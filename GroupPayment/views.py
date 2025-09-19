@@ -5,3 +5,4 @@ from django.shortcuts import render
 class CreateGroupPayment():
     pass
 
+class JoinGroup
