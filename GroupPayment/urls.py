@@ -1,7 +1,7 @@
 from django.urls import path,include
 from . import views
 
-app_name = 'GroupPayment'
+app_name = 'group_payment'
 
 
 urlpatterns = [
