@@ -5,5 +5,6 @@ app_name = 'GroupPayment'
 
 
 urlpatterns = [
-    #path('/', , name=''),
+    path('/', , name=''),
+    path('/', , name=''),
 ]
