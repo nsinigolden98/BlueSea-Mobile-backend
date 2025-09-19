@@ -57,7 +57,7 @@ INSTALLED_APPS = [
     # local apps
     'accounts',
     'wallet',
-    'group_payment',
+    'GroupPayment',
 ]
 
 MIDDLEWARE = [
