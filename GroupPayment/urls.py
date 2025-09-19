@@ -6,5 +6,5 @@ app_name = 'group_payment'
 
 urlpatterns = [
     path('create_group_payment/', , name=''),
-    path('/', , name=''),
+    path('join/', , name=''),
 ]
