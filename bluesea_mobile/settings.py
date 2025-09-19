@@ -56,7 +56,7 @@ INSTALLED_APPS = [
 
     # local apps
     'accounts',
-    'wall'
+    'wa'
     'group_payment',
 ]
 
