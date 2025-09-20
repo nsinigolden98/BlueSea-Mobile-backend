@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.core.validators import MinValueValidator
 from decimal import Decimal
 import uuid
@@ -34,7 +34,7 @@ class WalletTransaction(models.Model):
     
 
 class FundWallet(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='fund_requests')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='fund_requests')
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     payment_reference = models.CharField(max_length=100, unique=True)
     gateway_reference = models.CharField(max_length=100, blank=True, null=True)
