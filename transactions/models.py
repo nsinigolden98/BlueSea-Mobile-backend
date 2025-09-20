@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
 from decimal import Decimal
 import uuid
-from wallet.models import Wallet
+# from wallet.models import Wallet
 
 class WalletTransaction(models.Model):
     TRANSACTION_TYPES = [
@@ -18,7 +18,7 @@ class WalletTransaction(models.Model):
         ('CANCELLED', 'Cancelled'),
     ]
 
-    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name='transactions')
+    wallet = models.ForeignKey("wallet.Wallet", on_delete=models.CASCADE, related_name='transactions')
     amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
     transaction_type = models.CharField(max_length=6, choices=TRANSACTION_TYPES)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='COMPLETED')

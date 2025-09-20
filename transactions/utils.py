@@ -26,7 +26,7 @@ class WalletConfig:
     @transaction.atomic
     def fund_wallet(user, amount, payment_reference, gateway_reference=None):
         try:
-            wallet  = WalletConfig.get_or_create_wallet(user)
+            wallet  = WalletConfig.user_wallet(user)
 
             # check for funding
             funds = FundWallet.objects.filter(payment_reference=payment_reference).first()
@@ -62,6 +62,58 @@ class WalletConfig:
             logger.error(f"Error funding wallet for user {user.username}: {str(e)}")
             raise
 
-    # @staticmethod
-    # @transaction.atomic
-    # def debit_wa
+    @staticmethod
+    @transaction.atomic
+    def debit_walet_for_purchase(user, amount, sercive_typr, reference=None):
+        try:
+            wallet = WalletConfig.user_wallet(user)
+
+            if wallet.balance < amount:
+                raise ValueError("Insufficient funds in wallet.")
+
+            # debit the wallet
+            new_balance = wallet.debit(
+                amount=amount,
+                description=f"Debit for {sercive_typr}",
+                reference=reference or str(uuid.uuid4())
+            )
+            # transaction = WalletTransaction.objects.create(
+            #     wallet=wallet,
+            #     amount=amount,
+            #     transaction_type='DEBIT',
+            #     status='COMPLETED',
+            #     description=description,
+            #     reference=str(uuid.uuid4())
+            # )
+
+            logger.info(f"Wallet debited successfully for user {user.username} with amount {amount}")
+            return new_balance
+        except Exception as e:
+            logger.error(f"Error debiting wallet for user {user.username}: {str(e)}")
+            raise
+
+    @staticmethod
+    @transaction.atomic
+    def transaction_refund(user, amount, original_reference, reason="Refund"):
+        try:
+            wallet = WalletConfig.user_wallet(user)
+
+            refund_ref = f"REFUND-{original_reference}"
+
+            # credit the wallet
+            new_balance = wallet.credit(
+                amount=amount,
+                description=f"Refund for {reason}",
+                reference=refund_ref
+            )
+
+            logger.info(f"Wallet refunded successfully for user {user.username} with amount {amount}")
+            return new_balance
+        except Exception as e:
+            logger.error(f"Error refunding wallet for user {user.username}: {str(e)}")
+            raise
+
+    @staticmethod
+    def transaction_history(user):
+        wallet = WalletConfig.user_wallet(user)
+        return wallet.transactions.all()
