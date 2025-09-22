@@ -5,19 +5,22 @@ from decimal import Decimal
 import uuid
 # from wallet.models import Wallet
 
-class WalletTransaction(models.Model):
-    TRANSACTION_TYPES = [
+
+
+TRANSACTION_TYPES = [
         ('CREDIT', 'Credit'),
         ('DEBIT', 'Debit'),
     ]
 
-    STATUS_CHOICES = [
+STATUS_CHOICES = [
         ('PENDING', 'Pending'),
         ('COMPLETED', 'Completed'),
         ('FAILED', 'Failed'),
         ('CANCELLED', 'Cancelled'),
     ]
 
+
+class WalletTransaction(models.Model):
     wallet = models.ForeignKey("wallet.Wallet", on_delete=models.CASCADE, related_name='transactions')
     amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
     transaction_type = models.CharField(max_length=6, choices=TRANSACTION_TYPES)
