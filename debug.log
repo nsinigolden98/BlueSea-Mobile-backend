@@ -192,3 +192,184 @@ INFO 2025-09-24 08:57:29,190 autoreload 13924 8672 Watching for file changes wit
 INFO 2025-09-24 08:59:35,156 autoreload 13924 8672 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
 INFO 2025-09-24 08:59:38,630 autoreload 12116 124 Watching for file changes with StatReloader
 INFO 2025-09-24 09:32:35,476 autoreload 15352 5068 Watching for file changes with StatReloader
+INFO 2025-09-24 09:33:18,603 basehttp 15352 15072 "POST /transactions/fund-wallet/ HTTP/1.1" 200 162
+INFO 2025-09-24 09:46:40,296 autoreload 15352 5068 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:46:43,002 autoreload 15568 11180 Watching for file changes with StatReloader
+INFO 2025-09-24 09:47:14,987 basehttp 15568 5416 "POST /transactions/fund-wallet/ HTTP/1.1" 200 162
+INFO 2025-09-24 09:48:25,363 autoreload 15568 11180 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:48:29,583 autoreload 16380 5240 Watching for file changes with StatReloader
+INFO 2025-09-24 09:48:44,645 basehttp 16380 14428 "POST /transactions/fund-wallet/ HTTP/1.1" 200 162
+INFO 2025-09-24 09:50:04,975 autoreload 16380 5240 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:50:09,638 autoreload 15700 15760 Watching for file changes with StatReloader
+INFO 2025-09-24 09:50:25,147 autoreload 15700 15760 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:50:29,108 autoreload 13300 8992 Watching for file changes with StatReloader
+INFO 2025-09-24 09:50:36,997 autoreload 13300 8992 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:50:41,454 autoreload 8752 13692 Watching for file changes with StatReloader
+INFO 2025-09-24 09:50:47,584 autoreload 8752 13692 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:50:51,555 autoreload 10056 7064 Watching for file changes with StatReloader
+INFO 2025-09-24 09:51:07,946 autoreload 10056 7064 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:51:12,349 autoreload 8008 1496 Watching for file changes with StatReloader
+INFO 2025-09-24 09:51:20,753 autoreload 8008 1496 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:51:23,590 autoreload 11452 6300 Watching for file changes with StatReloader
+INFO 2025-09-24 09:51:49,150 autoreload 11452 6300 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:51:52,105 autoreload 11104 7852 Watching for file changes with StatReloader
+INFO 2025-09-24 09:51:58,583 autoreload 11104 7852 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:52:01,939 autoreload 4280 4332 Watching for file changes with StatReloader
+INFO 2025-09-24 09:52:06,236 autoreload 4280 4332 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:52:11,574 autoreload 12672 9820 Watching for file changes with StatReloader
+INFO 2025-09-24 09:52:17,961 autoreload 12672 9820 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:52:23,997 autoreload 14488 3724 Watching for file changes with StatReloader
+INFO 2025-09-24 09:52:30,943 autoreload 14488 3724 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:52:35,666 autoreload 9348 5740 Watching for file changes with StatReloader
+INFO 2025-09-24 09:52:43,907 autoreload 9348 5740 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:52:46,992 autoreload 4364 16192 Watching for file changes with StatReloader
+INFO 2025-09-24 09:52:52,858 autoreload 4364 16192 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:52:56,222 autoreload 10944 15324 Watching for file changes with StatReloader
+INFO 2025-09-24 09:53:04,170 autoreload 10944 15324 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:53:06,950 autoreload 15772 9712 Watching for file changes with StatReloader
+INFO 2025-09-24 09:53:11,604 autoreload 15772 9712 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:53:14,987 autoreload 15060 5096 Watching for file changes with StatReloader
+INFO 2025-09-24 09:53:21,426 autoreload 15060 5096 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:53:24,763 autoreload 13860 4092 Watching for file changes with StatReloader
+INFO 2025-09-24 09:53:37,574 autoreload 13860 4092 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:53:40,729 autoreload 15748 9748 Watching for file changes with StatReloader
+INFO 2025-09-24 09:53:49,689 autoreload 15748 9748 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 09:53:52,421 autoreload 5392 7852 Watching for file changes with StatReloader
+INFO 2025-09-24 09:55:04,418 autoreload 5392 7852 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\urls.py changed, reloading.
+INFO 2025-09-24 09:55:09,053 autoreload 8312 9084 Watching for file changes with StatReloader
+INFO 2025-09-24 09:55:20,798 utils 8312 13084 Wallet created successfully for user None
+INFO 2025-09-24 09:55:20,811 basehttp 8312 13084 "GET /transactions/history/ HTTP/1.1" 200 27
+INFO 2025-09-24 10:05:03,856 autoreload 8312 9084 C:\Users\Governor\Documents\BlueSea-Mobile-backend\accounts\views.py changed, reloading.
+INFO 2025-09-24 10:05:08,723 autoreload 11048 13108 Watching for file changes with StatReloader
+INFO 2025-09-24 10:05:22,398 autoreload 11048 13108 C:\Users\Governor\Documents\BlueSea-Mobile-backend\accounts\views.py changed, reloading.
+INFO 2025-09-24 10:05:26,934 autoreload 11040 14512 Watching for file changes with StatReloader
+INFO 2025-09-24 10:05:34,055 autoreload 11040 14512 C:\Users\Governor\Documents\BlueSea-Mobile-backend\accounts\views.py changed, reloading.
+INFO 2025-09-24 10:05:38,147 autoreload 8520 2828 Watching for file changes with StatReloader
+INFO 2025-09-24 10:05:49,790 autoreload 8520 2828 C:\Users\Governor\Documents\BlueSea-Mobile-backend\accounts\views.py changed, reloading.
+INFO 2025-09-24 10:05:52,755 autoreload 13092 12788 Watching for file changes with StatReloader
+INFO 2025-09-24 10:06:37,477 autoreload 13092 12788 C:\Users\Governor\Documents\BlueSea-Mobile-backend\accounts\views.py changed, reloading.
+INFO 2025-09-24 10:06:41,869 autoreload 12224 16036 Watching for file changes with StatReloader
+INFO 2025-09-24 10:06:48,217 autoreload 12224 16036 C:\Users\Governor\Documents\BlueSea-Mobile-backend\accounts\views.py changed, reloading.
+INFO 2025-09-24 10:06:52,340 autoreload 14368 6524 Watching for file changes with StatReloader
+INFO 2025-09-24 10:07:05,330 autoreload 14368 6524 C:\Users\Governor\Documents\BlueSea-Mobile-backend\accounts\views.py changed, reloading.
+INFO 2025-09-24 10:07:10,237 autoreload 16196 4220 Watching for file changes with StatReloader
+INFO 2025-09-24 10:07:17,263 autoreload 16196 4220 C:\Users\Governor\Documents\BlueSea-Mobile-backend\accounts\views.py changed, reloading.
+INFO 2025-09-24 10:07:21,342 autoreload 12468 10484 Watching for file changes with StatReloader
+INFO 2025-09-24 10:08:19,262 autoreload 12468 10484 C:\Users\Governor\Documents\BlueSea-Mobile-backend\accounts\views.py changed, reloading.
+INFO 2025-09-24 10:08:24,333 autoreload 2372 16276 Watching for file changes with StatReloader
+INFO 2025-09-24 10:08:47,909 autoreload 2372 16276 C:\Users\Governor\Documents\BlueSea-Mobile-backend\accounts\views.py changed, reloading.
+INFO 2025-09-24 10:08:52,480 autoreload 14704 14360 Watching for file changes with StatReloader
+ERROR 2025-09-24 10:10:15,366 log 14704 5188 Internal Server Error: /accounts/register/
+ERROR 2025-09-24 10:10:15,374 basehttp 14704 5188 "POST /accounts/register/ HTTP/1.1" 500 65
+ERROR 2025-09-24 10:10:26,851 log 14704 5188 Internal Server Error: /accounts/register/
+ERROR 2025-09-24 10:10:26,866 basehttp 14704 5188 "POST /accounts/register/ HTTP/1.1" 500 65
+INFO 2025-09-24 10:11:30,558 autoreload 14704 14360 C:\Users\Governor\Documents\BlueSea-Mobile-backend\accounts\views.py changed, reloading.
+INFO 2025-09-24 10:11:35,457 autoreload 11400 6168 Watching for file changes with StatReloader
+INFO 2025-09-24 10:11:42,336 autoreload 11400 6168 C:\Users\Governor\Documents\BlueSea-Mobile-backend\accounts\views.py changed, reloading.
+INFO 2025-09-24 10:11:45,770 autoreload 15344 14416 Watching for file changes with StatReloader
+INFO 2025-09-24 10:12:05,085 basehttp 15344 9228 "POST /accounts/register/ HTTP/1.1" 201 73
+INFO 2025-09-24 10:12:40,792 basehttp 15344 9228 "POST /accounts/verify-email/ HTTP/1.1" 200 554
+INFO 2025-09-24 10:14:03,384 autoreload 15344 14416 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:14:08,740 autoreload 8832 11220 Watching for file changes with StatReloader
+INFO 2025-09-24 10:15:21,099 autoreload 8832 11220 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:15:26,486 autoreload 6892 15860 Watching for file changes with StatReloader
+INFO 2025-09-24 10:15:40,557 autoreload 6892 15860 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:15:44,421 autoreload 12364 15612 Watching for file changes with StatReloader
+INFO 2025-09-24 10:16:43,632 autoreload 12364 15612 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:16:47,657 autoreload 15452 8372 Watching for file changes with StatReloader
+INFO 2025-09-24 10:17:04,187 autoreload 15452 8372 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:17:07,371 autoreload 13636 2648 Watching for file changes with StatReloader
+INFO 2025-09-24 10:17:18,690 autoreload 13636 2648 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:17:23,385 autoreload 7228 11912 Watching for file changes with StatReloader
+INFO 2025-09-24 10:17:29,747 autoreload 7228 11912 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:17:35,299 autoreload 9308 12120 Watching for file changes with StatReloader
+INFO 2025-09-24 10:17:42,796 autoreload 9308 12120 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:17:50,415 autoreload 9856 7912 Watching for file changes with StatReloader
+INFO 2025-09-24 10:17:56,258 autoreload 9856 7912 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:18:00,729 autoreload 11780 6460 Watching for file changes with StatReloader
+INFO 2025-09-24 10:18:03,524 autoreload 11780 6460 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:18:08,054 autoreload 9276 9056 Watching for file changes with StatReloader
+INFO 2025-09-24 10:18:15,679 autoreload 9276 9056 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:18:19,849 autoreload 4712 13568 Watching for file changes with StatReloader
+INFO 2025-09-24 10:18:23,689 autoreload 4712 13568 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:18:28,220 autoreload 14836 4848 Watching for file changes with StatReloader
+INFO 2025-09-24 10:18:33,584 autoreload 14836 4848 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:18:38,258 autoreload 7596 5856 Watching for file changes with StatReloader
+INFO 2025-09-24 10:18:51,190 autoreload 7596 5856 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:18:55,489 autoreload 11744 7104 Watching for file changes with StatReloader
+INFO 2025-09-24 10:19:04,623 autoreload 11744 7104 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:19:08,427 autoreload 13720 8972 Watching for file changes with StatReloader
+INFO 2025-09-24 10:19:19,094 autoreload 13720 8972 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:19:23,003 autoreload 7672 15020 Watching for file changes with StatReloader
+INFO 2025-09-24 10:19:42,802 autoreload 7672 15020 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:19:47,447 autoreload 4040 16016 Watching for file changes with StatReloader
+INFO 2025-09-24 10:19:56,673 autoreload 4040 16016 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:20:00,466 autoreload 16124 9704 Watching for file changes with StatReloader
+INFO 2025-09-24 10:20:33,218 autoreload 16124 9704 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:20:37,450 autoreload 11780 14660 Watching for file changes with StatReloader
+INFO 2025-09-24 10:20:41,297 autoreload 11780 14660 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:20:45,130 autoreload 14256 15788 Watching for file changes with StatReloader
+INFO 2025-09-24 10:21:05,692 autoreload 14256 15788 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:21:09,094 autoreload 14816 15920 Watching for file changes with StatReloader
+INFO 2025-09-24 10:21:11,959 autoreload 14816 15920 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:21:18,109 autoreload 1644 6336 Watching for file changes with StatReloader
+INFO 2025-09-24 10:21:23,684 autoreload 1644 6336 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:21:27,701 autoreload 5876 9740 Watching for file changes with StatReloader
+INFO 2025-09-24 10:21:54,285 autoreload 5876 9740 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:21:58,297 autoreload 15800 14984 Watching for file changes with StatReloader
+INFO 2025-09-24 10:22:07,730 autoreload 15800 14984 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:22:11,343 autoreload 3336 4092 Watching for file changes with StatReloader
+INFO 2025-09-24 10:22:16,859 autoreload 3336 4092 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:22:21,581 autoreload 11416 7672 Watching for file changes with StatReloader
+INFO 2025-09-24 10:22:26,945 autoreload 11416 7672 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:22:31,289 autoreload 13084 12176 Watching for file changes with StatReloader
+INFO 2025-09-24 10:22:37,300 autoreload 13084 12176 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:22:42,479 autoreload 332 7724 Watching for file changes with StatReloader
+INFO 2025-09-24 10:23:12,438 autoreload 332 7724 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:23:17,694 autoreload 1040 9856 Watching for file changes with StatReloader
+INFO 2025-09-24 10:23:29,292 autoreload 1040 9856 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:23:34,233 autoreload 8708 13864 Watching for file changes with StatReloader
+INFO 2025-09-24 10:23:40,140 autoreload 8708 13864 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:23:43,040 autoreload 604 10052 Watching for file changes with StatReloader
+INFO 2025-09-24 10:24:12,680 autoreload 604 10052 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:24:16,705 autoreload 8420 8172 Watching for file changes with StatReloader
+INFO 2025-09-24 10:24:24,405 autoreload 8420 8172 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:24:28,718 autoreload 7128 15888 Watching for file changes with StatReloader
+INFO 2025-09-24 10:25:49,717 autoreload 7128 15888 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:25:54,098 autoreload 14480 7556 Watching for file changes with StatReloader
+INFO 2025-09-24 10:26:40,611 autoreload 14480 7556 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:26:45,101 autoreload 10996 15840 Watching for file changes with StatReloader
+INFO 2025-09-24 10:26:50,853 autoreload 10996 15840 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:26:54,667 autoreload 8328 15796 Watching for file changes with StatReloader
+INFO 2025-09-24 10:27:43,897 autoreload 8328 15796 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:27:47,777 autoreload 4276 12840 Watching for file changes with StatReloader
+INFO 2025-09-24 10:27:54,686 autoreload 4276 12840 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:27:58,441 autoreload 636 5960 Watching for file changes with StatReloader
+INFO 2025-09-24 10:28:17,724 autoreload 636 5960 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:28:22,820 autoreload 6176 1496 Watching for file changes with StatReloader
+INFO 2025-09-24 10:28:35,203 autoreload 6176 1496 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:28:39,949 autoreload 13148 9352 Watching for file changes with StatReloader
+INFO 2025-09-24 10:28:48,874 autoreload 13148 9352 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:28:52,142 autoreload 620 13928 Watching for file changes with StatReloader
+INFO 2025-09-24 10:29:14,543 autoreload 620 13928 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:29:17,531 autoreload 13936 8404 Watching for file changes with StatReloader
+INFO 2025-09-24 10:29:32,979 basehttp 13936 12896 "POST /transactions/fund-wallet/ HTTP/1.1" 200 162
+INFO 2025-09-24 10:30:37,558 autoreload 13936 8404 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:30:42,545 autoreload 8988 7660 Watching for file changes with StatReloader
+INFO 2025-09-24 10:30:49,800 autoreload 8988 7660 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:30:54,674 autoreload 9144 10960 Watching for file changes with StatReloader
+INFO 2025-09-24 10:31:01,613 autoreload 9144 10960 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:31:04,488 autoreload 4760 7468 Watching for file changes with StatReloader
+INFO 2025-09-24 10:36:42,963 autoreload 4760 7468 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:36:45,594 autoreload 7460 2828 Watching for file changes with StatReloader
+INFO 2025-09-24 10:37:09,405 autoreload 7460 2828 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:37:13,614 autoreload 8964 13616 Watching for file changes with StatReloader
+INFO 2025-09-24 10:37:42,929 basehttp 8964 13744 "POST /transactions/fund-wallet/ HTTP/1.1" 200 162
+WARNING 2025-09-24 10:38:07,875 log 8964 2812 Unauthorized: /transactions/fund-wallet/
+WARNING 2025-09-24 10:38:07,878 basehttp 8964 2812 "GET /transactions/fund-wallet/ HTTP/1.1" 401 3806
+INFO 2025-09-24 10:41:58,656 autoreload 8964 13616 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:42:03,197 autoreload 1108 14508 Watching for file changes with StatReloader
+INFO 2025-09-24 10:43:30,167 basehttp 1108 11488 "POST /transactions/fund-wallet/ HTTP/1.1" 200 162
+INFO 2025-09-24 10:54:36,701 autoreload 1108 14508 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 10:54:43,355 autoreload 1056 2864 Watching for file changes with StatReloader
+INFO 2025-09-24 10:54:49,310 autoreload 1056 2864 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
