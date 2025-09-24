@@ -41,7 +41,7 @@ class FundWallet(models.Model):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     payment_reference = models.CharField(max_length=100, unique=True)
     gateway_reference = models.CharField(max_length=100, blank=True, null=True)
-    status = models.CharField(max_length=10, choices=WalletTransaction.STATUS_CHOICES, default='PENDING')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
     created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(blank=True, null=True)
 
