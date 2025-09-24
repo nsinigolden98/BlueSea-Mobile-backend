@@ -28,6 +28,7 @@ from django.contrib.auth import authenticate, get_user_model
 from .models import Profile, EmailVerification, ResetPassword, ResetPasswordValuationToken
 from .serializers import *
 import os
+from wallet.models import Wallet
 
 import dotenv
 
@@ -83,8 +84,8 @@ class RegisterView(APIView):
                                 "state": False
                             },
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                        )
-                    
+                        )   
+                Wallet.objects.create(user=account)
         except Exception as e:
             print(str(e))
             return Response(
