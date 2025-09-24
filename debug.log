@@ -518,3 +518,15 @@ WARNING 2025-09-24 12:37:16,221 log 3212 8988 Not Found: /transactions/webhook/p
 WARNING 2025-09-24 12:37:16,229 basehttp 3212 8988 "POST /transactions/webhook/paystack/ HTTP/1.1" 404 53
 INFO 2025-09-24 12:39:11,166 autoreload 3212 4208 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\models.py changed, reloading.
 INFO 2025-09-24 12:40:51,405 autoreload 7700 2716 Watching for file changes with StatReloader
+INFO 2025-09-24 12:46:30,218 basehttp 7700 6116 "POST /accounts/register/ HTTP/1.1" 201 73
+INFO 2025-09-24 12:47:24,556 basehttp 7700 11524 "POST /accounts/verify-email/ HTTP/1.1" 200 554
+INFO 2025-09-24 12:48:26,912 basehttp 7700 11524 "POST /transactions/fund-wallet/ HTTP/1.1" 200 163
+INFO 2025-09-24 12:48:45,115 views 7700 11140 Received webhook payload: {"event":"charge.success","data":{"id":5366770908,"domain":"test","status":"success","reference":"BS-b5b2450e-d2da-4c7d-8566-bd915fb60e01","amount":1000000,"message":null,"gateway_response":"Successful","paid_at":"2025-09-24T11:48:44.000Z","created_at":"2025-09-24T11:48:27.000Z","channel":"card","currency":"NGN","ip_address":"102.90.81.187","metadata":{"user_id":"5","payment_reference":"BS-b5b2450e-d2da-4c7d-8566-bd915fb60e01"},"fees_breakdown":null,"log":null,"fees":25000,"fees_split":null,"authorization":{"authorization_code":"AUTH_505okdz7hs","bin":"408408","last4":"4081","exp_month":"12","exp_year":"2030","channel":"card","card_type":"visa ","bank":"TEST BANK","country_code":"NG","brand":"visa","reusable":true,"signature":"SIG_ggimb607g35W1MCm3G00","account_name":null,"receiver_bank_account_number":null,"receiver_bank":null},"customer":{"id":307728851,"first_name":null,"last_name":null,"email":"covenantgovernor06@gmail.com","customer_code":"CUS_3e7xsm0yz94xvja","phone":null,"metadata":null,"risk_action":"default","international_format_phone":null},"plan":{},"subaccount":{},"split":{},"order_id":null,"paidAt":"2025-09-24T11:48:44.000Z","requested_amount":1000000,"pos_transaction_data":null,"source":{"type":"api","source":"merchant_api","entry_point":"transaction_initialize","identifier":null}}}
+INFO 2025-09-24 12:48:45,137 views 7700 11140 Processing webhook event: charge.success
+INFO 2025-09-24 12:48:45,147 views 7700 11140 Processing successful charge - Reference: BS-b5b2450e-d2da-4c7d-8566-bd915fb60e01, Raw Amount: 1000000, Converted Amount: 10000
+INFO 2025-09-24 12:48:45,183 views 7700 11140 Found pending funding request: Amount: 10000.00, User: covenantgovernor06@gmail.com
+INFO 2025-09-24 12:48:45,195 views 7700 11140 Found wallet for user: covenantgovernor06@gmail.com, Current balance: 0.00
+INFO 2025-09-24 12:48:45,235 views 7700 11140 Wallet funded successfully. Old balance: 0.00, New balance: 10000.00
+INFO 2025-09-24 12:48:45,283 basehttp 7700 11140 "POST /transactions/webhook/paystack/ HTTP/1.1" 200 105
+WARNING 2025-09-24 13:07:11,142 log 7700 4868 Unauthorized: /transactions/fund-wallet/
+WARNING 2025-09-24 13:07:11,148 basehttp 7700 4868 "GET /transactions/fund-wallet/ HTTP/1.1" 401 3806
