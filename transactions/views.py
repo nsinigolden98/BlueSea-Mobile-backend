@@ -25,6 +25,7 @@ from django.conf import settings
 import hmac
 import hashlib
 import logging
+from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -145,55 +146,66 @@ class PaymentWebhook(APIView):
             if event == 'charge.success':
                 payload = data.get('data', {})
                 reference = payload.get('reference')
-                amount = Decimal(str(payload.get('amount', 0))) / 100  # Convert from kobo to naira
+                # Ensure amount is converted to Decimal properly
+                raw_amount = Decimal(str(payload.get('amount', '0')))
+                amount = raw_amount / Decimal('100')  # Convert from kobo to naira
                 gateway_reference = str(payload.get('id'))
 
                 logger.info(
-                    "Processing successful charge - Reference: %s, Amount: %s, Gateway Reference: %s",
-                    reference, amount, gateway_reference
+                    "Processing successful charge - Reference: %s, Raw Amount: %s, Converted Amount: %s",
+                    reference, raw_amount, amount
                 )
 
-                # Find the funding request
                 try:
-                    funding_request = FundWallet.objects.get(
+                    funding_request = FundWallet.objects.select_for_update().get(
+                        user = request.user,
                         payment_reference=reference,
                         status='PENDING'
                     )
-                    logger.info("Found pending funding request: %s", funding_request)
+                    
+                    logger.info(
+                        "Found pending funding request: Amount: %s, User: %s", 
+                        funding_request.amount, 
+                        funding_request.user.email if funding_request.user else 'None'
+                    )
 
-                    # Verify amount matches
-                    if funding_request.amount != amount:
+                    # Convert both amounts to Decimal for comparison
+                    request_amount = Decimal(str(funding_request.amount))
+                    webhook_amount = Decimal(str(amount))
+
+                    if abs(request_amount - webhook_amount) > Decimal('0.01'):
                         logger.error(
                             "Amount mismatch - Expected: %s, Got: %s",
-                            funding_request.amount, amount
+                            request_amount, webhook_amount
                         )
                         funding_request.status = 'FAILED'
                         funding_request.save()
                         return Response({
                             "success": False,
-                            "error": "Amount mismatch"
+                            "error": f"Amount mismatch. Expected {request_amount}, got {webhook_amount}"
                         }, status=status.HTTP_400_BAD_REQUEST)
 
-                    # Fund the wallet
                     try:
-                        logger.info("Attempting to fund wallet for user: %s", funding_request.user)
-                        
-                        # First update the funding request status to processing
-                        funding_request.status = 'PROCESSING'
-                        funding_request.save()
-                        
-                        WalletConfig.fund_wallet(
-                            user=funding_request.user,
-                            amount=amount,
-                            payment_reference=reference,
-                            gateway_reference=gateway_reference
-                        )
-                        
-                        logger.info("Wallet funded successfully")
-                        return Response({
-                            "success": True,
-                            "message": "Payment processed successfully"
-                        })
+                        with transaction.atomic():
+                            # Update status to processing
+                            funding_request.status = 'PROCESSING'
+                            funding_request.save()
+
+                            # Fund the wallet
+                            WalletConfig.fund_wallet(
+                                user=funding_request.user,
+                                amount=webhook_amount,
+                                payment_reference=reference,
+                                gateway_reference=gateway_reference
+                            )
+                            funding_request.status = 'SUCCESS'
+                            funding_request.save()
+                            
+                            logger.info("Wallet funded successfully")
+                            return Response({
+                                "success": True,
+                                "message": "Payment processed successfully"
+                            })
 
                     except Exception as e:
                         logger.error("Error funding wallet: %s", str(e), exc_info=True)

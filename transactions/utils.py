@@ -4,6 +4,7 @@ import uuid
 import logging
 from .models import WalletTransaction, FundWallet
 from wallet.models import Wallet
+from decimal import Decimal
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +27,16 @@ class WalletConfig:
     @transaction.atomic
     def fund_wallet(user, amount, payment_reference, gateway_reference=None):
         try:
-            logger.info(f"Starting fund_wallet process for user {user.username}")
+            logger.info(f"Starting fund_wallet process for user {user.username if user else 'None'}")
+            
+            # Ensure amount is Decimal
+            if not isinstance(amount, Decimal):
+                amount = Decimal(str(amount))
+            
             logger.info(f"Amount: {amount}, Reference: {payment_reference}")
             
             wallet = WalletConfig.user_wallet(user)
-            logger.info(f"Retrieved wallet for user {user.username}")
+            logger.info(f"Retrieved wallet for user {user.username if user else 'None'}")
 
             # check for funding
             funds = FundWallet.objects.filter(payment_reference=payment_reference).first()
@@ -46,29 +52,19 @@ class WalletConfig:
                 funds.gateway_reference = gateway_reference
                 funds.completed_at = timezone.now()
                 funds.save()
-            else:
-                logger.info(f"Creating new funding request {payment_reference}")
-                funds = FundWallet.objects.create(
-                    user=user,
-                    amount=amount,
-                    payment_reference=payment_reference,
-                    gateway_reference=gateway_reference,
-                    status='COMPLETED',
-                    completed_at=timezone.now()
-                )
 
             # credit wallet
-            logger.info(f"Crediting wallet for user {user.username} with amount {amount}")
-            wallet.credit(
+            logger.info(f"Crediting wallet for user {user.username if user else 'None'} with amount {amount}")
+            new_balance = wallet.credit(
                 amount=amount,
                 description="Wallet Funding",
                 reference=payment_reference
             )
 
-            logger.info(f"Wallet funded successfully for user {user.username} with amount {amount}")
-            return wallet.balance
+            logger.info(f"Wallet funded successfully for user {user.username if user else 'None'} with amount {amount}")
+            return new_balance
         except Exception as e:
-            logger.error(f"Error funding wallet for user {user.username}: {str(e)}", exc_info=True)
+            logger.error(f"Error funding wallet for user {user.username if user else 'None'}: {str(e)}", exc_info=True)
             raise
 
     @staticmethod
