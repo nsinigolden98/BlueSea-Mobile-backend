@@ -5,19 +5,22 @@ from decimal import Decimal
 import uuid
 # from wallet.models import Wallet
 
-class WalletTransaction(models.Model):
-    TRANSACTION_TYPES = [
+
+
+TRANSACTION_TYPES = [
         ('CREDIT', 'Credit'),
         ('DEBIT', 'Debit'),
     ]
 
-    STATUS_CHOICES = [
+STATUS_CHOICES = [
         ('PENDING', 'Pending'),
         ('COMPLETED', 'Completed'),
         ('FAILED', 'Failed'),
         ('CANCELLED', 'Cancelled'),
     ]
 
+
+class WalletTransaction(models.Model):
     wallet = models.ForeignKey("wallet.Wallet", on_delete=models.CASCADE, related_name='transactions')
     amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
     transaction_type = models.CharField(max_length=6, choices=TRANSACTION_TYPES)
@@ -38,9 +41,9 @@ class FundWallet(models.Model):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     payment_reference = models.CharField(max_length=100, unique=True)
     gateway_reference = models.CharField(max_length=100, blank=True, null=True)
-    status = models.CharField(max_length=10, choices=WalletTransaction.STATUS_CHOICES, default='PENDING')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
     created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
-        return f"Fund {self.amount} for {self.user.username} - {self.status}"
+        return f"Fund {self.amount} for {self.user.email if self.user else 'None'} - {self.status}"

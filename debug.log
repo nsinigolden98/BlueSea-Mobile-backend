@@ -1,0 +1,23 @@
+INFO 2025-09-24 19:58:13,062 autoreload 4164 12228 Watching for file changes with StatReloader
+INFO 2025-09-24 19:58:27,929 autoreload 4164 12228 C:\Users\Governor\Documents\BlueSea-Mobile-backend\bluesea_mobile\urls.py changed, reloading.
+INFO 2025-09-24 19:58:31,799 autoreload 13132 6952 Watching for file changes with StatReloader
+INFO 2025-09-24 19:59:15,491 autoreload 13132 6952 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\models.py changed, reloading.
+INFO 2025-09-24 19:59:19,838 autoreload 2984 12832 Watching for file changes with StatReloader
+INFO 2025-09-24 20:00:29,290 autoreload 2984 12832 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\urls.py changed, reloading.
+INFO 2025-09-24 20:00:33,535 autoreload 11520 12132 Watching for file changes with StatReloader
+INFO 2025-09-24 20:01:03,249 autoreload 11520 12132 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 20:01:06,247 autoreload 13172 2784 Watching for file changes with StatReloader
+INFO 2025-09-24 20:01:44,349 autoreload 13172 2784 C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\models.py changed, reloading.
+INFO 2025-09-24 20:01:48,022 autoreload 10860 8660 Watching for file changes with StatReloader
+INFO 2025-09-24 20:02:19,610 autoreload 10860 8660 C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\serializers.py changed, reloading.
+INFO 2025-09-24 20:02:23,443 autoreload 13196 10668 Watching for file changes with StatReloader
+INFO 2025-09-24 20:08:01,836 basehttp 13196 7408 "POST /accounts/register/ HTTP/1.1" 201 73
+INFO 2025-09-24 20:08:43,023 basehttp 13196 7408 "POST /accounts/verify-email/ HTTP/1.1" 200 554
+INFO 2025-09-24 20:09:38,523 basehttp 13196 7408 "POST /transactions/fund-wallet/ HTTP/1.1" 200 163
+INFO 2025-09-24 20:09:57,314 views 13196 5624 Received webhook payload: {"event":"charge.success","data":{"id":5367919441,"domain":"test","status":"success","reference":"BS-1e2eecef-bc2d-4b6d-8a7a-2ce98087d98a","amount":1000000,"message":null,"gateway_response":"Successful","paid_at":"2025-09-24T19:09:56.000Z","created_at":"2025-09-24T19:09:39.000Z","channel":"card","currency":"NGN","ip_address":"102.88.55.51","metadata":{"user_id":"1","payment_reference":"BS-1e2eecef-bc2d-4b6d-8a7a-2ce98087d98a"},"fees_breakdown":null,"log":null,"fees":25000,"fees_split":null,"authorization":{"authorization_code":"AUTH_y450oc39av","bin":"408408","last4":"4081","exp_month":"12","exp_year":"2030","channel":"card","card_type":"visa ","bank":"TEST BANK","country_code":"NG","brand":"visa","reusable":true,"signature":"SIG_ggimb607g35W1MCm3G00","account_name":null,"receiver_bank_account_number":null,"receiver_bank":null},"customer":{"id":307728851,"first_name":null,"last_name":null,"email":"covenantgovernor06@gmail.com","customer_code":"CUS_3e7xsm0yz94xvja","phone":null,"metadata":null,"risk_action":"default","international_format_phone":null},"plan":{},"subaccount":{},"split":{},"order_id":null,"paidAt":"2025-09-24T19:09:56.000Z","requested_amount":1000000,"pos_transaction_data":null,"source":{"type":"api","source":"merchant_api","entry_point":"transaction_initialize","identifier":null}}}
+INFO 2025-09-24 20:09:57,327 views 13196 5624 Processing webhook event: charge.success
+INFO 2025-09-24 20:09:57,329 views 13196 5624 Processing successful charge - Reference: BS-1e2eecef-bc2d-4b6d-8a7a-2ce98087d98a, Raw Amount: 1000000, Converted Amount: 10000
+INFO 2025-09-24 20:09:57,354 views 13196 5624 Found pending funding request: Amount: 10000.00, User: covenantgovernor06@gmail.com
+INFO 2025-09-24 20:09:57,444 views 13196 5624 Found wallet for user: covenantgovernor06@gmail.com, Current balance: 0.00
+INFO 2025-09-24 20:09:57,592 views 13196 5624 Wallet funded successfully. Old balance: 0.00, New balance: 10000.00
+INFO 2025-09-24 20:09:57,651 basehttp 13196 5624 "POST /transactions/webhook/paystack/ HTTP/1.1" 200 105
