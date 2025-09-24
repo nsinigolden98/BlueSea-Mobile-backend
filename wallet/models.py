@@ -22,15 +22,27 @@ class Wallet(models.Model):
         if amount <= 0:
             raise ValueError("Amount must be positive")
         
+<<<<<<< HEAD
         self.balance += Decimal(amount)
+=======
+        amount = Decimal(str(amount))
+        
+        self.balance += amount
+>>>>>>> mybranch
         self.save()
 
         # create transaction record
         WalletTransaction.objects.create(
             wallet=self,
+<<<<<<< HEAD
             amount=Decimal(amount),
             transaction_type='CREDIT',
             description="Credit",
+=======
+            amount=amount,
+            transaction_type='CREDIT',
+            description=description,
+>>>>>>> mybranch
             reference=reference or str(uuid.uuid4())
         )
 

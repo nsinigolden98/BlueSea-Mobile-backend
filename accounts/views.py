@@ -28,6 +28,10 @@ from django.contrib.auth import authenticate, get_user_model
 from .models import Profile, EmailVerification, ResetPassword, ResetPasswordValuationToken
 from .serializers import *
 import os
+<<<<<<< HEAD
+=======
+from wallet.models import Wallet
+>>>>>>> mybranch
 
 import dotenv
 
@@ -47,6 +51,11 @@ class RegisterView(APIView):
                     account = serializer.save()
                     role = account.role
                     # account.save()
+<<<<<<< HEAD
+=======
+                    Wallet.objects.create(user=account)
+
+>>>>>>> mybranch
 
                     otp = get_random_string(6, '0123456789')
                     timestamp = timezone.now()
@@ -83,8 +92,12 @@ class RegisterView(APIView):
                                 "state": False
                             },
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+<<<<<<< HEAD
                         )
                     
+=======
+                        )   
+>>>>>>> mybranch
         except Exception as e:
             print(str(e))
             return Response(

@@ -57,8 +57,13 @@ INSTALLED_APPS = [
     # local apps
     'accounts',
     'wallet',
+<<<<<<< HEAD
     'group_payment',
     'transactions',
+=======
+    'transactions',
+    'group_payment',
+>>>>>>> mybranch
 ]
 
 MIDDLEWARE = [
@@ -163,4 +168,53 @@ EMAIL_PORT = os.environ.get('EMAIL_PORT')
 EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL')
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+<<<<<<< HEAD
 FROM_EMAIL = EMAIL_HOST_USER
+=======
+FROM_EMAIL = EMAIL_HOST_USER
+
+
+PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY')
+PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY')
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://unexhausted-semiorganic-genevie.ngrok-free.dev/transactions'
+]
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'transactions': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
+>>>>>>> mybranch

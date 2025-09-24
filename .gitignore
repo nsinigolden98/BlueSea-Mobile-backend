@@ -1,4 +1,14 @@
 .env
+<<<<<<< HEAD
 __pycache__/
 *.pyc
 db.sqlite3
+=======
+db.sqlite3
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git-rewrite
+>>>>>>> mybranch
