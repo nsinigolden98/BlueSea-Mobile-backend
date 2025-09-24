@@ -46,4 +46,4 @@ class FundWallet(models.Model):
     completed_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
-        return f"Fund {self.amount} for {self.user.username} - {self.status}"
+        return f"Fund {self.amount} for {self.user.email if self.user else 'None'} - {self.status}"

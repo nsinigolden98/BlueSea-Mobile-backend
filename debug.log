@@ -78,3 +78,117 @@ INFO 2025-09-24 08:20:01,284 autoreload 5456 5080 C:\Users\Governor\Documents\Bl
 INFO 2025-09-24 08:20:04,028 autoreload 12224 5228 Watching for file changes with StatReloader
 INFO 2025-09-24 08:20:11,457 autoreload 12224 5228 C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\models.py changed, reloading.
 INFO 2025-09-24 08:20:13,972 autoreload 14260 10892 Watching for file changes with StatReloader
+INFO 2025-09-24 08:24:01,561 autoreload 14260 10892 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 08:24:04,545 autoreload 12352 9116 Watching for file changes with StatReloader
+INFO 2025-09-24 08:24:39,414 views 12352 6388 Received webhook payload: {"event":"charge.success","data":{"id":5365833037,"domain":"test","status":"success","reference":"BS-943b41ce-e880-463e-ac1a-464d5823af1e","amount":1500000,"message":null,"gateway_response":"Successful","paid_at":"2025-09-24T07:14:31.000Z","created_at":"2025-09-24T07:14:10.000Z","channel":"card","currency":"NGN","ip_address":"102.90.118.56","metadata":{"user_id":"2","payment_reference":"BS-943b41ce-e880-463e-ac1a-464d5823af1e"},"fees_breakdown":null,"log":null,"fees":32500,"fees_split":null,"authorization":{"authorization_code":"AUTH_vw2sabxzyo","bin":"408408","last4":"4081","exp_month":"12","exp_year":"2030","channel":"card","card_type":"visa ","bank":"TEST BANK","country_code":"NG","brand":"visa","reusable":true,"signature":"SIG_ggimb607g35W1MCm3G00","account_name":null,"receiver_bank_account_number":null,"receiver_bank":null},"customer":{"id":307728851,"first_name":null,"last_name":null,"email":"covenantgovernor06@gmail.com","customer_code":"CUS_3e7xsm0yz94xvja","phone":null,"metadata":null,"risk_action":"default","international_format_phone":null},"plan":{},"subaccount":{},"split":{},"order_id":null,"paidAt":"2025-09-24T07:14:31.000Z","requested_amount":1500000,"pos_transaction_data":null,"source":{"type":"api","source":"merchant_api","entry_point":"transaction_initialize","identifier":null}}}
+INFO 2025-09-24 08:24:39,453 views 12352 6388 Processing webhook event: charge.success
+INFO 2025-09-24 08:24:39,460 views 12352 6388 Processing successful charge - Reference: BS-943b41ce-e880-463e-ac1a-464d5823af1e, Amount: 15000, Gateway Reference: 5365833037
+ERROR 2025-09-24 08:24:39,502 views 12352 6388 Invalid payment reference: BS-943b41ce-e880-463e-ac1a-464d5823af1e
+WARNING 2025-09-24 08:24:39,514 log 12352 6388 Not Found: /transactions/webhook/paystack/
+WARNING 2025-09-24 08:24:39,520 basehttp 12352 6388 "POST /transactions/webhook/paystack/ HTTP/1.1" 404 53
+INFO 2025-09-24 08:24:44,436 autoreload 12352 9116 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 08:24:49,579 autoreload 15684 12008 Watching for file changes with StatReloader
+INFO 2025-09-24 08:24:58,771 autoreload 15684 12008 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 08:25:03,452 autoreload 11824 12544 Watching for file changes with StatReloader
+INFO 2025-09-24 08:25:16,402 autoreload 11824 12544 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 08:25:21,376 autoreload 6116 3732 Watching for file changes with StatReloader
+INFO 2025-09-24 08:25:32,100 autoreload 6116 3732 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 08:25:35,989 autoreload 15188 11008 Watching for file changes with StatReloader
+INFO 2025-09-24 08:25:51,741 autoreload 15188 11008 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 08:25:56,246 autoreload 10440 15964 Watching for file changes with StatReloader
+INFO 2025-09-24 08:26:01,184 autoreload 10440 15964 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 08:26:06,418 autoreload 15100 7204 Watching for file changes with StatReloader
+INFO 2025-09-24 08:27:27,832 basehttp 15100 15076 "POST /transactions/fund-wallet/ HTTP/1.1" 200 162
+INFO 2025-09-24 08:27:44,268 views 15100 5984 Received webhook payload: {"event":"charge.success","data":{"id":5365873897,"domain":"test","status":"success","reference":"BS-3b43e428-1e95-4f68-86da-b4ba1560d93f","amount":100000,"message":null,"gateway_response":"Successful","paid_at":"2025-09-24T07:27:44.000Z","created_at":"2025-09-24T07:27:28.000Z","channel":"card","currency":"NGN","ip_address":"102.90.118.56","metadata":{"user_id":"2","payment_reference":"BS-3b43e428-1e95-4f68-86da-b4ba1560d93f"},"fees_breakdown":null,"log":null,"fees":1500,"fees_split":null,"authorization":{"authorization_code":"AUTH_wlv5gzou6y","bin":"408408","last4":"4081","exp_month":"12","exp_year":"2030","channel":"card","card_type":"visa ","bank":"TEST BANK","country_code":"NG","brand":"visa","reusable":true,"signature":"SIG_ggimb607g35W1MCm3G00","account_name":null,"receiver_bank_account_number":null,"receiver_bank":null},"customer":{"id":307728851,"first_name":null,"last_name":null,"email":"covenantgovernor06@gmail.com","customer_code":"CUS_3e7xsm0yz94xvja","phone":null,"metadata":null,"risk_action":"default","international_format_phone":null},"plan":{},"subaccount":{},"split":{},"order_id":null,"paidAt":"2025-09-24T07:27:44.000Z","requested_amount":100000,"pos_transaction_data":null,"source":{"type":"api","source":"merchant_api","entry_point":"transaction_initialize","identifier":null}}}
+INFO 2025-09-24 08:27:44,299 views 15100 5984 Processing webhook event: charge.success
+INFO 2025-09-24 08:27:44,301 views 15100 5984 Processing successful charge - Reference: BS-3b43e428-1e95-4f68-86da-b4ba1560d93f, Amount: 1000, Gateway Reference: 5365873897
+INFO 2025-09-24 08:27:44,339 views 15100 5984 Found pending funding request: Fund 1000.00 for None - PENDING
+INFO 2025-09-24 08:27:44,384 views 15100 5984 Attempting to fund wallet for user: covenantgovernor06@gmail.com
+INFO 2025-09-24 08:27:44,430 utils 15100 5984 Starting fund_wallet process for user None
+INFO 2025-09-24 08:27:44,435 utils 15100 5984 Amount: 1000, Reference: BS-3b43e428-1e95-4f68-86da-b4ba1560d93f
+INFO 2025-09-24 08:27:44,469 utils 15100 5984 Wallet created successfully for user None
+INFO 2025-09-24 08:27:44,473 utils 15100 5984 Retrieved wallet for user None
+INFO 2025-09-24 08:27:44,498 utils 15100 5984 Found funding request: Fund 1000.00 for None - PROCESSING
+INFO 2025-09-24 08:27:44,520 utils 15100 5984 Updating existing funding request BS-3b43e428-1e95-4f68-86da-b4ba1560d93f
+INFO 2025-09-24 08:27:44,571 utils 15100 5984 Crediting wallet for user None with amount 1000
+ERROR 2025-09-24 08:27:44,587 utils 15100 5984 Error funding wallet for user None: unsupported operand type(s) for +=: 'float' and 'decimal.Decimal'
+Traceback (most recent call last):
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\utils.py", line 62, in fund_wallet
+    wallet.credit(
+    ~~~~~~~~~~~~~^
+        amount=amount,
+        ^^^^^^^^^^^^^^
+        description="Wallet Funding",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        reference=payment_reference
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\models.py", line 27, in credit
+    self.balance += amount
+TypeError: unsupported operand type(s) for +=: 'float' and 'decimal.Decimal'
+ERROR 2025-09-24 08:27:44,649 views 15100 5984 Error funding wallet: unsupported operand type(s) for +=: 'float' and 'decimal.Decimal'
+Traceback (most recent call last):
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py", line 185, in post
+    WalletConfig.fund_wallet(
+    ~~~~~~~~~~~~~~~~~~~~~~~~^
+        user=funding_request.user,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        gateway_reference=gateway_reference
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Governor\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 85, in inner
+    return func(*args, **kwds)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\utils.py", line 62, in fund_wallet
+    wallet.credit(
+    ~~~~~~~~~~~~~^
+        amount=amount,
+        ^^^^^^^^^^^^^^
+        description="Wallet Funding",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        reference=payment_reference
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\models.py", line 27, in credit
+    self.balance += amount
+TypeError: unsupported operand type(s) for +=: 'float' and 'decimal.Decimal'
+WARNING 2025-09-24 08:27:44,796 log 15100 5984 Bad Request: /transactions/webhook/paystack/
+WARNING 2025-09-24 08:27:44,813 basehttp 15100 5984 "POST /transactions/webhook/paystack/ HTTP/1.1" 400 93
+INFO 2025-09-24 08:27:49,443 views 15100 4144 Received webhook payload: {"event":"charge.success","data":{"id":5365833037,"domain":"test","status":"success","reference":"BS-943b41ce-e880-463e-ac1a-464d5823af1e","amount":1500000,"message":null,"gateway_response":"Successful","paid_at":"2025-09-24T07:14:31.000Z","created_at":"2025-09-24T07:14:10.000Z","channel":"card","currency":"NGN","ip_address":"102.90.118.56","metadata":{"user_id":"2","payment_reference":"BS-943b41ce-e880-463e-ac1a-464d5823af1e"},"fees_breakdown":null,"log":null,"fees":32500,"fees_split":null,"authorization":{"authorization_code":"AUTH_vw2sabxzyo","bin":"408408","last4":"4081","exp_month":"12","exp_year":"2030","channel":"card","card_type":"visa ","bank":"TEST BANK","country_code":"NG","brand":"visa","reusable":true,"signature":"SIG_ggimb607g35W1MCm3G00","account_name":null,"receiver_bank_account_number":null,"receiver_bank":null},"customer":{"id":307728851,"first_name":null,"last_name":null,"email":"covenantgovernor06@gmail.com","customer_code":"CUS_3e7xsm0yz94xvja","phone":null,"metadata":null,"risk_action":"default","international_format_phone":null},"plan":{},"subaccount":{},"split":{},"order_id":null,"paidAt":"2025-09-24T07:14:31.000Z","requested_amount":1500000,"pos_transaction_data":null,"source":{"type":"api","source":"merchant_api","entry_point":"transaction_initialize","identifier":null}}}
+INFO 2025-09-24 08:27:49,451 views 15100 4144 Processing webhook event: charge.success
+INFO 2025-09-24 08:27:49,455 views 15100 4144 Processing successful charge - Reference: BS-943b41ce-e880-463e-ac1a-464d5823af1e, Amount: 15000, Gateway Reference: 5365833037
+ERROR 2025-09-24 08:27:49,476 views 15100 4144 Invalid payment reference: BS-943b41ce-e880-463e-ac1a-464d5823af1e
+WARNING 2025-09-24 08:27:49,484 log 15100 4144 Not Found: /transactions/webhook/paystack/
+WARNING 2025-09-24 08:27:49,488 basehttp 15100 4144 "POST /transactions/webhook/paystack/ HTTP/1.1" 404 53
+INFO 2025-09-24 08:31:06,485 views 15100 492 Received webhook payload: {"event":"charge.success","data":{"id":5365833037,"domain":"test","status":"success","reference":"BS-943b41ce-e880-463e-ac1a-464d5823af1e","amount":1500000,"message":null,"gateway_response":"Successful","paid_at":"2025-09-24T07:14:31.000Z","created_at":"2025-09-24T07:14:10.000Z","channel":"card","currency":"NGN","ip_address":"102.90.118.56","metadata":{"user_id":"2","payment_reference":"BS-943b41ce-e880-463e-ac1a-464d5823af1e"},"fees_breakdown":null,"log":null,"fees":32500,"fees_split":null,"authorization":{"authorization_code":"AUTH_vw2sabxzyo","bin":"408408","last4":"4081","exp_month":"12","exp_year":"2030","channel":"card","card_type":"visa ","bank":"TEST BANK","country_code":"NG","brand":"visa","reusable":true,"signature":"SIG_ggimb607g35W1MCm3G00","account_name":null,"receiver_bank_account_number":null,"receiver_bank":null},"customer":{"id":307728851,"first_name":null,"last_name":null,"email":"covenantgovernor06@gmail.com","customer_code":"CUS_3e7xsm0yz94xvja","phone":null,"metadata":null,"risk_action":"default","international_format_phone":null},"plan":{},"subaccount":{},"split":{},"order_id":null,"paidAt":"2025-09-24T07:14:31.000Z","requested_amount":1500000,"pos_transaction_data":null,"source":{"type":"api","source":"merchant_api","entry_point":"transaction_initialize","identifier":null}}}
+INFO 2025-09-24 08:31:06,509 views 15100 492 Processing webhook event: charge.success
+INFO 2025-09-24 08:31:06,510 views 15100 492 Processing successful charge - Reference: BS-943b41ce-e880-463e-ac1a-464d5823af1e, Amount: 15000, Gateway Reference: 5365833037
+ERROR 2025-09-24 08:31:06,525 views 15100 492 Invalid payment reference: BS-943b41ce-e880-463e-ac1a-464d5823af1e
+WARNING 2025-09-24 08:31:06,528 log 15100 492 Not Found: /transactions/webhook/paystack/
+WARNING 2025-09-24 08:31:06,531 basehttp 15100 492 "POST /transactions/webhook/paystack/ HTTP/1.1" 404 53
+INFO 2025-09-24 08:31:58,192 basehttp 15100 492 - Broken pipe from ('127.0.0.1', 62938)
+INFO 2025-09-24 08:34:02,573 autoreload 15100 7204 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 08:34:06,671 autoreload 7256 12816 Watching for file changes with StatReloader
+INFO 2025-09-24 08:34:59,415 autoreload 7256 12816 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\utils.py changed, reloading.
+INFO 2025-09-24 08:35:04,046 autoreload 9352 15428 Watching for file changes with StatReloader
+INFO 2025-09-24 08:36:13,909 autoreload 9352 15428 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\models.py changed, reloading.
+INFO 2025-09-24 08:36:17,463 autoreload 11888 3864 Watching for file changes with StatReloader
+INFO 2025-09-24 08:37:47,469 basehttp 11888 13556 "POST /transactions/fund-wallet/ HTTP/1.1" 200 162
+INFO 2025-09-24 08:39:22,295 autoreload 11888 3864 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 08:39:27,362 autoreload 14460 16116 Watching for file changes with StatReloader
+INFO 2025-09-24 08:39:32,736 autoreload 14460 16116 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\models.py changed, reloading.
+INFO 2025-09-24 08:39:36,463 autoreload 2772 15704 Watching for file changes with StatReloader
+INFO 2025-09-24 08:51:45,024 autoreload 2772 15704 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 08:51:49,321 autoreload 15176 12312 Watching for file changes with StatReloader
+INFO 2025-09-24 08:54:04,788 autoreload 15176 12312 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 08:54:09,278 autoreload 4492 13328 Watching for file changes with StatReloader
+INFO 2025-09-24 08:54:15,079 autoreload 4492 13328 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 08:54:18,809 autoreload 13144 5364 Watching for file changes with StatReloader
+INFO 2025-09-24 08:57:25,900 autoreload 13144 5364 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 08:57:29,190 autoreload 13924 8672 Watching for file changes with StatReloader
+INFO 2025-09-24 08:59:35,156 autoreload 13924 8672 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-24 08:59:38,630 autoreload 12116 124 Watching for file changes with StatReloader
+INFO 2025-09-24 09:32:35,476 autoreload 15352 5068 Watching for file changes with StatReloader
