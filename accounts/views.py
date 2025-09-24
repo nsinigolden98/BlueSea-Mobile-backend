@@ -48,6 +48,8 @@ class RegisterView(APIView):
                     account = serializer.save()
                     role = account.role
                     # account.save()
+                    Wallet.objects.create(user=account)
+
 
                     otp = get_random_string(6, '0123456789')
                     timestamp = timezone.now()
@@ -85,7 +87,6 @@ class RegisterView(APIView):
                             },
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR
                         )   
-                Wallet.objects.create(user=account)
         except Exception as e:
             print(str(e))
             return Response(

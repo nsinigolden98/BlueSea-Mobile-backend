@@ -1,6 +1,6 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -242,7 +242,8 @@ class InitializeFunding(APIView):
 
 
 class PaymentWebhook(APIView):
-    permission_classes = [IsAuthenticated]
+    authentication_classes = []
+    permission_classes = [AllowAny]
     def verify_signature(self, request):
         signature = request.headers.get('X-Paystack-Signature')
         if not signature:
