@@ -73,4 +73,3 @@ class ResetPasswordSerializer(serializers.Serializer):
         user = Profile.objects.get(email=self.validated_data['email'])
         otp = get_random_string(6,'0123456789')
         return user, otp
-    
