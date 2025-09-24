@@ -14,6 +14,19 @@ from .serializers import WalletTransactionSerializer, WalletFundingSerializer
 from wallet.models import Wallet
 from wallet.serializers import WalletSerializer
 from .utils import WalletConfig
+import uuid
+from .paystack import checkout
+from django.urls import reverse
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from django.conf import settings
+import hmac
+import hashlib
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class GetWalletTransaction(APIView):
@@ -29,4 +42,187 @@ class GetWalletTransaction(APIView):
 
 
 class InitializeFunding(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+            amount = Decimal(str(data.get('amount')))
+
+            if amount < Decimal('100.00'):
+                return Response({"error": "Minimum funding amount is 100.00"}, status=status.HTTP_400_BAD_REQUEST)
+
+            payment_reference = f"BS-{uuid.uuid4()}"
+
+            # FundWallet.objects.create(
+            #     user=request.user,
+            #     amount=amount,
+            #     payment_reference=payment_reference,
+            #     status="PENDING"
+            # )
+            FundWallet.objects.create(
+                user=request.user,
+                amount=amount,
+                payment_reference=payment_reference,
+                status="PENDING"
+            )
+
+            payload = {
+                "email": request.user.email,
+                "amount": int(amount * 100),
+                "reference": payment_reference,
+                # "callback_url": callback_url
+                "metadata": {
+                    "user_id": request.user.id,
+                    "payment_reference": payment_reference
+                }
+            }
+
+            # success, result = checkout(payload)
+
+            # if not success:
+            #     return JsonResponse({
+            #         "success": False,
+            #         "error": result
+            #     }, status=400)
+
+            # return JsonResponse({
+            #     "success": True,
+            #     "authorization_url": result,
+            #     "payment_reference": payment_reference,
+            #     "amount": str(amount),
+            # })
+
+            success, authorization_url = checkout(payload)
+
+            if not success:
+                return Response({"success": False, "error": authorization_url}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success": True, "authorization_url": authorization_url, "payment_reference": payment_reference, "amount": str(amount)}, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            print("InitializeFunding error:", str(e))
+            return Response({"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PaymentWebhook(APIView):
+    """Handle Paystack payment webhook callbacks"""
     
+    def verify_paystack_signature(self, request):
+        """Verify that the webhook is from Paystack"""
+        paystack_signature = request.headers.get('X-Paystack-Signature')
+        if not paystack_signature:
+            return False
+
+        # Calculate hash using your secret key
+        hash = hmac.new(
+            settings.PAYSTACK_SECRET_KEY.encode('utf-8'),
+            request.body,
+            hashlib.sha512
+        ).hexdigest()
+        
+        return hash == paystack_signature
+
+    def post(self, request, *args, **kwargs):
+        """Handle payment gateway webhooks"""
+        try:
+            # Log the incoming webhook data
+            logger.info("Received webhook payload: %s", request.body.decode('utf-8'))
+
+            # Verify webhook signature
+            if not self.verify_paystack_signature(request):
+                logger.error("Invalid Paystack signature")
+                return Response(
+                    {"success": False, "error": "Invalid signature"},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+
+            # Parse webhook data
+            data = json.loads(request.body)
+            event = data.get('event')
+            logger.info("Processing webhook event: %s", event)
+
+            # Handle successful charge
+            if event == 'charge.success':
+                payload = data.get('data', {})
+                reference = payload.get('reference')
+                amount = Decimal(str(payload.get('amount', 0))) / 100  # Convert from kobo to naira
+                gateway_reference = str(payload.get('id'))
+
+                logger.info(
+                    "Processing successful charge - Reference: %s, Amount: %s, Gateway Reference: %s",
+                    reference, amount, gateway_reference
+                )
+
+                # Find the funding request
+                try:
+                    funding_request = FundWallet.objects.get(
+                        payment_reference=reference,
+                        status='PENDING'
+                    )
+                    logger.info("Found pending funding request: %s", funding_request)
+
+                    # Verify amount matches
+                    if funding_request.amount != amount:
+                        logger.error(
+                            "Amount mismatch - Expected: %s, Got: %s",
+                            funding_request.amount, amount
+                        )
+                        funding_request.status = 'FAILED'
+                        funding_request.save()
+                        return Response({
+                            "success": False,
+                            "error": "Amount mismatch"
+                        }, status=status.HTTP_400_BAD_REQUEST)
+
+                    # Fund the wallet
+                    try:
+                        logger.info("Attempting to fund wallet for user: %s", funding_request.user)
+                        
+                        # First update the funding request status to processing
+                        funding_request.status = 'PROCESSING'
+                        funding_request.save()
+                        
+                        WalletConfig.fund_wallet(
+                            user=funding_request.user,
+                            amount=amount,
+                            payment_reference=reference,
+                            gateway_reference=gateway_reference
+                        )
+                        
+                        logger.info("Wallet funded successfully")
+                        return Response({
+                            "success": True,
+                            "message": "Payment processed successfully"
+                        })
+
+                    except Exception as e:
+                        logger.error("Error funding wallet: %s", str(e), exc_info=True)
+                        funding_request.status = 'FAILED'
+                        funding_request.save()
+                        return Response({
+                            "success": False,
+                            "error": str(e)
+                        }, status=status.HTTP_400_BAD_REQUEST)
+
+                except FundWallet.DoesNotExist:
+                    logger.error("Invalid payment reference: %s", reference)
+                    return Response({
+                        "success": False,
+                        "error": "Invalid payment reference"
+                    }, status=status.HTTP_404_NOT_FOUND)
+
+            # Return success for other events
+            return Response({"success": True})
+
+        except json.JSONDecodeError as e:
+            logger.error("Invalid JSON payload: %s", str(e))
+            return Response({
+                "success": False,
+                "error": "Invalid JSON payload"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.error("Unexpected error in webhook handler: %s", str(e), exc_info=True)
+            return Response({
+                "success": False,
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

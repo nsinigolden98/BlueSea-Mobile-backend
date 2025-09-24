@@ -26,20 +26,28 @@ class WalletConfig:
     @transaction.atomic
     def fund_wallet(user, amount, payment_reference, gateway_reference=None):
         try:
-            wallet  = WalletConfig.user_wallet(user)
+            logger.info(f"Starting fund_wallet process for user {user.username}")
+            logger.info(f"Amount: {amount}, Reference: {payment_reference}")
+            
+            wallet = WalletConfig.user_wallet(user)
+            logger.info(f"Retrieved wallet for user {user.username}")
 
             # check for funding
             funds = FundWallet.objects.filter(payment_reference=payment_reference).first()
+            logger.info(f"Found funding request: {funds}")
 
             if funds:
                 if funds.status == 'COMPLETED':
+                    logger.error(f"Payment reference {payment_reference} has already been used")
                     raise ValueError("This payment reference has already been used.")
+                
+                logger.info(f"Updating existing funding request {payment_reference}")
                 funds.status = 'COMPLETED'
                 funds.gateway_reference = gateway_reference
                 funds.completed_at = timezone.now()
                 funds.save()
-
             else:
+                logger.info(f"Creating new funding request {payment_reference}")
                 funds = FundWallet.objects.create(
                     user=user,
                     amount=amount,
@@ -50,6 +58,7 @@ class WalletConfig:
                 )
 
             # credit wallet
+            logger.info(f"Crediting wallet for user {user.username} with amount {amount}")
             wallet.credit(
                 amount=amount,
                 description="Wallet Funding",
@@ -59,7 +68,7 @@ class WalletConfig:
             logger.info(f"Wallet funded successfully for user {user.username} with amount {amount}")
             return wallet.balance
         except Exception as e:
-            logger.error(f"Error funding wallet for user {user.username}: {str(e)}")
+            logger.error(f"Error funding wallet for user {user.username}: {str(e)}", exc_info=True)
             raise
 
     @staticmethod
