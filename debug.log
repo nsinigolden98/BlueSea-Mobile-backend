@@ -551,3 +551,5 @@ INFO 2025-09-24 13:17:49,528 views 7700 6844 Found pending funding request: Amou
 ERROR 2025-09-24 13:17:49,559 views 7700 6844 Wallet not found for user: venantgovernor06@gmail.com
 WARNING 2025-09-24 13:17:49,587 log 7700 6844 Not Found: /transactions/webhook/paystack/
 WARNING 2025-09-24 13:17:49,654 basehttp 7700 6844 "POST /transactions/webhook/paystack/ HTTP/1.1" 404 44
+INFO 2025-09-24 13:18:27,672 basehttp 7700 6576 - Broken pipe from ('127.0.0.1', 54451)
+INFO 2025-09-24 13:18:27,673 basehttp 7700 6844 - Broken pipe from ('127.0.0.1', 54456)
