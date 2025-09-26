@@ -21,3 +21,23 @@ INFO 2025-09-24 20:09:57,354 views 13196 5624 Found pending funding request: Amo
 INFO 2025-09-24 20:09:57,444 views 13196 5624 Found wallet for user: covenantgovernor06@gmail.com, Current balance: 0.00
 INFO 2025-09-24 20:09:57,592 views 13196 5624 Wallet funded successfully. Old balance: 0.00, New balance: 10000.00
 INFO 2025-09-24 20:09:57,651 basehttp 13196 5624 "POST /transactions/webhook/paystack/ HTTP/1.1" 200 105
+INFO 2025-09-26 09:11:42,717 autoreload 5168 3732 Watching for file changes with StatReloader
+INFO 2025-09-26 09:12:41,139 autoreload 5168 3732 C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\views.py changed, reloading.
+INFO 2025-09-26 09:12:44,341 autoreload 11476 6984 Watching for file changes with StatReloader
+INFO 2025-09-26 09:13:16,439 autoreload 11476 6984 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-26 09:13:19,744 autoreload 11092 11468 Watching for file changes with StatReloader
+INFO 2025-09-26 09:13:29,922 autoreload 11092 11468 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-26 09:13:32,783 autoreload 7944 7480 Watching for file changes with StatReloader
+INFO 2025-09-26 09:13:55,336 autoreload 7944 7480 C:\Users\Governor\Documents\BlueSea-Mobile-backend\transactions\views.py changed, reloading.
+INFO 2025-09-26 09:13:57,891 autoreload 4712 6028 Watching for file changes with StatReloader
+INFO 2025-09-26 09:14:16,402 autoreload 4712 6028 C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\views.py changed, reloading.
+INFO 2025-09-26 09:14:18,429 autoreload 8068 10976 Watching for file changes with StatReloader
+INFO 2025-09-26 09:14:21,498 autoreload 8068 10976 C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\views.py changed, reloading.
+INFO 2025-09-26 09:14:23,685 autoreload 9676 7616 Watching for file changes with StatReloader
+INFO 2025-09-26 09:14:26,656 autoreload 9676 7616 C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\views.py changed, reloading.
+INFO 2025-09-26 09:14:28,763 autoreload 1212 11376 Watching for file changes with StatReloader
+INFO 2025-09-26 09:14:34,145 autoreload 1212 11376 C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\views.py changed, reloading.
+INFO 2025-09-26 09:14:37,049 autoreload 7828 6256 Watching for file changes with StatReloader
+INFO 2025-09-26 09:14:49,440 autoreload 7828 6256 C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\views.py changed, reloading.
+INFO 2025-09-26 09:14:54,288 autoreload 3172 5992 Watching for file changes with StatReloader
+INFO 2025-09-26 09:17:32,080 basehttp 3172 8232 "GET /wallet/balance/ HTTP/1.1" 200 19
