@@ -41,3 +41,35 @@ INFO 2025-09-26 09:14:37,049 autoreload 7828 6256 Watching for file changes with
 INFO 2025-09-26 09:14:49,440 autoreload 7828 6256 C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\views.py changed, reloading.
 INFO 2025-09-26 09:14:54,288 autoreload 3172 5992 Watching for file changes with StatReloader
 INFO 2025-09-26 09:17:32,080 basehttp 3172 8232 "GET /wallet/balance/ HTTP/1.1" 200 19
+INFO 2025-09-28 22:01:25,946 autoreload 8664 7140 Watching for file changes with StatReloader
+INFO 2025-09-28 22:05:22,121 autoreload 8664 7140 C:\Users\Governor\Documents\BlueSea-Mobile-backend\bluesea_mobile\settings.py changed, reloading.
+INFO 2025-09-28 22:05:27,001 autoreload 11344 6680 Watching for file changes with StatReloader
+INFO 2025-09-28 22:05:34,099 autoreload 11344 6680 C:\Users\Governor\Documents\BlueSea-Mobile-backend\bluesea_mobile\settings.py changed, reloading.
+INFO 2025-09-28 22:05:37,898 autoreload 5024 6676 Watching for file changes with StatReloader
+INFO 2025-09-28 22:05:43,248 autoreload 5024 6676 C:\Users\Governor\Documents\BlueSea-Mobile-backend\vtpass\models.py changed, reloading.
+INFO 2025-09-28 22:05:47,044 autoreload 1312 8156 Watching for file changes with StatReloader
+INFO 2025-09-28 22:06:07,219 autoreload 1312 8156 C:\Users\Governor\Documents\BlueSea-Mobile-backend\vtpass\models.py changed, reloading.
+INFO 2025-09-28 22:06:10,126 autoreload 10356 9960 Watching for file changes with StatReloader
+INFO 2025-09-28 22:06:13,486 autoreload 10356 9960 C:\Users\Governor\Documents\BlueSea-Mobile-backend\vtpass\models.py changed, reloading.
+INFO 2025-09-28 22:06:17,369 autoreload 3216 12208 Watching for file changes with StatReloader
+INFO 2025-09-28 22:07:25,153 autoreload 3216 12208 C:\Users\Governor\Documents\BlueSea-Mobile-backend\vtpass\models.py changed, reloading.
+INFO 2025-09-28 22:07:29,999 autoreload 4324 10412 Watching for file changes with StatReloader
+INFO 2025-09-28 22:07:34,265 autoreload 4324 10412 C:\Users\Governor\Documents\BlueSea-Mobile-backend\vtpass\models.py changed, reloading.
+INFO 2025-09-28 22:07:37,724 autoreload 8848 9176 Watching for file changes with StatReloader
+INFO 2025-09-28 22:07:43,514 autoreload 8848 9176 C:\Users\Governor\Documents\BlueSea-Mobile-backend\vtpass\models.py changed, reloading.
+INFO 2025-09-28 22:07:49,358 autoreload 5928 8920 Watching for file changes with StatReloader
+INFO 2025-09-28 22:07:53,715 autoreload 5928 8920 C:\Users\Governor\Documents\BlueSea-Mobile-backend\vtpass\models.py changed, reloading.
+INFO 2025-09-28 22:07:59,717 autoreload 2872 11856 Watching for file changes with StatReloader
+INFO 2025-09-28 22:08:46,588 autoreload 2872 11856 C:\Users\Governor\Documents\BlueSea-Mobile-backend\vtpass\models.py changed, reloading.
+INFO 2025-09-28 22:08:51,796 autoreload 3656 7584 Watching for file changes with StatReloader
+INFO 2025-09-28 22:09:03,460 autoreload 3656 7584 C:\Users\Governor\Documents\BlueSea-Mobile-backend\vtpass\models.py changed, reloading.
+INFO 2025-09-28 22:09:08,410 autoreload 7568 11872 Watching for file changes with StatReloader
+INFO 2025-09-28 22:09:13,998 autoreload 7568 11872 C:\Users\Governor\Documents\BlueSea-Mobile-backend\vtpass\models.py changed, reloading.
+INFO 2025-09-28 22:09:18,860 autoreload 8664 6892 Watching for file changes with StatReloader
+INFO 2025-09-28 22:10:20,496 autoreload 8664 6892 C:\Users\Governor\Documents\BlueSea-Mobile-backend\vtpass\models.py changed, reloading.
+INFO 2025-09-28 22:10:24,852 autoreload 9908 7912 Watching for file changes with StatReloader
+INFO 2025-09-28 22:12:05,782 autoreload 9908 7912 C:\Users\Governor\Documents\BlueSea-Mobile-backend\vtpass\models.py changed, reloading.
+INFO 2025-09-28 22:12:10,355 autoreload 2124 7192 Watching for file changes with StatReloader
+INFO 2025-09-28 22:16:26,510 autoreload 2124 7192 C:\Users\Governor\Documents\BlueSea-Mobile-backend\vtpass\models.py changed, reloading.
+INFO 2025-09-28 22:16:32,219 autoreload 3796 10388 Watching for file changes with StatReloader
+INFO 2025-09-28 22:20:21,440 autoreload 3796 10388 C:\Users\Governor\Documents\BlueSea-Mobile-backend\bluesea_mobile\settings.py changed, reloading.
