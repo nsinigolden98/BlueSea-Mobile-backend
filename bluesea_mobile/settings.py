@@ -59,7 +59,6 @@ INSTALLED_APPS = [
     'wallet',
     'transactions',
     'group_payment',
-    'vtpass',
 ]
 
 MIDDLEWARE = [
@@ -210,11 +209,3 @@ LOGGING = {
         },
     },
 }
-
-
-VTPASS_BASE_URL = os.environ.get('VTPASS_BASE_URL')
-VTPASS_API_KEY = os.environ.get('VTPASS_API_KEY')
-VTPASS_EMAIL = os.environ.get('VTPASS_EMAIL')
-VTPASS_PASSWORD = os.environ.get('VTPASS_PASSWORD')
-VTPASS_PUBLIC_KEY = os.environ.get('VTPASS_PUBLIC_KEY')
-VTPASS_SECRET_KEY = os.environ.get('VTPASS_SECRET_KEY')
