@@ -20,10 +20,7 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
-    path('group_payment/', include('group_payment.urls')),
-<<<<<<< HEAD
-=======
+    path('payments/', include('payments.urls')),
     # path('wallet/', include('wallet.urls')),
     path('transactions/', include('transactions.urls')),
->>>>>>> mybranch
 ]

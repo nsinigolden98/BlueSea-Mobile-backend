@@ -57,13 +57,8 @@ INSTALLED_APPS = [
     # local apps
     'accounts',
     'wallet',
-<<<<<<< HEAD
-    'group_payment',
+    'payments',
     'transactions',
-=======
-    'transactions',
-    'group_payment',
->>>>>>> mybranch
 ]
 
 MIDDLEWARE = [
@@ -81,6 +76,11 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser', # This is what you need
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser'
+    ],
 }
 
 
@@ -155,7 +155,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -168,9 +169,6 @@ EMAIL_PORT = os.environ.get('EMAIL_PORT')
 EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL')
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
-<<<<<<< HEAD
-FROM_EMAIL = EMAIL_HOST_USER
-=======
 FROM_EMAIL = EMAIL_HOST_USER
 
 
@@ -217,4 +215,3 @@ LOGGING = {
         },
     },
 }
->>>>>>> mybranch

@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-from django.shortcuts import render
-
-# Create your views here.
-=======
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -384,4 +379,3 @@ class PaymentWebhook(APIView):
                 "success": False, 
                 "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
->>>>>>> mybranch

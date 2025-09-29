@@ -1,9 +1,0 @@
-from django.shortcuts import render
-
-# Create your views here.
-
-class CreateGroupPayment():
-    pass
-
-class JoinGroupPayment():
-    pass

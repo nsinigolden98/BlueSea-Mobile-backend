@@ -1,8 +1,6 @@
-<<<<<<< HEAD
 from django.shortcuts import render
 
 # Create your views here.
-=======
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -33,4 +31,3 @@ class WalletBalance(APIView):
             return Response({"error": "Wallet not found."}, status=status.HTTP_404_NOT_FOUND)
         
 
->>>>>>> mybranch
