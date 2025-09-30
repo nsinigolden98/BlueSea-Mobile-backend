@@ -9372,3 +9372,1695 @@ WARNING 2025-09-29 13:32:03,717 basehttp 27370 493783622896 "GET /static/rest_fr
 WARNING 2025-09-29 13:32:03,721 basehttp 27370 493776332016 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
 WARNING 2025-09-29 13:32:03,725 basehttp 27370 493777372400 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
 WARNING 2025-09-29 13:32:03,728 basehttp 27370 493782582512 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+INFO 2025-09-29 14:01:06,869 autoreload 2832 529860003144 Watching for file changes with StatReloader
+WARNING 2025-09-29 14:01:25,402 log 2832 529771160816 Not Found: /
+WARNING 2025-09-29 14:01:25,407 basehttp 2832 529771160816 "GET / HTTP/1.1" 404 179
+WARNING 2025-09-29 14:01:37,181 log 2832 529769071856 Not Found: /payments
+WARNING 2025-09-29 14:01:37,186 basehttp 2832 529769071856 "GET /payments HTTP/1.1" 404 179
+INFO 2025-09-29 14:02:14,322 basehttp 2832 529768031472 "POST /payments/airtime_top_up HTTP/1.1" 301 0
+INFO 2025-09-29 14:02:14,357 basehttp 2832 529768031472 "GET /payments/airtime_top_up/ HTTP/1.1" 200 13
+INFO 2025-09-29 14:02:33,122 basehttp 2832 529768031472 "POST /payments/airtime_top_up HTTP/1.1" 301 0
+INFO 2025-09-29 14:02:33,151 basehttp 2832 529768031472 "GET /payments/airtime_top_up/ HTTP/1.1" 200 13
+INFO 2025-09-29 14:02:34,635 basehttp 2832 529768031472 "POST /payments/airtime_top_up HTTP/1.1" 301 0
+INFO 2025-09-29 14:02:34,664 basehttp 2832 529768031472 "GET /payments/airtime_top_up/ HTTP/1.1" 200 13
+INFO 2025-09-29 14:02:35,502 basehttp 2832 529768031472 "POST /payments/airtime_top_up HTTP/1.1" 301 0
+INFO 2025-09-29 14:02:35,534 basehttp 2832 529768031472 "GET /payments/airtime_top_up/ HTTP/1.1" 200 13
+INFO 2025-09-29 14:02:36,726 basehttp 2832 529768031472 "POST /payments/airtime_top_up HTTP/1.1" 301 0
+INFO 2025-09-29 14:02:36,755 basehttp 2832 529768031472 "GET /payments/airtime_top_up/ HTTP/1.1" 200 13
+INFO 2025-09-29 14:03:45,251 basehttp 2832 529766991088 "POST /payments/airtime_top_up HTTP/1.1" 301 0
+INFO 2025-09-29 14:03:45,307 basehttp 2832 529766991088 "GET /payments/airtime_top_up/ HTTP/1.1" 200 13
+INFO 2025-09-29 14:04:40,120 basehttp 2832 529766991088 "POST /payments/airtime_top_up HTTP/1.1" 301 0
+INFO 2025-09-29 14:04:40,147 basehttp 2832 529766991088 "GET /payments/airtime_top_up/ HTTP/1.1" 200 13
+INFO 2025-09-29 14:07:39,035 autoreload 2832 529860003144 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 14:07:43,507 autoreload 4418 510128858440 Watching for file changes with StatReloader
+INFO 2025-09-29 14:09:59,472 basehttp 4418 510040831216 "OPTIONS /payments/airtime_top_up HTTP/1.1" 301 0
+INFO 2025-09-29 14:11:44,224 basehttp 4418 510039782640 "OPTIONS /payments/airtime_top_up HTTP/1.1" 301 0
+INFO 2025-09-29 14:17:56,524 basehttp 4418 510039782640 "OPTIONS /payments/airtime_top_up HTTP/1.1" 301 0
+INFO 2025-09-29 14:18:23,684 basehttp 4418 510039782640 "GET /payments/airtime_top_up HTTP/1.1" 301 0
+INFO 2025-09-29 14:23:37,883 basehttp 4418 510039782640 "GET /payments/airtime_top_up/ HTTP/1.1" 200 6978
+INFO 2025-09-29 14:24:26,874 basehttp 4418 510039782640 "GET /payments/airtime_top_up/ HTTP/1.1" 200 6978
+INFO 2025-09-29 14:25:15,441 basehttp 4418 510038742256 code 400, message Bad request version ('\x00\x12\x00\x10\x04\x03\x08\x04\x04\x01\x05\x03\x08\x05\x05\x01\x08\x06\x06\x01\x00\x12\x00\x00\x00')
+ERROR 2025-09-29 14:25:15,443 basehttp 4418 510038742256 You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-09-29 14:25:15,458 basehttp 4418 510038742256 code 400, message Bad request version ('\x12\x17q\x1a¡4©¼\xadNûËÄ©\x9fþ\x07')
+ERROR 2025-09-29 14:25:15,461 basehttp 4418 510038742256 You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-09-29 14:25:22,449 basehttp 4418 510038742256 code 400, message Bad request version ('0\x98S\x04\x08w\x9a\x92&t6\x9f\x95Inò5k%H+\x9bÅ~ëà{Lz\x81Ã@Äçr')
+ERROR 2025-09-29 14:25:22,451 basehttp 4418 510038742256 You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-09-29 14:25:22,469 basehttp 4418 510038742256 code 400, message Bad request version ('v¡\x8eNª²Æ\x07Åjs\x80\x9c\x8bY\x95\x86\x17\x92\x92\x8c\x92¬}\x15Wh\x82i\x87xp')
+ERROR 2025-09-29 14:25:22,471 basehttp 4418 510038742256 You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-09-29 14:27:25,070 autoreload 7186 545860638024 Watching for file changes with StatReloader
+INFO 2025-09-29 14:27:58,889 basehttp 7186 545772197104 "GET /payments/airtime_top_up/ HTTP/1.1" 200 6978
+INFO 2025-09-29 14:28:08,221 basehttp 7186 545772197104 "GET /payments/airtime_top_up/ HTTP/1.1" 200 6978
+INFO 2025-09-29 14:29:30,118 basehttp 7186 545772197104 "GET /payments/airtime_top_up/ HTTP/1.1" 200 6978
+WARNING 2025-09-29 14:29:49,302 log 7186 545772197104 Not Found: /payments
+WARNING 2025-09-29 14:29:49,309 basehttp 7186 545772197104 "GET /payments HTTP/1.1" 404 179
+WARNING 2025-09-29 14:29:55,504 log 7186 545772197104 Not Found: /
+WARNING 2025-09-29 14:29:55,511 basehttp 7186 545772197104 "GET / HTTP/1.1" 404 179
+WARNING 2025-09-29 14:30:15,091 log 7186 545772197104 Not Found: /
+WARNING 2025-09-29 14:30:15,096 basehttp 7186 545772197104 "GET / HTTP/1.1" 404 179
+WARNING 2025-09-29 14:30:20,707 log 7186 545772197104 Not Found: /
+WARNING 2025-09-29 14:30:20,712 basehttp 7186 545772197104 "GET / HTTP/1.1" 404 179
+INFO 2025-09-29 14:30:45,007 basehttp 7186 545770108144 code 400, message Bad request version ('þ¦Ü\x06e')
+ERROR 2025-09-29 14:30:45,014 basehttp 7186 545770108144 You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-09-29 14:30:45,035 basehttp 7186 545770108144 code 400, message Bad request version ('**\x13\x01\x13\x02\x13\x03À+À/À,À0Ì©Ì¨À\x13À\x14\x00\x9c\x00\x9d\x00/\x005\x01\x00\x06s**\x00\x00ÿ\x01\x00\x01\x00\x00\x05\x00\x05\x01\x00\x00\x00\x00\x00-\x00\x02\x01\x01\x00')
+ERROR 2025-09-29 14:30:45,039 basehttp 7186 545770108144 You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-09-29 14:30:54,997 basehttp 7186 545770108144 code 400, message Bad request version ('ÚÚ\x13\x01\x13\x02\x13\x03À+À/À,À0Ì©Ì¨À\x13À\x14\x00\x9c\x00\x9d\x00/\x005\x01\x00\x06\x93úú\x00\x00\x00')
+ERROR 2025-09-29 14:30:55,000 basehttp 7186 545770108144 You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-09-29 14:30:55,037 basehttp 7186 545770108144 code 400, message Bad request version ('\x00\x12\x00\x10\x04\x03\x08\x04\x04\x01\x05\x03\x08\x05\x05\x01\x08\x06\x06\x01ÿ\x01\x00\x01\x00\x00')
+ERROR 2025-09-29 14:30:55,040 basehttp 7186 545770108144 You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-09-29 14:35:45,525 basehttp 7186 545772197104 "GET /payments/airtime_top_up/ HTTP/1.1" 200 6978
+WARNING 2025-09-29 14:35:45,593 log 7186 545772197104 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 14:35:45,599 basehttp 7186 545772197104 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:35:45,638 log 7186 545770108144 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-29 14:35:45,644 basehttp 7186 545770108144 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:35:45,700 log 7186 545769067760 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-29 14:35:45,731 log 7186 545772197104 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 14:35:45,753 log 7186 545770108144 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 14:35:45,757 basehttp 7186 545769067760 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:35:45,764 basehttp 7186 545772197104 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:35:45,770 log 7186 545765946608 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 14:35:45,773 log 7186 545768027376 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-29 14:35:45,776 basehttp 7186 545770108144 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:35:45,786 log 7186 545766986992 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 14:35:45,794 basehttp 7186 545765946608 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:35:45,799 basehttp 7186 545768027376 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:35:45,824 log 7186 545769067760 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 14:35:45,829 log 7186 545770108144 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 14:35:45,832 log 7186 545772197104 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 14:35:45,838 basehttp 7186 545766986992 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:35:45,851 basehttp 7186 545770108144 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:35:45,845 basehttp 7186 545769067760 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:35:45,854 basehttp 7186 545772197104 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:35:46,148 log 7186 545772197104 Not Found: /favicon.ico
+WARNING 2025-09-29 14:35:46,154 basehttp 7186 545772197104 "GET /favicon.ico HTTP/1.1" 404 179
+INFO 2025-09-29 14:36:03,043 basehttp 7186 545772197104 "POST /payments/airtime_top_up/ HTTP/1.1" 200 7263
+WARNING 2025-09-29 14:36:03,134 log 7186 545772197104 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 14:36:03,171 log 7186 545769067760 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-29 14:36:03,174 log 7186 545766986992 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-29 14:36:03,181 basehttp 7186 545772197104 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:36:03,187 log 7186 545770108144 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-29 14:36:03,206 basehttp 7186 545769067760 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:36:03,209 log 7186 545768027376 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 14:36:03,212 basehttp 7186 545766986992 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:36:03,228 log 7186 545765946608 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 14:36:03,231 basehttp 7186 545770108144 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:36:03,243 basehttp 7186 545768027376 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:36:03,256 basehttp 7186 545765946608 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:36:03,264 log 7186 545764906224 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 14:36:03,273 log 7186 545772197104 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 14:36:03,279 log 7186 545766986992 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 14:36:03,283 basehttp 7186 545764906224 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:36:03,287 basehttp 7186 545772197104 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:36:03,294 log 7186 545763865840 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 14:36:03,300 basehttp 7186 545766986992 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:36:03,313 log 7186 545768027376 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 14:36:03,316 basehttp 7186 545763865840 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:36:03,321 basehttp 7186 545768027376 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 14:40:49,620 autoreload 11146 520770704712 Watching for file changes with StatReloader
+INFO 2025-09-29 14:41:05,483 basehttp 11146 520676701424 "GET /payments/airtime_top_up/ HTTP/1.1" 200 11743
+WARNING 2025-09-29 14:41:05,584 log 11146 520676701424 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-29 14:41:05,596 log 11146 520675661040 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-29 14:41:05,603 basehttp 11146 520676701424 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:05,605 basehttp 11146 520675661040 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+INFO 2025-09-29 14:41:44,662 basehttp 11146 520676701424 "GET /payments/airtime_top_up/ HTTP/1.1" 200 11743
+WARNING 2025-09-29 14:41:44,751 log 11146 520676701424 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 14:41:44,767 basehttp 11146 520676701424 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:44,777 log 11146 520675661040 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-29 14:41:44,785 basehttp 11146 520675661040 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:44,824 log 11146 520673572080 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-29 14:41:44,834 log 11146 520672531696 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-29 14:41:44,845 log 11146 520676701424 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 14:41:44,860 log 11146 520671491312 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 14:41:44,862 log 11146 520675661040 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 14:41:44,865 log 11146 520670450928 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 14:41:44,870 basehttp 11146 520673572080 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:44,878 basehttp 11146 520672531696 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:44,884 basehttp 11146 520676701424 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:44,892 basehttp 11146 520675661040 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:44,882 basehttp 11146 520671491312 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:44,915 log 11146 520672531696 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 14:41:44,896 log 11146 520673572080 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 14:41:44,904 basehttp 11146 520670450928 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:44,942 basehttp 11146 520673572080 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:44,943 log 11146 520671491312 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 14:41:44,945 basehttp 11146 520672531696 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:44,952 basehttp 11146 520671491312 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:45,028 log 11146 520671491312 Not Found: /favicon.ico
+WARNING 2025-09-29 14:41:45,031 basehttp 11146 520671491312 "GET /favicon.ico HTTP/1.1" 404 179
+INFO 2025-09-29 14:41:56,415 basehttp 11146 520671491312 "POST /payments/airtime_top_up/ HTTP/1.1" 200 12028
+WARNING 2025-09-29 14:41:56,484 log 11146 520671491312 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 14:41:56,512 log 11146 520675661040 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 14:41:56,514 log 11146 520673572080 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-29 14:41:56,521 log 11146 520670450928 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-29 14:41:56,525 log 11146 520676701424 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 14:41:56,523 log 11146 520672531696 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-29 14:41:56,534 basehttp 11146 520671491312 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:56,537 basehttp 11146 520675661040 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:56,543 basehttp 11146 520670450928 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:56,542 basehttp 11146 520673572080 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:56,548 basehttp 11146 520676701424 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:56,550 basehttp 11146 520672531696 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:56,565 log 11146 520671491312 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 14:41:56,578 log 11146 520673572080 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 14:41:56,585 log 11146 520676701424 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 14:41:56,586 log 11146 520675661040 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 14:41:56,597 log 11146 520672531696 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 14:41:56,600 basehttp 11146 520671491312 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:56,603 basehttp 11146 520673572080 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:56,605 basehttp 11146 520676701424 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:56,607 basehttp 11146 520675661040 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:41:56,610 basehttp 11146 520672531696 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 14:42:01,836 basehttp 11146 520672531696 "GET /payments/airtime_top_up/? HTTP/1.1" 200 11743
+WARNING 2025-09-29 14:42:01,898 log 11146 520672531696 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 14:42:01,917 log 11146 520675661040 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-29 14:42:01,919 log 11146 520673572080 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-29 14:42:01,929 log 11146 520676701424 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-29 14:42:01,936 log 11146 520671491312 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 14:42:01,941 basehttp 11146 520672531696 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:01,934 log 11146 520670450928 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 14:42:01,945 basehttp 11146 520675661040 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:01,951 basehttp 11146 520673572080 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:01,954 basehttp 11146 520676701424 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:01,970 basehttp 11146 520671491312 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:01,972 log 11146 520672531696 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 14:42:01,977 log 11146 520675661040 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 14:42:01,989 basehttp 11146 520670450928 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:01,991 log 11146 520673572080 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 14:42:01,996 log 11146 520676701424 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 14:42:02,005 log 11146 520671491312 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 14:42:02,013 basehttp 11146 520672531696 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:02,011 basehttp 11146 520675661040 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:02,020 basehttp 11146 520673572080 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:02,022 basehttp 11146 520676701424 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:02,026 basehttp 11146 520671491312 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+INFO 2025-09-29 14:42:03,735 basehttp 11146 520671491312 "GET /payments/airtime_top_up/? HTTP/1.1" 200 11743
+WARNING 2025-09-29 14:42:03,813 log 11146 520671491312 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 14:42:03,843 log 11146 520676701424 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-29 14:42:03,849 log 11146 520675661040 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-29 14:42:03,852 log 11146 520672531696 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 14:42:03,858 log 11146 520673572080 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-29 14:42:03,857 log 11146 520670450928 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 14:42:03,863 basehttp 11146 520671491312 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:03,861 basehttp 11146 520676701424 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:03,865 basehttp 11146 520675661040 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:03,876 basehttp 11146 520672531696 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:03,878 basehttp 11146 520673572080 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:03,896 basehttp 11146 520670450928 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:03,904 log 11146 520671491312 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 14:42:03,929 log 11146 520675661040 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 14:42:03,909 log 11146 520676701424 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 14:42:03,942 log 11146 520673572080 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 14:42:03,953 basehttp 11146 520671491312 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:03,937 log 11146 520672531696 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 14:42:03,961 basehttp 11146 520675661040 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:03,966 basehttp 11146 520676701424 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:03,966 basehttp 11146 520673572080 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:03,973 basehttp 11146 520672531696 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+INFO 2025-09-29 14:42:41,725 basehttp 11146 520672531696 "GET /payments/airtime_top_up/? HTTP/1.1" 200 11743
+WARNING 2025-09-29 14:42:42,225 log 11146 520672531696 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 14:42:42,258 log 11146 520673572080 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-29 14:42:42,268 log 11146 520671491312 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 14:42:42,275 log 11146 520675661040 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-29 14:42:42,277 basehttp 11146 520672531696 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:42,290 basehttp 11146 520673572080 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:42,294 basehttp 11146 520671491312 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:42,297 log 11146 520670450928 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 14:42:42,300 basehttp 11146 520675661040 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:42,303 log 11146 520676701424 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-29 14:42:42,318 basehttp 11146 520670450928 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:42,340 log 11146 520672531696 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 14:42:42,343 basehttp 11146 520676701424 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:42,362 basehttp 11146 520672531696 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:42,367 log 11146 520675661040 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 14:42:42,370 log 11146 520673572080 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 14:42:42,375 log 11146 520671491312 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 14:42:42,377 basehttp 11146 520673572080 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:42,381 log 11146 520670450928 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 14:42:42,382 basehttp 11146 520675661040 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:42,385 basehttp 11146 520671491312 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:42:42,392 basehttp 11146 520670450928 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 14:42:51,898 basehttp 11146 520670450928 "GET /payments/airtime_top_up/ HTTP/1.1" 200 11743
+INFO 2025-09-29 14:43:01,008 basehttp 11146 520670450928 "GET /payments/airtime_top_up/ HTTP/1.1" 200 11743
+WARNING 2025-09-29 14:43:01,105 log 11146 520671491312 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 14:43:01,091 log 11146 520670450928 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-29 14:43:01,115 log 11146 520673572080 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-29 14:43:01,119 log 11146 520675661040 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-29 14:43:01,129 log 11146 520672531696 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 14:43:01,130 log 11146 520676701424 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 14:43:01,139 basehttp 11146 520671491312 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:43:01,142 basehttp 11146 520673572080 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:43:01,143 basehttp 11146 520670450928 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:43:01,149 basehttp 11146 520676701424 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:43:01,150 basehttp 11146 520675661040 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+WARNING 2025-09-29 14:43:01,178 log 11146 520671491312 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 14:43:01,179 log 11146 520673572080 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 14:43:01,187 log 11146 520670450928 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 14:43:01,185 basehttp 11146 520672531696 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:43:01,203 log 11146 520675661040 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 14:43:01,199 log 11146 520676701424 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 14:43:01,207 basehttp 11146 520671491312 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:43:01,208 basehttp 11146 520673572080 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:43:01,213 basehttp 11146 520675661040 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:43:01,217 basehttp 11146 520676701424 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 14:43:01,212 basehttp 11146 520670450928 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+INFO 2025-09-29 14:45:38,182 autoreload 11146 520770704712 /storage/emulated/0/codes/BlueSea-Mobile-backend/bluesea_mobile/settings.py changed, reloading.
+INFO 2025-09-29 14:45:42,129 autoreload 11777 494865769800 Watching for file changes with StatReloader
+INFO 2025-09-29 14:45:47,756 autoreload 11777 494865769800 /storage/emulated/0/codes/BlueSea-Mobile-backend/bluesea_mobile/settings.py changed, reloading.
+INFO 2025-09-29 14:45:51,727 autoreload 11835 534601942344 Watching for file changes with StatReloader
+INFO 2025-09-29 14:46:45,083 autoreload 11835 534601942344 /storage/emulated/0/codes/BlueSea-Mobile-backend/bluesea_mobile/settings.py changed, reloading.
+INFO 2025-09-29 14:46:48,869 autoreload 11946 505029707080 Watching for file changes with StatReloader
+INFO 2025-09-29 14:51:15,639 autoreload 11946 505029707080 /storage/emulated/0/codes/BlueSea-Mobile-backend/bluesea_mobile/settings.py changed, reloading.
+INFO 2025-09-29 14:51:19,584 autoreload 12376 545694991688 Watching for file changes with StatReloader
+INFO 2025-09-29 14:51:24,721 autoreload 12376 545694991688 /storage/emulated/0/codes/BlueSea-Mobile-backend/bluesea_mobile/settings.py changed, reloading.
+INFO 2025-09-29 14:51:29,070 autoreload 12388 504724948296 Watching for file changes with StatReloader
+WARNING 2025-09-29 14:51:40,736 log 12388 504631391472 Not Found: /
+WARNING 2025-09-29 14:51:40,745 basehttp 12388 504631391472 "GET / HTTP/1.1" 404 179
+WARNING 2025-09-29 14:56:12,650 log 12388 504631391472 Not Found: /
+WARNING 2025-09-29 14:56:12,654 basehttp 12388 504631391472 "GET / HTTP/1.1" 404 179
+INFO 2025-09-29 14:56:35,895 autoreload 12388 504724948296 /storage/emulated/0/codes/BlueSea-Mobile-backend/bluesea_mobile/settings.py changed, reloading.
+INFO 2025-09-29 16:49:07,143 autoreload 18419 526905574728 Watching for file changes with StatReloader
+WARNING 2025-09-29 16:49:27,918 log 18419 526809822448 Not Found: /payments
+WARNING 2025-09-29 16:49:27,921 basehttp 18419 526809822448 "GET /payments HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:28,061 log 18419 526809822448 Not Found: /favicon.ico
+WARNING 2025-09-29 16:49:28,067 basehttp 18419 526809822448 "GET /favicon.ico HTTP/1.1" 404 179
+INFO 2025-09-29 16:49:34,705 basehttp 18419 526809822448 "GET /payments/airtime_top_up/?format=api HTTP/1.1" 200 11805
+WARNING 2025-09-29 16:49:34,749 log 18419 526809822448 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 16:49:34,754 basehttp 18419 526809822448 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:34,845 log 18419 526807733488 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-29 16:49:34,847 log 18419 526805652720 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-29 16:49:34,850 log 18419 526806693104 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-29 16:49:34,860 log 18419 526803571952 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:49:34,856 log 18419 526804612336 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:49:34,869 basehttp 18419 526807733488 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:34,852 log 18419 526809822448 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:49:34,879 basehttp 18419 526805652720 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:34,889 log 18419 526807733488 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:49:34,891 basehttp 18419 526806693104 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:34,895 basehttp 18419 526804612336 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:34,893 basehttp 18419 526803571952 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:34,913 basehttp 18419 526807733488 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:34,911 log 18419 526805652720 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:49:34,931 log 18419 526804612336 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:49:34,921 basehttp 18419 526809822448 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:34,927 log 18419 526802531568 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:49:34,941 basehttp 18419 526805652720 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:34,946 basehttp 18419 526804612336 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:34,952 basehttp 18419 526802531568 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:49:42,237 basehttp 18419 526804612336 "POST /payments/airtime_top_up/?format=api HTTP/1.1" 200 12090
+WARNING 2025-09-29 16:49:42,306 log 18419 526804612336 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 16:49:42,311 basehttp 18419 526804612336 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:42,342 log 18419 526805652720 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-29 16:49:42,352 log 18419 526802531568 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-29 16:49:42,360 log 18419 526807733488 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-29 16:49:42,367 log 18419 526809822448 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:49:42,390 log 18419 526803571952 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:49:42,382 basehttp 18419 526807733488 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:42,393 basehttp 18419 526802531568 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:42,392 log 18419 526804612336 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:49:42,380 basehttp 18419 526805652720 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:42,403 basehttp 18419 526809822448 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:42,413 basehttp 18419 526804612336 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:42,415 basehttp 18419 526803571952 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:42,462 log 18419 526807733488 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:49:42,489 log 18419 526803571952 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:49:42,490 log 18419 526809822448 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:49:42,491 log 18419 526805652720 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 16:49:42,510 log 18419 526804612336 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-29 16:49:42,511 log 18419 526802531568 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:49:42,520 basehttp 18419 526803571952 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:42,524 basehttp 18419 526807733488 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:42,526 basehttp 18419 526809822448 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:42,527 basehttp 18419 526804612336 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:42,531 basehttp 18419 526802531568 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:49:42,530 basehttp 18419 526805652720 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+INFO 2025-09-29 16:55:27,528 autoreload 19899 541477508424 Watching for file changes with StatReloader
+INFO 2025-09-29 16:55:45,617 basehttp 19899 541381883120 "POST /payments/airtime_top_up/?format=api HTTP/1.1" 200 12090
+WARNING 2025-09-29 16:55:45,670 log 19899 541381883120 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 16:55:45,676 basehttp 19899 541381883120 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:45,720 log 19899 541376673008 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:55:45,721 log 19899 541377713392 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-29 16:55:45,730 log 19899 541379794160 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-29 16:55:45,735 log 19899 541378753776 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-29 16:55:45,738 log 19899 541375632624 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:55:45,742 log 19899 541381883120 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:55:45,749 basehttp 19899 541376673008 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:45,754 basehttp 19899 541378753776 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:45,755 basehttp 19899 541379794160 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:45,760 basehttp 19899 541381883120 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:45,751 basehttp 19899 541377713392 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:45,761 basehttp 19899 541375632624 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:45,783 log 19899 541378753776 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:55:45,785 log 19899 541376673008 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:55:45,785 log 19899 541379794160 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:55:45,791 log 19899 541377713392 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:55:45,798 basehttp 19899 541378753776 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:45,799 basehttp 19899 541376673008 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:45,801 basehttp 19899 541379794160 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:45,800 basehttp 19899 541377713392 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:55:48,885 basehttp 19899 541377713392 "POST /payments/airtime_top_up/?format=api HTTP/1.1" 200 12090
+WARNING 2025-09-29 16:55:48,969 log 19899 541377713392 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 16:55:48,984 log 19899 541378753776 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-29 16:55:49,001 log 19899 541379794160 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-29 16:55:49,022 log 19899 541376673008 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-29 16:55:49,034 log 19899 541375632624 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:55:49,036 log 19899 541381883120 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:55:49,040 basehttp 19899 541377713392 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:49,046 basehttp 19899 541378753776 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:49,049 basehttp 19899 541379794160 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:49,054 basehttp 19899 541376673008 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:49,061 basehttp 19899 541375632624 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:49,072 basehttp 19899 541381883120 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:49,076 log 19899 541377713392 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:55:49,114 log 19899 541378753776 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:55:49,116 basehttp 19899 541377713392 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:49,129 log 19899 541379794160 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:55:49,132 log 19899 541375632624 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:55:49,133 basehttp 19899 541379794160 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:49,133 basehttp 19899 541378753776 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:49,134 log 19899 541376673008 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:55:49,140 basehttp 19899 541375632624 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:49,142 basehttp 19899 541376673008 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:55:59,145 basehttp 19899 541376673008 "GET /payments/airtime_top_up/ HTTP/1.1" 200 11750
+WARNING 2025-09-29 16:55:59,200 log 19899 541376673008 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 16:55:59,210 log 19899 541375632624 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-29 16:55:59,238 log 19899 541379794160 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-29 16:55:59,240 basehttp 19899 541376673008 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:59,241 log 19899 541378753776 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-29 16:55:59,247 basehttp 19899 541375632624 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:59,255 basehttp 19899 541379794160 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:59,256 log 19899 541377713392 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:55:59,258 log 19899 541381883120 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:55:59,266 basehttp 19899 541378753776 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:59,283 basehttp 19899 541377713392 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:59,290 basehttp 19899 541381883120 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:55:59,291 basehttp 19899 541378753776 - Broken pipe from ('127.0.0.1', 44616)
+WARNING 2025-09-29 16:55:59,309 log 19899 541376673008 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:55:59,314 log 19899 541379794160 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:55:59,321 basehttp 19899 541376673008 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:59,323 basehttp 19899 541379794160 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:59,331 log 19899 541375632624 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:55:59,334 log 19899 541373543664 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:55:59,345 basehttp 19899 541375632624 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:59,350 log 19899 541377713392 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:55:59,350 basehttp 19899 541373543664 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:55:59,354 basehttp 19899 541377713392 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:56:01,765 basehttp 19899 541377713392 "GET /payments/airtime_top_up/ HTTP/1.1" 200 11750
+WARNING 2025-09-29 16:56:01,829 log 19899 541377713392 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 16:56:01,839 log 19899 541375632624 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-29 16:56:01,845 basehttp 19899 541377713392 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:56:01,865 log 19899 541379794160 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-29 16:56:01,897 log 19899 541381883120 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:56:01,899 log 19899 541373543664 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:56:01,910 basehttp 19899 541375632624 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:56:01,903 log 19899 541377713392 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:56:01,916 log 19899 541372503280 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 16:56:01,909 log 19899 541376673008 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-29 16:56:01,921 basehttp 19899 541379794160 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:56:01,925 basehttp 19899 541381883120 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:56:01,928 basehttp 19899 541373543664 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:56:01,933 basehttp 19899 541377713392 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:56:01,943 basehttp 19899 541372503280 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:56:01,944 log 19899 541379794160 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:56:01,952 log 19899 541381883120 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:56:01,960 log 19899 541373543664 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:56:01,953 basehttp 19899 541376673008 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:56:01,969 log 19899 541372503280 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:56:01,974 basehttp 19899 541379794160 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:56:01,983 basehttp 19899 541381883120 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:56:01,986 basehttp 19899 541373543664 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:56:01,987 basehttp 19899 541372503280 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:59:31,360 basehttp 19899 541372503280 "GET /payments/airtime_top_up/ HTTP/1.1" 200 11750
+INFO 2025-09-29 16:59:31,367 autoreload 19899 541477508424 /storage/emulated/0/codes/BlueSea-Mobile-backend/bluesea_mobile/urls.py changed, reloading.
+INFO 2025-09-29 17:00:25,827 autoreload 20797 489527825736 Watching for file changes with StatReloader
+INFO 2025-09-29 16:10:01,502 autoreload 22838 518188246344 Watching for file changes with StatReloader
+INFO 2025-09-29 16:14:50,437 autoreload 22838 518188246344 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 16:14:54,441 autoreload 23515 541202367816 Watching for file changes with StatReloader
+INFO 2025-09-29 16:14:58,323 autoreload 23515 541202367816 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 16:15:02,310 autoreload 23541 526546580808 Watching for file changes with StatReloader
+INFO 2025-09-29 16:15:12,955 autoreload 23541 526546580808 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 16:15:16,791 autoreload 23591 503861335368 Watching for file changes with StatReloader
+INFO 2025-09-29 16:15:39,786 autoreload 23591 503861335368 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 16:15:43,457 autoreload 23646 488001131848 Watching for file changes with StatReloader
+INFO 2025-09-29 16:15:48,045 autoreload 23646 488001131848 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 16:15:52,185 autoreload 23660 527418279240 Watching for file changes with StatReloader
+INFO 2025-09-29 16:15:55,782 basehttp 23660 527325721840 "GET /payments/airtime_top_up/ HTTP/1.1" 200 11743
+WARNING 2025-09-29 16:15:55,859 log 23660 527325721840 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 16:15:55,871 basehttp 23660 527325721840 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:15:55,911 log 23660 527320511728 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:15:55,923 log 23660 527323632880 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-29 16:15:55,936 log 23660 527319471344 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:15:55,934 log 23660 527321552112 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-29 16:15:55,936 log 23660 527322592496 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-29 16:15:55,937 log 23660 527325721840 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:15:55,945 basehttp 23660 527320511728 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:15:55,947 basehttp 23660 527323632880 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:15:55,950 basehttp 23660 527319471344 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:15:55,953 basehttp 23660 527321552112 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:15:55,961 basehttp 23660 527325721840 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:15:55,958 basehttp 23660 527322592496 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:15:56,010 log 23660 527320511728 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:15:56,014 log 23660 527321552112 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:15:56,018 log 23660 527319471344 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:15:56,017 log 23660 527323632880 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:15:56,023 basehttp 23660 527320511728 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:15:56,026 basehttp 23660 527321552112 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:15:56,028 basehttp 23660 527323632880 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:15:56,030 basehttp 23660 527319471344 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:15:58,016 autoreload 23660 527418279240 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 16:16:01,766 autoreload 23740 514672579912 Watching for file changes with StatReloader
+ERROR 2025-09-29 16:16:04,938 log 23740 514579231984 Internal Server Error: /payments/airtime_top_up/
+Traceback (most recent call last):
+  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/rest_framework/views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/rest_framework/views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/rest_framework/views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py", line 19, in post
+    serializer = self.get_serializer(data=request.data)
+                 ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'AirtimeTopUpViews' object has no attribute 'get_serializer'
+ERROR 2025-09-29 16:16:04,988 basehttp 23740 514579231984 "POST /payments/airtime_top_up/ HTTP/1.1" 500 145
+WARNING 2025-09-29 16:16:08,070 log 23740 514579231984 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 16:16:08,082 basehttp 23740 514579231984 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:16:08,143 log 23740 514577143024 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-29 16:16:08,146 log 23740 514576102640 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-29 16:16:08,153 log 23740 514575062256 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-29 16:16:08,162 basehttp 23740 514577143024 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:16:08,163 basehttp 23740 514576102640 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:16:08,167 basehttp 23740 514575062256 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+INFO 2025-09-29 16:16:11,705 basehttp 23740 514575062256 "GET /payments/airtime_top_up/? HTTP/1.1" 200 11743
+WARNING 2025-09-29 16:16:11,755 log 23740 514576102640 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-29 16:16:11,758 log 23740 514575062256 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-29 16:16:11,778 log 23740 514577143024 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-29 16:16:11,782 log 23740 514579231984 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-29 16:16:11,806 basehttp 23740 514576102640 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:16:11,807 basehttp 23740 514575062256 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:16:11,811 log 23740 514571932912 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:16:11,794 log 23740 514572973296 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:16:11,821 basehttp 23740 514577143024 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:16:11,833 log 23740 514570892528 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:16:11,837 basehttp 23740 514579231984 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:16:11,866 basehttp 23740 514571932912 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:16:11,878 basehttp 23740 514570892528 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:16:11,872 basehttp 23740 514572973296 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:16:11,887 log 23740 514575062256 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:16:11,894 log 23740 514577143024 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:16:11,897 log 23740 514576102640 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:16:11,905 basehttp 23740 514575062256 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:16:11,915 log 23740 514571932912 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:16:11,918 basehttp 23740 514577143024 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:16:11,921 basehttp 23740 514576102640 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:16:11,923 basehttp 23740 514571932912 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+ERROR 2025-09-29 16:16:20,586 log 23740 514571932912 Internal Server Error: /payments/airtime_top_up/
+Traceback (most recent call last):
+  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/rest_framework/views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/rest_framework/views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/rest_framework/views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py", line 19, in post
+    serializer = self.get_serializer(data=request.data)
+                 ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'AirtimeTopUpViews' object has no attribute 'get_serializer'
+ERROR 2025-09-29 16:16:20,620 basehttp 23740 514571932912 "POST /payments/airtime_top_up/ HTTP/1.1" 500 145
+INFO 2025-09-29 16:26:35,325 autoreload 23740 514672579912 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 16:26:39,699 autoreload 24955 498063095112 Watching for file changes with StatReloader
+INFO 2025-09-29 16:26:44,317 autoreload 24955 498063095112 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 16:26:48,180 autoreload 24991 499353883976 Watching for file changes with StatReloader
+INFO 2025-09-29 16:27:19,724 autoreload 24991 499353883976 /storage/emulated/0/codes/BlueSea-Mobile-backend/bluesea_mobile/settings.py changed, reloading.
+INFO 2025-09-29 16:27:23,814 autoreload 25059 540714403144 Watching for file changes with StatReloader
+INFO 2025-09-29 16:27:28,616 autoreload 25059 540714403144 /storage/emulated/0/codes/BlueSea-Mobile-backend/bluesea_mobile/settings.py changed, reloading.
+INFO 2025-09-29 16:27:32,774 autoreload 25096 523248973128 Watching for file changes with StatReloader
+INFO 2025-09-29 16:28:27,616 basehttp 25096 523155535088 "GET /payments/airtime_top_up/?format=api HTTP/1.1" 200 18648
+WARNING 2025-09-29 16:28:28,089 log 25096 523153446128 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:28:28,092 log 25096 523152405744 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:28:28,094 log 25096 523150324976 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:28:28,096 log 25096 523151365360 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:28:28,103 log 25096 523149284592 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:28:28,106 log 25096 523155535088 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:28:28,107 basehttp 25096 523152405744 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:28,116 basehttp 25096 523151365360 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:28,111 basehttp 25096 523153446128 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:28,118 basehttp 25096 523150324976 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:28,134 log 25096 523152405744 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:28:28,135 basehttp 25096 523149284592 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:28,136 basehttp 25096 523155535088 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:28,143 basehttp 25096 523152405744 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:28:42,314 basehttp 25096 523152405744 "GET /payments/airtime_top_up/? HTTP/1.1" 200 18604
+WARNING 2025-09-29 16:28:42,398 log 25096 523155535088 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:28:42,427 log 25096 523152405744 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:28:42,437 log 25096 523151365360 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:28:42,432 log 25096 523149284592 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:28:42,442 log 25096 523153446128 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:28:42,453 log 25096 523150324976 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:28:42,457 basehttp 25096 523155535088 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:42,463 basehttp 25096 523151365360 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:42,464 basehttp 25096 523152405744 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:42,468 basehttp 25096 523153446128 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:42,473 basehttp 25096 523149284592 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:42,476 basehttp 25096 523150324976 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:42,486 log 25096 523155535088 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:28:42,501 basehttp 25096 523155535088 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:28:49,104 basehttp 25096 523155535088 "GET /payments/airtime_top_up/ HTTP/1.1" 200 18604
+WARNING 2025-09-29 16:28:49,171 log 25096 523155535088 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:28:49,192 log 25096 523150324976 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:28:49,197 log 25096 523149284592 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:28:49,207 log 25096 523152405744 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:28:49,210 log 25096 523153446128 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:28:49,213 log 25096 523151365360 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:28:49,221 basehttp 25096 523155535088 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:49,224 basehttp 25096 523150324976 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:49,227 basehttp 25096 523152405744 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:49,230 basehttp 25096 523153446128 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:49,236 basehttp 25096 523149284592 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:49,237 basehttp 25096 523151365360 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:49,252 log 25096 523155535088 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:28:49,255 basehttp 25096 523155535088 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:28:50,369 basehttp 25096 523155535088 "GET /payments/airtime_top_up/ HTTP/1.1" 200 18604
+WARNING 2025-09-29 16:28:50,419 log 25096 523155535088 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:28:50,430 log 25096 523151365360 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:28:50,435 basehttp 25096 523155535088 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:50,438 basehttp 25096 523151365360 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:50,470 log 25096 523150324976 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:28:50,471 log 25096 523149284592 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:28:50,487 log 25096 523152405744 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:28:50,494 log 25096 523155535088 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:28:50,497 log 25096 523153446128 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:28:50,504 basehttp 25096 523150324976 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:50,508 basehttp 25096 523155535088 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:50,510 basehttp 25096 523149284592 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:50,513 basehttp 25096 523152405744 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:50,516 basehttp 25096 523153446128 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:28:51,642 basehttp 25096 523155535088 "GET /payments/airtime_top_up/? HTTP/1.1" 200 18604
+WARNING 2025-09-29 16:28:51,708 log 25096 523155535088 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:28:51,723 log 25096 523153446128 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:28:51,750 log 25096 523152405744 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:28:51,753 log 25096 523149284592 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:28:51,757 log 25096 523151365360 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:28:51,763 basehttp 25096 523155535088 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:51,767 log 25096 523150324976 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:28:51,773 basehttp 25096 523149284592 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:51,770 basehttp 25096 523153446128 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:51,776 basehttp 25096 523152405744 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:51,776 basehttp 25096 523151365360 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:51,787 log 25096 523155535088 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:28:51,796 basehttp 25096 523150324976 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:28:51,803 basehttp 25096 523155535088 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:28:55,034 basehttp 25096 523155535088 "GET /payments/airtime_top_up/?format=json HTTP/1.1" 200 13
+INFO 2025-09-29 16:29:21,108 basehttp 25096 523155535088 "GET /payments/airtime_top_up/? HTTP/1.1" 200 18604
+WARNING 2025-09-29 16:29:21,173 log 25096 523155535088 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:29:21,184 log 25096 523150324976 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:29:21,213 log 25096 523149284592 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:29:21,217 log 25096 523151365360 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:29:21,221 log 25096 523152405744 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:29:21,222 log 25096 523153446128 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:29:21,228 basehttp 25096 523155535088 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:21,230 basehttp 25096 523150324976 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:21,233 basehttp 25096 523149284592 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:21,238 basehttp 25096 523153446128 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:21,240 basehttp 25096 523151365360 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:21,247 basehttp 25096 523152405744 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:21,256 log 25096 523155535088 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:29:21,260 basehttp 25096 523155535088 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:29:42,034 basehttp 25096 523155535088 "GET /payments/airtime_top_up/? HTTP/1.1" 200 18604
+WARNING 2025-09-29 16:29:42,105 log 25096 523155535088 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:29:42,116 log 25096 523152405744 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:29:42,127 log 25096 523153446128 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:29:42,130 log 25096 523149284592 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:29:42,152 log 25096 523150324976 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:29:42,150 log 25096 523151365360 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:29:42,155 basehttp 25096 523155535088 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:42,158 basehttp 25096 523152405744 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:42,163 basehttp 25096 523153446128 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:42,166 basehttp 25096 523149284592 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:42,177 basehttp 25096 523150324976 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:42,175 log 25096 523155535088 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:29:42,178 basehttp 25096 523151365360 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:42,189 basehttp 25096 523155535088 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:29:54,514 basehttp 25096 523155535088 "GET /payments/airtime_top_up/? HTTP/1.1" 200 18604
+WARNING 2025-09-29 16:29:54,564 log 25096 523155535088 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:29:54,594 log 25096 523150324976 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:29:54,607 log 25096 523152405744 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:29:54,612 log 25096 523149284592 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:29:54,615 log 25096 523153446128 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:29:54,608 log 25096 523151365360 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:29:54,621 basehttp 25096 523155535088 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:54,624 basehttp 25096 523150324976 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:54,626 basehttp 25096 523152405744 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:54,631 basehttp 25096 523149284592 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:54,635 basehttp 25096 523153446128 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:54,646 log 25096 523155535088 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:29:54,647 basehttp 25096 523151365360 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:54,657 basehttp 25096 523155535088 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:29:56,538 basehttp 25096 523155535088 "GET /payments/airtime_top_up/? HTTP/1.1" 200 18604
+WARNING 2025-09-29 16:29:56,638 log 25096 523155535088 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:29:56,655 log 25096 523151365360 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:29:56,689 log 25096 523149284592 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:29:56,692 basehttp 25096 523151365360 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:56,694 log 25096 523153446128 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:29:56,700 log 25096 523150324976 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:29:56,695 basehttp 25096 523155535088 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:56,704 log 25096 523152405744 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:29:56,714 basehttp 25096 523149284592 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:56,724 basehttp 25096 523153446128 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:56,730 basehttp 25096 523150324976 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:56,718 log 25096 523151365360 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:29:56,738 basehttp 25096 523152405744 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:56,743 basehttp 25096 523151365360 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:29:57,585 basehttp 25096 523151365360 "GET /payments/airtime_top_up/? HTTP/1.1" 200 18604
+WARNING 2025-09-29 16:29:57,661 log 25096 523151365360 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:29:57,673 log 25096 523152405744 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:29:57,696 log 25096 523149284592 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:29:57,701 log 25096 523150324976 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:29:57,712 basehttp 25096 523151365360 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:57,718 log 25096 523153446128 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:29:57,721 basehttp 25096 523149284592 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:57,724 basehttp 25096 523152405744 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:57,729 basehttp 25096 523150324976 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:57,732 log 25096 523155535088 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:29:57,742 basehttp 25096 523153446128 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:57,751 log 25096 523151365360 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:29:57,753 basehttp 25096 523155535088 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:57,757 basehttp 25096 523151365360 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:29:58,488 basehttp 25096 523151365360 "GET /payments/airtime_top_up/? HTTP/1.1" 200 18604
+WARNING 2025-09-29 16:29:58,593 log 25096 523151365360 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:29:58,622 log 25096 523150324976 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:29:58,637 log 25096 523152405744 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:29:58,633 log 25096 523149284592 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:29:58,649 log 25096 523153446128 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:29:58,655 basehttp 25096 523151365360 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:58,654 log 25096 523155535088 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:29:58,663 basehttp 25096 523150324976 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:58,675 basehttp 25096 523149284592 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:58,696 basehttp 25096 523153446128 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:58,694 log 25096 523151365360 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:29:58,673 basehttp 25096 523152405744 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:58,705 basehttp 25096 523155535088 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:58,715 basehttp 25096 523151365360 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:29:59,420 basehttp 25096 523151365360 "GET /payments/airtime_top_up/? HTTP/1.1" 200 18604
+WARNING 2025-09-29 16:29:59,477 log 25096 523151365360 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:29:59,494 log 25096 523155535088 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:29:59,509 log 25096 523153446128 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:29:59,529 log 25096 523150324976 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:29:59,533 log 25096 523149284592 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:29:59,536 basehttp 25096 523151365360 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:59,535 log 25096 523152405744 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:29:59,538 basehttp 25096 523155535088 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:59,544 basehttp 25096 523153446128 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:59,548 basehttp 25096 523150324976 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:59,555 log 25096 523151365360 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:29:59,558 basehttp 25096 523149284592 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:59,564 basehttp 25096 523152405744 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:29:59,571 basehttp 25096 523151365360 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:30:01,640 basehttp 25096 523151365360 "GET /payments/airtime_top_up/ HTTP/1.1" 200 18604
+WARNING 2025-09-29 16:30:01,712 log 25096 523151365360 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:30:01,728 log 25096 523152405744 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:30:01,761 log 25096 523155535088 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:30:01,764 log 25096 523153446128 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:30:01,767 log 25096 523149284592 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:30:01,772 basehttp 25096 523151365360 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:30:01,774 basehttp 25096 523152405744 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:30:01,769 log 25096 523150324976 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:30:01,783 basehttp 25096 523155535088 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:30:01,790 basehttp 25096 523153446128 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:30:01,794 log 25096 523151365360 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:30:01,795 basehttp 25096 523149284592 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:30:01,804 basehttp 25096 523150324976 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:30:01,808 basehttp 25096 523151365360 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:32:10,987 basehttp 25096 523155535088 "GET /payments/airtime_top_up/?format=api HTTP/1.1" 200 18648
+WARNING 2025-09-29 16:32:11,052 log 25096 523155535088 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:32:11,060 basehttp 25096 523155535088 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:32:11,103 log 25096 523153446128 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:32:11,128 log 25096 523151365360 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:32:11,138 log 25096 523149284592 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:32:11,132 log 25096 523155535088 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:32:11,142 log 25096 523152405744 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:32:11,148 log 25096 523150324976 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:32:11,156 basehttp 25096 523153446128 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:32:11,158 basehttp 25096 523151365360 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:32:11,160 basehttp 25096 523149284592 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:32:11,164 basehttp 25096 523155535088 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:32:11,166 basehttp 25096 523152405744 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:32:11,170 basehttp 25096 523150324976 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:32:16,243 basehttp 25096 523150324976 "GET /payments/airtime_top_up/?format=api HTTP/1.1" 200 18648
+WARNING 2025-09-29 16:32:16,306 log 25096 523150324976 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:32:16,317 log 25096 523152405744 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:32:16,345 log 25096 523149284592 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:32:16,350 log 25096 523155535088 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:32:16,359 log 25096 523151365360 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:32:16,361 log 25096 523153446128 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:32:16,364 basehttp 25096 523152405744 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:32:16,371 basehttp 25096 523155535088 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:32:16,365 basehttp 25096 523150324976 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:32:16,369 basehttp 25096 523149284592 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:32:16,375 basehttp 25096 523151365360 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:32:16,380 basehttp 25096 523153446128 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:32:16,394 log 25096 523152405744 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:32:16,399 basehttp 25096 523152405744 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:34:16,374 autoreload 25096 523248973128 /storage/emulated/0/codes/BlueSea-Mobile-backend/bluesea_mobile/settings.py changed, reloading.
+INFO 2025-09-29 16:34:21,500 autoreload 26966 512392906056 Watching for file changes with StatReloader
+INFO 2025-09-29 16:34:29,068 basehttp 26966 512298579184 "GET /payments/airtime_top_up/? HTTP/1.1" 200 42740
+WARNING 2025-09-29 16:34:29,334 log 26966 512298579184 Not Found: /static/rest_wind/css/pygments.css
+WARNING 2025-09-29 16:34:29,336 log 26966 512293369072 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:34:29,337 log 26966 512292328688 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:34:29,341 log 26966 512295449840 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:34:29,342 log 26966 512296490224 Not Found: /static/rest_wind/css/styles.css
+WARNING 2025-09-29 16:34:29,344 basehttp 26966 512293369072 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:34:29,345 log 26966 512294409456 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:34:29,347 basehttp 26966 512298579184 "GET /static/rest_wind/css/pygments.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:34:29,348 basehttp 26966 512292328688 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:34:29,358 basehttp 26966 512295449840 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:34:29,361 basehttp 26966 512296490224 "GET /static/rest_wind/css/styles.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:34:29,368 log 26966 512293369072 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:34:29,371 basehttp 26966 512294409456 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:34:29,375 log 26966 512292328688 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:34:29,384 basehttp 26966 512293369072 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:34:29,387 basehttp 26966 512292328688 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:34:30,083 log 26966 512292328688 Not Found: /static/rest_wind/css/styles.css
+WARNING 2025-09-29 16:34:30,086 basehttp 26966 512292328688 "GET /static/rest_wind/css/styles.css HTTP/1.1" 404 179
+INFO 2025-09-29 16:34:41,494 basehttp 26966 512292328688 "GET /payments/airtime_top_up/? HTTP/1.1" 200 42740
+WARNING 2025-09-29 16:34:41,570 log 26966 512292328688 Not Found: /static/rest_wind/css/pygments.css
+WARNING 2025-09-29 16:34:41,588 log 26966 512293369072 Not Found: /static/rest_wind/css/styles.css
+WARNING 2025-09-29 16:34:41,604 log 26966 512296490224 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:34:41,613 log 26966 512298579184 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:34:41,610 log 26966 512294409456 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:34:41,619 log 26966 512295449840 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:34:41,626 basehttp 26966 512292328688 "GET /static/rest_wind/css/pygments.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:34:41,630 basehttp 26966 512293369072 "GET /static/rest_wind/css/styles.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:34:41,635 basehttp 26966 512296490224 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:34:41,634 basehttp 26966 512298579184 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:34:41,639 basehttp 26966 512294409456 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:34:41,663 log 26966 512293369072 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:34:41,654 basehttp 26966 512295449840 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:34:41,650 log 26966 512292328688 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:34:41,679 log 26966 512295449840 Not Found: /static/rest_wind/css/styles.css
+WARNING 2025-09-29 16:34:41,681 basehttp 26966 512293369072 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:34:41,684 basehttp 26966 512292328688 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:34:41,686 basehttp 26966 512295449840 "GET /static/rest_wind/css/styles.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:35:07,336 log 26966 512295449840 Bad Request: /payments/airtime_top_up/
+WARNING 2025-09-29 16:35:07,339 basehttp 26966 512295449840 "POST /payments/airtime_top_up/ HTTP/1.1" 400 43184
+WARNING 2025-09-29 16:35:07,394 log 26966 512295449840 Not Found: /static/rest_wind/css/pygments.css
+WARNING 2025-09-29 16:35:07,439 log 26966 512298579184 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:35:07,445 log 26966 512293369072 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:35:07,456 log 26966 512296490224 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:35:07,408 log 26966 512292328688 Not Found: /static/rest_wind/css/styles.css
+WARNING 2025-09-29 16:35:07,476 basehttp 26966 512295449840 "GET /static/rest_wind/css/pygments.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:35:07,478 log 26966 512294409456 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:35:07,480 basehttp 26966 512298579184 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:35:07,488 basehttp 26966 512296490224 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:35:07,499 basehttp 26966 512293369072 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:35:07,500 basehttp 26966 512292328688 "GET /static/rest_wind/css/styles.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:35:07,474 log 26966 512291288304 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:35:07,513 log 26966 512298579184 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:35:07,522 basehttp 26966 512294409456 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:35:07,532 basehttp 26966 512298579184 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:35:07,536 basehttp 26966 512291288304 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:35:17,194 log 26966 512298579184 Bad Request: /payments/airtime_top_up/
+WARNING 2025-09-29 16:35:17,198 basehttp 26966 512298579184 "POST /payments/airtime_top_up/ HTTP/1.1" 400 43184
+WARNING 2025-09-29 16:35:17,287 log 26966 512298579184 Not Found: /static/rest_wind/css/pygments.css
+WARNING 2025-09-29 16:35:17,317 log 26966 512291288304 Not Found: /static/rest_wind/css/styles.css
+WARNING 2025-09-29 16:35:17,357 log 26966 512294409456 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:35:17,362 log 26966 512296490224 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:35:17,368 log 26966 512292328688 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:35:17,373 log 26966 512293369072 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:35:17,389 basehttp 26966 512291288304 "GET /static/rest_wind/css/styles.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:35:17,376 basehttp 26966 512298579184 "GET /static/rest_wind/css/pygments.css HTTP/1.1" 404 179
+WARNING 2025-09-29 16:35:17,394 basehttp 26966 512294409456 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:35:17,388 log 26966 512295449840 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:35:17,411 log 26966 512291288304 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:35:17,412 basehttp 26966 512292328688 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:35:17,421 basehttp 26966 512293369072 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:35:17,413 basehttp 26966 512296490224 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:35:17,431 basehttp 26966 512291288304 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:35:17,434 basehttp 26966 512295449840 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:37:11,387 autoreload 26966 512392906056 /storage/emulated/0/codes/BlueSea-Mobile-backend/bluesea_mobile/settings.py changed, reloading.
+INFO 2025-09-29 16:37:15,187 autoreload 27427 532726740296 Watching for file changes with StatReloader
+INFO 2025-09-29 16:37:21,165 autoreload 27427 532726740296 /storage/emulated/0/codes/BlueSea-Mobile-backend/bluesea_mobile/urls.py changed, reloading.
+INFO 2025-09-29 16:37:25,052 autoreload 27438 510252750152 Watching for file changes with StatReloader
+INFO 2025-09-29 16:37:32,846 autoreload 27438 510252750152 /storage/emulated/0/codes/BlueSea-Mobile-backend/bluesea_mobile/urls.py changed, reloading.
+INFO 2025-09-29 16:37:36,696 autoreload 27459 523032126792 Watching for file changes with StatReloader
+INFO 2025-09-29 16:37:43,691 autoreload 27459 523032126792 /storage/emulated/0/codes/BlueSea-Mobile-backend/bluesea_mobile/urls.py changed, reloading.
+INFO 2025-09-29 16:37:47,650 autoreload 27496 487574582600 Watching for file changes with StatReloader
+INFO 2025-09-29 16:37:53,831 basehttp 27496 487480882416 "GET /payments/airtime_top_up/ HTTP/1.1" 200 19250
+WARNING 2025-09-29 16:37:54,033 log 27496 487480882416 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:37:54,034 log 27496 487474631920 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:37:54,035 log 27496 487475672304 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:37:54,036 log 27496 487476712688 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:37:54,038 log 27496 487478793456 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:37:54,037 log 27496 487477753072 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:37:54,045 basehttp 27496 487480882416 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:37:54,047 basehttp 27496 487474631920 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:37:54,050 basehttp 27496 487475672304 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:37:54,054 basehttp 27496 487476712688 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:37:54,057 basehttp 27496 487478793456 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:37:54,058 basehttp 27496 487477753072 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:37:54,069 log 27496 487480882416 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:37:54,071 basehttp 27496 487480882416 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:38:05,799 basehttp 27496 487480882416 "GET /payments/airtime_top_up/? HTTP/1.1" 200 19250
+WARNING 2025-09-29 16:38:05,856 log 27496 487480882416 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:38:05,860 basehttp 27496 487480882416 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:05,870 log 27496 487476712688 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:38:05,913 basehttp 27496 487476712688 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:05,918 log 27496 487477753072 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:38:05,923 log 27496 487475672304 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:38:05,926 log 27496 487474631920 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:38:05,924 log 27496 487478793456 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:38:05,930 log 27496 487480882416 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:38:05,934 basehttp 27496 487477753072 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:05,939 basehttp 27496 487475672304 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:05,943 basehttp 27496 487480882416 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:05,944 basehttp 27496 487474631920 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:05,947 basehttp 27496 487478793456 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:38:31,257 basehttp 27496 487480882416 "GET /payments/airtime_top_up/? HTTP/1.1" 200 19250
+WARNING 2025-09-29 16:38:31,341 log 27496 487480882416 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:38:31,361 log 27496 487478793456 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:38:31,401 log 27496 487474631920 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:38:31,405 log 27496 487475672304 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:38:31,408 log 27496 487477753072 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:38:31,413 log 27496 487476712688 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:38:31,415 basehttp 27496 487480882416 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:31,423 basehttp 27496 487474631920 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:31,425 basehttp 27496 487478793456 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:31,435 basehttp 27496 487475672304 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:31,436 log 27496 487480882416 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:38:31,437 basehttp 27496 487477753072 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:31,440 basehttp 27496 487476712688 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:31,448 basehttp 27496 487480882416 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:38:33,815 basehttp 27496 487480882416 "GET /payments/airtime_top_up/ HTTP/1.1" 200 19250
+WARNING 2025-09-29 16:38:33,889 log 27496 487480882416 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:38:33,914 log 27496 487476712688 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:38:33,917 log 27496 487474631920 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:38:33,928 log 27496 487477753072 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:38:33,938 log 27496 487478793456 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:38:33,942 log 27496 487475672304 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:38:33,947 basehttp 27496 487480882416 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:33,955 basehttp 27496 487474631920 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:33,952 basehttp 27496 487476712688 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:33,958 basehttp 27496 487477753072 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:33,970 log 27496 487480882416 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:38:33,974 basehttp 27496 487478793456 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:33,975 basehttp 27496 487475672304 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:33,987 basehttp 27496 487480882416 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:38:34,893 basehttp 27496 487480882416 "GET /payments/airtime_top_up/ HTTP/1.1" 200 19250
+WARNING 2025-09-29 16:38:34,950 log 27496 487480882416 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:38:34,958 log 27496 487475672304 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:38:34,980 log 27496 487477753072 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:38:34,991 log 27496 487474631920 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:38:34,993 log 27496 487478793456 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:38:34,997 log 27496 487476712688 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:38:35,001 basehttp 27496 487480882416 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:35,003 basehttp 27496 487475672304 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:35,008 basehttp 27496 487477753072 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:35,011 basehttp 27496 487474631920 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:35,020 basehttp 27496 487478793456 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:35,023 log 27496 487480882416 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:38:35,024 basehttp 27496 487476712688 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:35,034 basehttp 27496 487480882416 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:38:35,813 basehttp 27496 487480882416 "GET /payments/airtime_top_up/ HTTP/1.1" 200 19250
+WARNING 2025-09-29 16:38:35,892 log 27496 487480882416 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:38:35,896 basehttp 27496 487480882416 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:35,925 log 27496 487474631920 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:38:35,940 log 27496 487480882416 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:38:35,941 log 27496 487476712688 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:38:35,950 log 27496 487475672304 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:38:35,943 log 27496 487477753072 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:38:35,946 log 27496 487478793456 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:38:35,955 basehttp 27496 487474631920 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:35,959 basehttp 27496 487480882416 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:35,963 basehttp 27496 487476712688 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:35,968 basehttp 27496 487475672304 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:35,969 basehttp 27496 487477753072 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:35,972 basehttp 27496 487478793456 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:38:36,747 basehttp 27496 487480882416 "GET /payments/airtime_top_up/ HTTP/1.1" 200 19250
+WARNING 2025-09-29 16:38:36,806 log 27496 487480882416 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:38:36,826 log 27496 487477753072 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:38:36,835 log 27496 487478793456 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:38:36,851 log 27496 487475672304 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:38:36,852 log 27496 487476712688 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:38:36,856 log 27496 487474631920 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:38:36,861 basehttp 27496 487480882416 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:36,867 basehttp 27496 487477753072 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:36,870 basehttp 27496 487478793456 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:36,872 basehttp 27496 487475672304 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:36,876 basehttp 27496 487476712688 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:36,886 log 27496 487480882416 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:38:36,888 basehttp 27496 487474631920 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:36,899 basehttp 27496 487480882416 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:38:42,580 basehttp 27496 487480882416 "GET /payments/airtime_top_up/ HTTP/1.1" 200 19250
+WARNING 2025-09-29 16:38:42,646 log 27496 487480882416 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:38:42,655 log 27496 487474631920 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:38:42,688 log 27496 487478793456 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:38:42,691 log 27496 487477753072 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:38:42,697 log 27496 487476712688 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:38:42,695 log 27496 487475672304 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:38:42,701 basehttp 27496 487480882416 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:42,708 basehttp 27496 487478793456 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:42,704 basehttp 27496 487474631920 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:42,713 basehttp 27496 487477753072 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:42,716 basehttp 27496 487476712688 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:42,719 basehttp 27496 487475672304 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:38:42,730 log 27496 487480882416 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:38:42,737 basehttp 27496 487480882416 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:38:56,554 autoreload 27496 487574582600 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 16:39:00,886 autoreload 27635 510667617608 Watching for file changes with StatReloader
+WARNING 2025-09-29 16:39:04,939 log 27635 510574720240 Method Not Allowed: /payments/airtime_top_up/
+WARNING 2025-09-29 16:39:04,945 basehttp 27635 510574720240 "GET /payments/airtime_top_up/ HTTP/1.1" 405 17537
+WARNING 2025-09-29 16:39:05,117 log 27635 510571590896 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:39:05,120 log 27635 510574720240 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:39:05,123 log 27635 510572631280 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:39:05,127 log 27635 510570550512 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:39:05,140 log 27635 510569510128 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:39:05,141 log 27635 510568469744 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:39:05,145 basehttp 27635 510571590896 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:39:05,151 basehttp 27635 510572631280 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:39:05,155 basehttp 27635 510570550512 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:39:05,146 basehttp 27635 510574720240 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:39:05,163 log 27635 510571590896 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:39:05,169 basehttp 27635 510568469744 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:39:05,166 basehttp 27635 510569510128 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:39:05,177 basehttp 27635 510571590896 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:39:07,657 autoreload 27635 510667617608 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 16:39:11,275 autoreload 27761 491308901704 Watching for file changes with StatReloader
+INFO 2025-09-29 16:39:49,046 autoreload 27761 491308901704 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 16:39:52,793 autoreload 28055 481004197192 Watching for file changes with StatReloader
+INFO 2025-09-29 16:39:57,212 autoreload 28055 481004197192 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 16:40:01,043 autoreload 28081 517548483912 Watching for file changes with StatReloader
+INFO 2025-09-29 16:40:16,708 basehttp 28081 517454427376 "GET /payments/airtime_top_up/ HTTP/1.1" 200 19250
+WARNING 2025-09-29 16:40:16,823 log 28081 517454427376 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:40:16,830 basehttp 28081 517454427376 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:40:16,866 log 28081 517452338416 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:40:16,882 log 28081 517451298032 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:40:16,895 log 28081 517454427376 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:40:16,877 log 28081 517448176880 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:40:16,887 log 28081 517450257648 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:40:16,889 log 28081 517449217264 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:40:16,902 basehttp 28081 517454427376 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:40:16,904 basehttp 28081 517452338416 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:40:16,906 basehttp 28081 517451298032 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:40:16,912 basehttp 28081 517448176880 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:40:16,915 basehttp 28081 517450257648 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:40:16,918 basehttp 28081 517449217264 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:40:21,734 basehttp 28081 517454427376 "GET /payments/airtime_top_up/?format=json HTTP/1.1" 200 13
+INFO 2025-09-29 16:40:25,465 basehttp 28081 517454427376 "GET /payments/airtime_top_up/?format=api HTTP/1.1" 200 19294
+WARNING 2025-09-29 16:40:25,528 log 28081 517454427376 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:40:25,533 basehttp 28081 517454427376 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:40:25,559 log 28081 517449217264 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:40:25,582 log 28081 517450257648 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:40:25,593 log 28081 517451298032 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:40:25,604 log 28081 517452338416 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:40:25,602 log 28081 517454427376 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:40:25,615 basehttp 28081 517449217264 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:40:25,597 log 28081 517448176880 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:40:25,622 basehttp 28081 517450257648 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:40:25,625 basehttp 28081 517451298032 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:40:25,628 basehttp 28081 517452338416 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:40:25,634 basehttp 28081 517454427376 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:40:25,642 basehttp 28081 517448176880 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:40:35,004 basehttp 28081 517454427376 "GET /payments/airtime_top_up/?format=api HTTP/1.1" 200 19294
+WARNING 2025-09-29 16:40:35,071 log 28081 517454427376 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:40:35,097 log 28081 517448176880 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:40:35,129 log 28081 517449217264 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:40:35,130 log 28081 517450257648 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:40:35,133 log 28081 517451298032 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:40:35,135 log 28081 517452338416 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:40:35,138 basehttp 28081 517454427376 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:40:35,144 basehttp 28081 517448176880 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:40:35,148 basehttp 28081 517450257648 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:40:35,150 basehttp 28081 517449217264 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:40:35,161 basehttp 28081 517451298032 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:40:35,163 basehttp 28081 517452338416 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:40:35,160 log 28081 517454427376 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:40:35,171 basehttp 28081 517454427376 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:41:00,868 basehttp 28081 517454427376 "GET /payments/airtime_top_up/?format=api HTTP/1.1" 200 19294
+WARNING 2025-09-29 16:41:00,948 log 28081 517454427376 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:41:00,960 log 28081 517452338416 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:41:00,995 log 28081 517450257648 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:41:01,017 log 28081 517448176880 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:41:01,024 basehttp 28081 517454427376 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:41:01,011 log 28081 517451298032 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:41:01,013 log 28081 517449217264 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:41:01,028 basehttp 28081 517452338416 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:41:01,034 basehttp 28081 517450257648 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:41:01,046 log 28081 517454427376 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:41:01,047 basehttp 28081 517448176880 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:41:01,054 basehttp 28081 517451298032 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:41:01,060 basehttp 28081 517449217264 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:41:01,066 basehttp 28081 517454427376 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:41:40,533 basehttp 28081 517454427376 "GET /payments/airtime_top_up/? HTTP/1.1" 200 19250
+WARNING 2025-09-29 16:41:40,601 log 28081 517454427376 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:41:40,640 log 28081 517451298032 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:41:40,644 log 28081 517450257648 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:41:40,650 log 28081 517448176880 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:41:40,665 log 28081 517449217264 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:41:40,669 log 28081 517452338416 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:41:40,673 basehttp 28081 517454427376 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:41:40,680 basehttp 28081 517451298032 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:41:40,679 basehttp 28081 517450257648 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:41:40,686 basehttp 28081 517449217264 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:41:40,699 log 28081 517454427376 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:41:40,701 basehttp 28081 517448176880 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:41:40,700 basehttp 28081 517452338416 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:41:40,715 basehttp 28081 517454427376 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:41:43,855 basehttp 28081 517454427376 "GET /payments/airtime_top_up/?format=json HTTP/1.1" 200 13
+INFO 2025-09-29 16:41:48,262 basehttp 28081 517454427376 "GET /payments/airtime_top_up/?format=json HTTP/1.1" 200 13
+INFO 2025-09-29 16:41:55,415 basehttp 28081 517454427376 "GET /payments/airtime_top_up/? HTTP/1.1" 200 19250
+WARNING 2025-09-29 16:41:55,505 log 28081 517454427376 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:41:55,545 log 28081 517451298032 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:41:55,519 log 28081 517452338416 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:41:55,554 log 28081 517449217264 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:41:55,562 basehttp 28081 517454427376 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:41:55,557 log 28081 517450257648 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:41:55,551 log 28081 517448176880 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:41:55,567 basehttp 28081 517451298032 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:41:55,577 basehttp 28081 517452338416 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:41:55,578 log 28081 517454427376 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:41:55,581 basehttp 28081 517449217264 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:41:55,587 basehttp 28081 517450257648 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:41:55,592 basehttp 28081 517448176880 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:41:55,599 basehttp 28081 517454427376 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:44:32,863 basehttp 28081 517454427376 "GET /payments/airtime_top_up/? HTTP/1.1" 200 19250
+WARNING 2025-09-29 16:44:32,931 log 28081 517454427376 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:44:32,957 log 28081 517449217264 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:44:32,976 log 28081 517450257648 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:44:32,977 log 28081 517448176880 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:44:32,982 log 28081 517452338416 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:44:32,981 log 28081 517451298032 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:44:32,985 basehttp 28081 517454427376 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:44:32,991 basehttp 28081 517449217264 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:44:32,994 basehttp 28081 517450257648 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:44:33,002 basehttp 28081 517448176880 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:44:33,008 basehttp 28081 517452338416 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:44:33,006 log 28081 517454427376 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:44:33,011 basehttp 28081 517451298032 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:44:33,017 basehttp 28081 517454427376 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:45:01,870 basehttp 28081 517454427376 "GET /payments/airtime_top_up/ HTTP/1.1" 200 19250
+WARNING 2025-09-29 16:45:01,952 log 28081 517452338416 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:45:01,967 log 28081 517448176880 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:45:01,975 log 28081 517454427376 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:45:01,969 log 28081 517450257648 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:45:01,975 log 28081 517451298032 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:45:01,972 log 28081 517449217264 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:45:01,992 basehttp 28081 517454427376 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:45:01,988 basehttp 28081 517452338416 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:45:01,994 basehttp 28081 517450257648 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:45:01,997 basehttp 28081 517448176880 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:45:02,009 basehttp 28081 517451298032 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:45:02,012 log 28081 517452338416 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:45:02,013 basehttp 28081 517449217264 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:45:02,020 basehttp 28081 517452338416 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+INFO 2025-09-29 16:45:21,388 basehttp 28081 517452338416 "GET /payments/airtime_top_up/? HTTP/1.1" 200 19250
+WARNING 2025-09-29 16:45:21,443 log 28081 517452338416 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-29 16:45:21,447 basehttp 28081 517452338416 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:45:21,463 log 28081 517449217264 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-29 16:45:21,467 basehttp 28081 517449217264 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:45:21,483 log 28081 517451298032 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-29 16:45:21,507 log 28081 517452338416 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-29 16:45:21,509 log 28081 517450257648 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-29 16:45:21,510 log 28081 517448176880 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-29 16:45:21,513 log 28081 517454427376 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-29 16:45:21,517 basehttp 28081 517452338416 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:45:21,519 basehttp 28081 517451298032 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:45:21,526 basehttp 28081 517450257648 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:45:21,527 basehttp 28081 517448176880 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-29 16:45:21,530 basehttp 28081 517454427376 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+INFO 2025-09-29 17:06:53,067 autoreload 28081 517548483912 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 17:06:58,605 autoreload 1297 503394252104 Watching for file changes with StatReloader
+INFO 2025-09-29 17:07:07,960 autoreload 1297 503394252104 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 17:07:12,073 autoreload 1359 519340569928 Watching for file changes with StatReloader
+INFO 2025-09-29 17:07:29,701 autoreload 1359 519340569928 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 17:07:33,556 autoreload 1537 511378666824 Watching for file changes with StatReloader
+INFO 2025-09-29 17:08:16,517 autoreload 1537 511378666824 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 17:08:20,785 autoreload 1670 543061218632 Watching for file changes with StatReloader
+INFO 2025-09-29 17:08:55,955 autoreload 1670 543061218632 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 17:08:59,667 autoreload 1783 526549579080 Watching for file changes with StatReloader
+INFO 2025-09-29 17:09:08,846 autoreload 1783 526549579080 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 17:09:13,019 autoreload 1862 491799463240 Watching for file changes with StatReloader
+INFO 2025-09-29 17:09:24,430 autoreload 1862 491799463240 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 17:09:28,903 autoreload 1970 532189005128 Watching for file changes with StatReloader
+INFO 2025-09-29 17:10:26,729 autoreload 1970 532189005128 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 17:10:30,771 autoreload 2174 503668647240 Watching for file changes with StatReloader
+WARNING 2025-09-29 17:11:17,654 log 2174 503574426864 Not Found: /favicon.ico
+WARNING 2025-09-29 17:11:17,659 basehttp 2174 503574426864 "GET /favicon.ico HTTP/1.1" 404 179
+INFO 2025-09-29 17:13:31,652 autoreload 2174 503668647240 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/urls.py changed, reloading.
+INFO 2025-09-29 17:13:35,860 autoreload 3231 544730568008 Watching for file changes with StatReloader
+INFO 2025-09-29 17:15:05,045 autoreload 3231 544730568008 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-29 17:15:08,955 autoreload 3365 547714213192 Watching for file changes with StatReloader
+INFO 2025-09-29 17:15:46,601 autoreload 3365 547714213192 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-29 17:15:50,533 autoreload 3423 502263850312 Watching for file changes with StatReloader
+INFO 2025-09-29 17:15:55,453 autoreload 3423 502263850312 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-29 17:15:59,403 autoreload 3446 487165146440 Watching for file changes with StatReloader
+INFO 2025-09-29 17:16:05,158 autoreload 3446 487165146440 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-29 17:16:08,943 autoreload 3466 512436168008 Watching for file changes with StatReloader
+INFO 2025-09-29 17:16:14,606 autoreload 3466 512436168008 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-29 17:16:18,336 autoreload 3479 531795248456 Watching for file changes with StatReloader
+INFO 2025-09-29 17:17:15,247 autoreload 3479 531795248456 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 17:17:19,033 autoreload 3528 533144462664 Watching for file changes with StatReloader
+INFO 2025-09-29 17:18:31,637 autoreload 3528 533144462664 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 17:18:35,388 autoreload 3675 517717062984 Watching for file changes with StatReloader
+INFO 2025-09-29 17:18:55,696 autoreload 3675 517717062984 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 17:18:59,543 autoreload 3700 496939709768 Watching for file changes with StatReloader
+INFO 2025-09-29 17:21:33,536 autoreload 3700 496939709768 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 17:21:37,454 autoreload 4303 498380522824 Watching for file changes with StatReloader
+INFO 2025-09-29 17:22:26,584 autoreload 4303 498380522824 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:22:30,351 autoreload 4365 539005760840 Watching for file changes with StatReloader
+INFO 2025-09-29 17:22:48,659 autoreload 4365 539005760840 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:22:51,708 autoreload 4383 545917085000 Watching for file changes with StatReloader
+INFO 2025-09-29 17:22:57,569 autoreload 4383 545917085000 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:23:01,292 autoreload 4388 490252916040 Watching for file changes with StatReloader
+INFO 2025-09-29 17:23:03,891 autoreload 4388 490252916040 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:23:07,667 autoreload 4410 521698882888 Watching for file changes with StatReloader
+INFO 2025-09-29 17:23:13,993 autoreload 4410 521698882888 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:23:17,326 autoreload 4435 546650486088 Watching for file changes with StatReloader
+INFO 2025-09-29 17:25:27,604 autoreload 4435 546650486088 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:25:31,403 autoreload 4557 504437093704 Watching for file changes with StatReloader
+INFO 2025-09-29 17:26:32,374 autoreload 4557 504437093704 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:26:36,437 autoreload 4636 529988506952 Watching for file changes with StatReloader
+INFO 2025-09-29 17:27:03,932 autoreload 4636 529988506952 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:27:08,785 autoreload 4691 510689572168 Watching for file changes with StatReloader
+INFO 2025-09-29 17:28:04,314 autoreload 4691 510689572168 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:28:08,308 autoreload 4744 525793912136 Watching for file changes with StatReloader
+INFO 2025-09-29 17:29:55,083 autoreload 4744 525793912136 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:29:59,372 autoreload 5707 480623129928 Watching for file changes with StatReloader
+INFO 2025-09-29 17:30:56,603 autoreload 5707 480623129928 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:31:00,959 autoreload 6201 489452066120 Watching for file changes with StatReloader
+INFO 2025-09-29 17:31:06,693 autoreload 6201 489452066120 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:31:10,500 autoreload 6220 531276264776 Watching for file changes with StatReloader
+INFO 2025-09-29 17:32:13,300 autoreload 6220 531276264776 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:32:17,201 autoreload 6314 518143071560 Watching for file changes with StatReloader
+INFO 2025-09-29 17:32:23,956 autoreload 6314 518143071560 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:32:27,788 autoreload 6348 525398889800 Watching for file changes with StatReloader
+INFO 2025-09-29 17:38:47,780 autoreload 6348 525398889800 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:38:51,771 autoreload 7206 524054013256 Watching for file changes with StatReloader
+INFO 2025-09-29 17:38:57,542 autoreload 7206 524054013256 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:39:01,426 autoreload 7220 489014519112 Watching for file changes with StatReloader
+INFO 2025-09-29 17:39:12,099 autoreload 7220 489014519112 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:39:15,960 autoreload 7267 519968314696 Watching for file changes with StatReloader
+INFO 2025-09-29 17:39:22,855 autoreload 7267 519968314696 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:39:26,247 autoreload 7283 545643328840 Watching for file changes with StatReloader
+INFO 2025-09-29 17:40:23,128 autoreload 7283 545643328840 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:40:27,227 autoreload 7388 495150953800 Watching for file changes with StatReloader
+INFO 2025-09-29 17:40:33,932 autoreload 7388 495150953800 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:40:37,712 autoreload 7410 535191606600 Watching for file changes with StatReloader
+INFO 2025-09-29 17:41:28,400 autoreload 7410 535191606600 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:41:32,740 autoreload 7472 505883727176 Watching for file changes with StatReloader
+INFO 2025-09-29 17:41:38,419 autoreload 7472 505883727176 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:41:42,188 autoreload 7492 535173285192 Watching for file changes with StatReloader
+INFO 2025-09-29 17:44:56,911 autoreload 7492 535173285192 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:45:00,653 autoreload 8394 532633625928 Watching for file changes with StatReloader
+INFO 2025-09-29 17:45:06,488 autoreload 8394 532633625928 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:45:10,427 autoreload 8404 497901106504 Watching for file changes with StatReloader
+INFO 2025-09-29 17:45:15,171 autoreload 8404 497901106504 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:45:18,524 autoreload 8420 514385003848 Watching for file changes with StatReloader
+INFO 2025-09-29 17:46:21,143 autoreload 8420 514385003848 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:46:24,842 autoreload 8489 535959668040 Watching for file changes with StatReloader
+INFO 2025-09-29 17:47:17,469 autoreload 8489 535959668040 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:47:21,229 autoreload 8721 481155695944 Watching for file changes with StatReloader
+INFO 2025-09-29 17:48:16,329 autoreload 8721 481155695944 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:48:19,917 autoreload 8829 500755326280 Watching for file changes with StatReloader
+INFO 2025-09-29 17:50:25,845 autoreload 8829 500755326280 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:50:29,684 autoreload 9475 541742945608 Watching for file changes with StatReloader
+INFO 2025-09-29 17:50:36,144 autoreload 9475 541742945608 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:50:40,202 autoreload 9485 540574848328 Watching for file changes with StatReloader
+INFO 2025-09-29 17:51:58,444 autoreload 9485 540574848328 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:52:02,080 autoreload 9591 515573228872 Watching for file changes with StatReloader
+INFO 2025-09-29 17:52:23,541 autoreload 9591 515573228872 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:52:27,424 autoreload 9613 491977516360 Watching for file changes with StatReloader
+INFO 2025-09-29 17:52:34,191 autoreload 9613 491977516360 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:52:38,057 autoreload 9634 511821522248 Watching for file changes with StatReloader
+INFO 2025-09-29 17:53:50,584 autoreload 9634 511821522248 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:53:54,400 autoreload 9698 494506038600 Watching for file changes with StatReloader
+INFO 2025-09-29 17:53:58,918 autoreload 9698 494506038600 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:54:02,798 autoreload 9710 535874671944 Watching for file changes with StatReloader
+INFO 2025-09-29 17:57:31,802 autoreload 9710 535874671944 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:57:35,523 autoreload 10003 538486277448 Watching for file changes with StatReloader
+INFO 2025-09-29 17:57:41,642 autoreload 10003 538486277448 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 17:57:45,481 autoreload 10041 513674855752 Watching for file changes with StatReloader
+INFO 2025-09-29 17:59:13,871 autoreload 10041 513674855752 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/serializers.py changed, reloading.
+INFO 2025-09-29 17:59:17,547 autoreload 10277 518880912712 Watching for file changes with StatReloader
+INFO 2025-09-29 18:00:34,722 autoreload 10277 518880912712 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 18:00:38,385 autoreload 10781 517114787144 Watching for file changes with StatReloader
+INFO 2025-09-29 18:01:02,498 autoreload 10781 517114787144 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/serializers.py changed, reloading.
+INFO 2025-09-29 18:01:06,568 autoreload 10826 538392859976 Watching for file changes with StatReloader
+INFO 2025-09-29 18:01:47,808 autoreload 10826 538392859976 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/serializers.py changed, reloading.
+INFO 2025-09-29 18:01:51,619 autoreload 10922 492121306440 Watching for file changes with StatReloader
+INFO 2025-09-29 18:03:08,901 autoreload 10922 492121306440 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 18:03:13,081 autoreload 11163 489715008840 Watching for file changes with StatReloader
+INFO 2025-09-29 18:03:32,582 autoreload 11163 489715008840 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/serializers.py changed, reloading.
+INFO 2025-09-29 18:03:36,389 autoreload 11186 536583025992 Watching for file changes with StatReloader
+INFO 2025-09-29 18:03:51,411 autoreload 11186 536583025992 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/serializers.py changed, reloading.
+INFO 2025-09-29 18:03:55,278 autoreload 11204 516807402824 Watching for file changes with StatReloader
+INFO 2025-09-29 18:05:00,656 autoreload 11204 516807402824 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:05:04,556 autoreload 11259 548225176904 Watching for file changes with StatReloader
+INFO 2025-09-29 18:05:26,101 autoreload 11259 548225176904 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:05:29,815 autoreload 11294 484110447944 Watching for file changes with StatReloader
+INFO 2025-09-29 18:05:36,672 autoreload 11294 484110447944 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:05:40,805 autoreload 11314 520375752008 Watching for file changes with StatReloader
+INFO 2025-09-29 18:06:29,967 autoreload 11314 520375752008 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:06:33,899 autoreload 11354 547007718728 Watching for file changes with StatReloader
+INFO 2025-09-29 18:06:39,631 autoreload 11354 547007718728 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/urls.py changed, reloading.
+INFO 2025-09-29 18:06:43,587 autoreload 11364 485250811208 Watching for file changes with StatReloader
+INFO 2025-09-29 18:07:21,363 autoreload 11364 485250811208 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/urls.py changed, reloading.
+INFO 2025-09-29 18:07:25,467 autoreload 11384 499036165448 Watching for file changes with StatReloader
+INFO 2025-09-29 18:07:29,990 autoreload 11384 499036165448 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/urls.py changed, reloading.
+INFO 2025-09-29 18:07:34,003 autoreload 11391 480137065800 Watching for file changes with StatReloader
+INFO 2025-09-29 18:08:37,247 autoreload 11391 480137065800 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/urls.py changed, reloading.
+INFO 2025-09-29 18:08:41,448 autoreload 11420 524100748616 Watching for file changes with StatReloader
+INFO 2025-09-29 18:08:47,875 autoreload 11420 524100748616 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/urls.py changed, reloading.
+INFO 2025-09-29 18:08:51,673 autoreload 11456 537837921608 Watching for file changes with StatReloader
+INFO 2025-09-29 18:09:28,541 autoreload 11456 537837921608 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 18:09:32,738 autoreload 11480 495917434184 Watching for file changes with StatReloader
+INFO 2025-09-29 18:09:38,114 autoreload 11480 495917434184 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 18:09:42,474 autoreload 11488 545046271304 Watching for file changes with StatReloader
+INFO 2025-09-29 18:10:56,258 autoreload 11488 545046271304 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:11:00,375 autoreload 11596 498372519240 Watching for file changes with StatReloader
+INFO 2025-09-29 18:11:05,603 autoreload 11596 498372519240 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:11:08,931 autoreload 11623 502233318728 Watching for file changes with StatReloader
+INFO 2025-09-29 18:12:04,417 autoreload 11623 502233318728 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:12:08,846 autoreload 11704 492545099080 Watching for file changes with StatReloader
+INFO 2025-09-29 18:13:01,352 autoreload 11704 492545099080 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:13:05,827 autoreload 11760 488867796296 Watching for file changes with StatReloader
+INFO 2025-09-29 18:13:47,994 autoreload 11760 488867796296 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:13:52,096 autoreload 11811 525670327624 Watching for file changes with StatReloader
+INFO 2025-09-29 18:14:05,192 autoreload 11811 525670327624 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:14:09,107 autoreload 11854 522067838280 Watching for file changes with StatReloader
+INFO 2025-09-29 18:16:01,351 autoreload 11854 522067838280 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:16:05,483 autoreload 11933 525083456840 Watching for file changes with StatReloader
+INFO 2025-09-29 18:16:11,549 autoreload 11933 525083456840 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:16:15,366 autoreload 11965 488624579912 Watching for file changes with StatReloader
+INFO 2025-09-29 18:18:37,339 autoreload 11965 488624579912 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:18:41,584 autoreload 12031 490373133640 Watching for file changes with StatReloader
+INFO 2025-09-29 18:18:51,213 autoreload 12031 490373133640 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:18:55,336 autoreload 12041 482152875336 Watching for file changes with StatReloader
+INFO 2025-09-29 18:19:18,779 autoreload 12041 482152875336 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-29 18:19:22,749 autoreload 12071 544217744712 Watching for file changes with StatReloader
+INFO 2025-09-29 18:19:29,560 autoreload 12071 544217744712 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-29 18:19:33,497 autoreload 12084 530385921352 Watching for file changes with StatReloader
+INFO 2025-09-29 18:20:53,107 autoreload 12084 530385921352 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-29 18:20:57,168 autoreload 12122 543649301832 Watching for file changes with StatReloader
+INFO 2025-09-29 18:21:11,510 autoreload 12122 543649301832 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:21:15,346 autoreload 12143 515702506824 Watching for file changes with StatReloader
+INFO 2025-09-29 18:21:35,448 autoreload 12143 515702506824 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:21:39,692 autoreload 12159 497782486344 Watching for file changes with StatReloader
+INFO 2025-09-29 18:21:44,733 autoreload 12159 497782486344 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:21:48,723 autoreload 12173 529095611720 Watching for file changes with StatReloader
+INFO 2025-09-29 18:22:36,057 autoreload 12173 529095611720 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:22:40,140 autoreload 12198 538985510216 Watching for file changes with StatReloader
+INFO 2025-09-29 18:23:03,984 autoreload 12198 538985510216 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:23:07,978 autoreload 12365 493509625160 Watching for file changes with StatReloader
+INFO 2025-09-29 18:23:13,702 autoreload 12365 493509625160 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/serializers.py changed, reloading.
+INFO 2025-09-29 18:23:18,119 autoreload 12376 485029643592 Watching for file changes with StatReloader
+INFO 2025-09-29 18:24:58,264 autoreload 12376 485029643592 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:25:02,447 autoreload 13326 520951387464 Watching for file changes with StatReloader
+INFO 2025-09-29 18:26:26,598 autoreload 13326 520951387464 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 18:26:30,415 autoreload 13537 533498615112 Watching for file changes with StatReloader
+INFO 2025-09-29 18:26:59,680 autoreload 13537 533498615112 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:27:03,568 autoreload 13570 520800728392 Watching for file changes with StatReloader
+INFO 2025-09-29 18:27:34,682 autoreload 13570 520800728392 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:27:38,484 autoreload 13599 500391343432 Watching for file changes with StatReloader
+INFO 2025-09-29 18:27:53,516 autoreload 13599 500391343432 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:27:57,560 autoreload 13616 545151800648 Watching for file changes with StatReloader
+INFO 2025-09-29 18:28:03,318 autoreload 13616 545151800648 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:28:07,471 autoreload 13714 511699809608 Watching for file changes with StatReloader
+INFO 2025-09-29 18:30:11,920 autoreload 13714 511699809608 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:30:15,824 autoreload 14110 532922533192 Watching for file changes with StatReloader
+INFO 2025-09-29 18:30:38,676 autoreload 14110 532922533192 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:30:42,938 autoreload 14176 533130159432 Watching for file changes with StatReloader
+INFO 2025-09-29 18:31:10,017 autoreload 14176 533130159432 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:31:14,108 autoreload 14221 535782622536 Watching for file changes with StatReloader
+INFO 2025-09-29 18:31:28,864 autoreload 14221 535782622536 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:31:32,852 autoreload 14249 524501022024 Watching for file changes with StatReloader
+INFO 2025-09-29 18:31:38,378 autoreload 14249 524501022024 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:31:42,480 autoreload 14280 511638631752 Watching for file changes with StatReloader
+INFO 2025-09-29 18:31:55,946 autoreload 14280 511638631752 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:31:59,578 autoreload 14301 541394052424 Watching for file changes with StatReloader
+INFO 2025-09-29 18:32:16,751 autoreload 14301 541394052424 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:32:20,406 autoreload 14332 535953900872 Watching for file changes with StatReloader
+INFO 2025-09-29 18:32:26,868 autoreload 14332 535953900872 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:32:30,833 autoreload 14358 500178511176 Watching for file changes with StatReloader
+INFO 2025-09-29 18:32:59,400 autoreload 14358 500178511176 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:33:04,004 autoreload 14489 486122067272 Watching for file changes with StatReloader
+INFO 2025-09-29 18:33:15,892 autoreload 14489 486122067272 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:33:19,673 autoreload 14928 484060824904 Watching for file changes with StatReloader
+INFO 2025-09-29 18:33:43,645 autoreload 14928 484060824904 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:33:47,548 autoreload 15053 514979775816 Watching for file changes with StatReloader
+INFO 2025-09-29 18:33:53,131 autoreload 15053 514979775816 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:33:56,909 autoreload 15069 523645736264 Watching for file changes with StatReloader
+INFO 2025-09-29 18:34:48,604 autoreload 15069 523645736264 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:34:52,592 autoreload 15170 513096365384 Watching for file changes with StatReloader
+INFO 2025-09-29 18:36:14,737 autoreload 15170 513096365384 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:36:18,825 autoreload 15291 522190529864 Watching for file changes with StatReloader
+INFO 2025-09-29 18:36:30,721 autoreload 15291 522190529864 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:36:34,676 autoreload 15309 485811647816 Watching for file changes with StatReloader
+INFO 2025-09-29 18:36:45,109 autoreload 15309 485811647816 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-29 18:36:49,010 autoreload 15336 539102369096 Watching for file changes with StatReloader
+INFO 2025-09-29 18:38:50,915 autoreload 15336 539102369096 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/urls.py changed, reloading.
+INFO 2025-09-29 18:38:54,793 autoreload 15585 548132955464 Watching for file changes with StatReloader
+INFO 2025-09-29 18:39:34,308 autoreload 15585 548132955464 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/urls.py changed, reloading.
+INFO 2025-09-29 18:39:38,149 autoreload 15626 541269828936 Watching for file changes with StatReloader
+INFO 2025-09-29 18:40:27,271 autoreload 15626 541269828936 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/urls.py changed, reloading.
+INFO 2025-09-29 18:40:31,296 autoreload 15680 519145207112 Watching for file changes with StatReloader
+INFO 2025-09-29 18:40:36,970 autoreload 15680 519145207112 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/urls.py changed, reloading.
+INFO 2025-09-29 18:40:41,235 autoreload 15689 493124781384 Watching for file changes with StatReloader
+INFO 2025-09-29 23:28:41,246 autoreload 15689 493124781384 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-29 23:28:46,272 autoreload 17832 532441126216 Watching for file changes with StatReloader
+INFO 2025-09-29 23:29:15,156 autoreload 17832 532441126216 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/serializers.py changed, reloading.
+INFO 2025-09-29 23:29:19,024 autoreload 17861 497146824008 Watching for file changes with StatReloader
+INFO 2025-09-29 23:33:13,135 autoreload 17861 497146824008 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:33:17,253 autoreload 18386 529458562376 Watching for file changes with StatReloader
+INFO 2025-09-29 23:33:39,720 autoreload 18386 529458562376 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:33:43,739 autoreload 18527 510786540872 Watching for file changes with StatReloader
+INFO 2025-09-29 23:34:04,791 autoreload 18527 510786540872 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:34:08,675 autoreload 18616 540328129864 Watching for file changes with StatReloader
+INFO 2025-09-29 23:35:00,356 autoreload 18616 540328129864 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:35:04,425 autoreload 18683 538145219912 Watching for file changes with StatReloader
+INFO 2025-09-29 23:35:10,171 autoreload 18683 538145219912 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:35:13,745 autoreload 18736 499058492744 Watching for file changes with StatReloader
+INFO 2025-09-29 23:35:36,312 autoreload 18736 499058492744 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:35:39,651 autoreload 18755 509671552328 Watching for file changes with StatReloader
+INFO 2025-09-29 23:36:13,992 autoreload 18755 509671552328 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:36:17,739 autoreload 18815 517069800776 Watching for file changes with StatReloader
+INFO 2025-09-29 23:36:23,755 autoreload 18815 517069800776 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:36:27,827 autoreload 18831 506101552456 Watching for file changes with StatReloader
+INFO 2025-09-29 23:37:12,228 autoreload 18831 506101552456 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:37:16,058 autoreload 18908 548136969544 Watching for file changes with StatReloader
+INFO 2025-09-29 23:37:37,780 autoreload 18908 548136969544 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:37:41,219 autoreload 18925 541768340808 Watching for file changes with StatReloader
+INFO 2025-09-29 23:45:47,549 autoreload 18925 541768340808 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:45:51,460 autoreload 19872 491011355976 Watching for file changes with StatReloader
+INFO 2025-09-29 23:46:37,199 autoreload 19872 491011355976 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:46:40,608 autoreload 19944 509867390280 Watching for file changes with StatReloader
+INFO 2025-09-29 23:47:21,984 autoreload 19944 509867390280 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:47:25,296 autoreload 20056 495135352136 Watching for file changes with StatReloader
+INFO 2025-09-29 23:47:55,031 autoreload 20056 495135352136 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:47:58,071 autoreload 20209 503595332936 Watching for file changes with StatReloader
+INFO 2025-09-29 23:49:07,616 autoreload 20209 503595332936 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:49:11,398 autoreload 20694 507490657608 Watching for file changes with StatReloader
+INFO 2025-09-29 23:49:50,306 autoreload 20694 507490657608 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:49:54,325 autoreload 20807 529949369672 Watching for file changes with StatReloader
+INFO 2025-09-29 23:50:22,112 autoreload 20807 529949369672 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:50:25,785 autoreload 21224 497712969032 Watching for file changes with StatReloader
+INFO 2025-09-29 23:51:10,955 autoreload 21224 497712969032 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:51:15,286 autoreload 21360 484184503624 Watching for file changes with StatReloader
+INFO 2025-09-29 23:51:45,840 autoreload 21360 484184503624 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:51:49,680 autoreload 21498 497339409736 Watching for file changes with StatReloader
+INFO 2025-09-29 23:52:26,141 autoreload 21498 497339409736 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:52:30,300 autoreload 21586 510643287368 Watching for file changes with StatReloader
+INFO 2025-09-29 23:53:05,783 autoreload 21586 510643287368 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:53:10,214 autoreload 21675 495273985352 Watching for file changes with StatReloader
+INFO 2025-09-29 23:53:53,225 autoreload 21675 495273985352 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:53:57,166 autoreload 21885 504400864584 Watching for file changes with StatReloader
+INFO 2025-09-29 23:54:41,354 autoreload 21885 504400864584 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:54:45,503 autoreload 22067 546412606792 Watching for file changes with StatReloader
+INFO 2025-09-29 23:54:50,373 autoreload 22067 546412606792 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:54:54,234 autoreload 22077 525242946888 Watching for file changes with StatReloader
+INFO 2025-09-29 23:55:27,370 autoreload 22077 525242946888 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:55:31,333 autoreload 22125 536245392712 Watching for file changes with StatReloader
+INFO 2025-09-29 23:55:36,672 autoreload 22125 536245392712 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/serializers.py changed, reloading.
+INFO 2025-09-29 23:55:40,372 autoreload 22138 480576714056 Watching for file changes with StatReloader
+INFO 2025-09-29 23:55:58,744 autoreload 22138 480576714056 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:56:02,583 autoreload 22158 481976862024 Watching for file changes with StatReloader
+INFO 2025-09-29 23:56:32,836 autoreload 22158 481976862024 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/serializers.py changed, reloading.
+INFO 2025-09-29 23:56:36,550 autoreload 22194 540524000584 Watching for file changes with StatReloader
+INFO 2025-09-29 23:57:01,555 autoreload 22194 540524000584 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/serializers.py changed, reloading.
+INFO 2025-09-29 23:57:05,550 autoreload 22235 493500314952 Watching for file changes with StatReloader
+INFO 2025-09-29 23:57:58,550 autoreload 22235 493500314952 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-29 23:58:02,363 autoreload 22308 540563887432 Watching for file changes with StatReloader
+INFO 2025-09-29 23:58:15,590 autoreload 22308 540563887432 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/serializers.py changed, reloading.
+INFO 2025-09-29 23:58:19,296 autoreload 22323 509696771400 Watching for file changes with StatReloader
+INFO 2025-09-29 23:58:26,978 autoreload 22323 509696771400 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/serializers.py changed, reloading.
+INFO 2025-09-29 23:58:31,064 autoreload 22338 489301558600 Watching for file changes with StatReloader
+INFO 2025-09-29 23:58:38,640 autoreload 22338 489301558600 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/serializers.py changed, reloading.
+INFO 2025-09-29 23:58:42,311 autoreload 22350 499134182728 Watching for file changes with StatReloader
+INFO 2025-09-29 23:58:48,944 autoreload 22350 499134182728 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/serializers.py changed, reloading.
+INFO 2025-09-29 23:58:53,000 autoreload 22359 545113212232 Watching for file changes with StatReloader
+INFO 2025-09-29 23:59:33,565 autoreload 22359 545113212232 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-29 23:59:37,591 autoreload 22399 480651474248 Watching for file changes with StatReloader
+INFO 2025-09-30 00:00:33,143 autoreload 22399 480651474248 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:00:37,106 autoreload 22473 525499774280 Watching for file changes with StatReloader
+INFO 2025-09-30 00:01:29,912 autoreload 22473 525499774280 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:01:33,888 autoreload 22538 525533881672 Watching for file changes with StatReloader
+INFO 2025-09-30 00:01:40,859 autoreload 22538 525533881672 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:01:44,670 autoreload 22559 515141358920 Watching for file changes with StatReloader
+INFO 2025-09-30 00:04:34,021 autoreload 22559 515141358920 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:04:37,915 autoreload 22717 522933667144 Watching for file changes with StatReloader
+INFO 2025-09-30 00:05:19,214 autoreload 22717 522933667144 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:05:23,180 autoreload 22775 495938524488 Watching for file changes with StatReloader
+INFO 2025-09-30 00:05:33,177 autoreload 22775 495938524488 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:05:36,912 autoreload 22793 486042338632 Watching for file changes with StatReloader
+INFO 2025-09-30 00:06:18,262 autoreload 22793 486042338632 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:06:22,280 autoreload 22862 499811992904 Watching for file changes with StatReloader
+INFO 2025-09-30 00:07:11,547 autoreload 22862 499811992904 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:07:15,657 autoreload 22948 544786621768 Watching for file changes with StatReloader
+INFO 2025-09-30 00:08:26,157 autoreload 22948 544786621768 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:08:30,566 autoreload 23053 539344876872 Watching for file changes with StatReloader
+INFO 2025-09-30 00:08:35,878 autoreload 23053 539344876872 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:08:39,770 autoreload 23073 512870253896 Watching for file changes with StatReloader
+INFO 2025-09-30 00:09:55,221 autoreload 23073 512870253896 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:09:59,047 autoreload 23147 534373852488 Watching for file changes with StatReloader
+INFO 2025-09-30 00:10:05,554 autoreload 23147 534373852488 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:10:09,297 autoreload 23165 542812366152 Watching for file changes with StatReloader
+INFO 2025-09-30 00:10:53,634 autoreload 23165 542812366152 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:10:57,534 autoreload 23209 507103692104 Watching for file changes with StatReloader
+INFO 2025-09-30 00:12:00,615 autoreload 23209 507103692104 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:12:04,335 autoreload 23261 489406641480 Watching for file changes with StatReloader
+INFO 2025-09-30 00:12:09,900 autoreload 23261 489406641480 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:12:13,571 autoreload 23272 544327374152 Watching for file changes with StatReloader
+INFO 2025-09-30 00:12:19,181 autoreload 23272 544327374152 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:12:22,862 autoreload 23280 511655720264 Watching for file changes with StatReloader
+INFO 2025-09-30 00:13:20,912 autoreload 23280 511655720264 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:13:24,765 autoreload 23333 481908282696 Watching for file changes with StatReloader
+INFO 2025-09-30 00:13:30,751 autoreload 23333 481908282696 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:13:34,794 autoreload 23350 513712846152 Watching for file changes with StatReloader
+INFO 2025-09-30 00:13:56,099 autoreload 23350 513712846152 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:14:00,530 autoreload 23400 536872166728 Watching for file changes with StatReloader
+INFO 2025-09-30 00:15:45,239 autoreload 23400 536872166728 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:15:49,171 autoreload 23509 486846080328 Watching for file changes with StatReloader
+INFO 2025-09-30 00:16:14,792 autoreload 23509 486846080328 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:16:18,596 autoreload 23538 514446312776 Watching for file changes with StatReloader
+INFO 2025-09-30 00:16:56,759 autoreload 23538 514446312776 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:17:00,435 autoreload 23589 512953394504 Watching for file changes with StatReloader
+INFO 2025-09-30 00:18:12,608 autoreload 23589 512953394504 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:18:16,591 autoreload 23721 481728693576 Watching for file changes with StatReloader
+INFO 2025-09-30 00:18:27,165 autoreload 23721 481728693576 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:18:31,132 autoreload 23739 508148573512 Watching for file changes with StatReloader
+INFO 2025-09-30 00:18:46,177 autoreload 23739 508148573512 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-30 00:18:50,261 autoreload 23764 495211709768 Watching for file changes with StatReloader
+INFO 2025-09-30 00:19:17,208 autoreload 23764 495211709768 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:19:21,486 autoreload 23830 495505958216 Watching for file changes with StatReloader
+INFO 2025-09-30 00:19:27,922 autoreload 23830 495505958216 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:19:32,056 autoreload 23865 538068587848 Watching for file changes with StatReloader
+INFO 2025-09-30 00:20:56,672 autoreload 23865 538068587848 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:21:01,107 autoreload 24406 482263962952 Watching for file changes with StatReloader
+INFO 2025-09-30 00:21:07,743 autoreload 24406 482263962952 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:21:11,904 autoreload 24445 534732965192 Watching for file changes with StatReloader
+INFO 2025-09-30 00:22:25,042 autoreload 24445 534732965192 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:22:28,911 autoreload 24510 491691640136 Watching for file changes with StatReloader
+INFO 2025-09-30 00:25:00,942 autoreload 24510 491691640136 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:25:04,922 autoreload 24622 523861222728 Watching for file changes with StatReloader
+INFO 2025-09-30 00:25:14,324 autoreload 24622 523861222728 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:25:18,313 autoreload 24659 484591326536 Watching for file changes with StatReloader
+INFO 2025-09-30 00:25:30,498 autoreload 24659 484591326536 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:25:34,744 autoreload 24679 482195440968 Watching for file changes with StatReloader
+INFO 2025-09-30 00:25:41,441 autoreload 24679 482195440968 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/views.py changed, reloading.
+INFO 2025-09-30 00:25:45,188 autoreload 24722 538042393928 Watching for file changes with StatReloader
+INFO 2025-09-30 00:27:28,777 autoreload 24722 538042393928 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/urls.py changed, reloading.
+INFO 2025-09-30 00:27:32,556 autoreload 24848 491720168776 Watching for file changes with StatReloader
+INFO 2025-09-30 00:27:37,983 autoreload 24848 491720168776 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/urls.py changed, reloading.
+INFO 2025-09-30 00:27:42,037 autoreload 24859 530089600328 Watching for file changes with StatReloader
+INFO 2025-09-30 00:28:35,148 autoreload 24859 530089600328 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-30 00:28:39,016 autoreload 24948 514619942216 Watching for file changes with StatReloader
+INFO 2025-09-30 00:31:35,658 autoreload 24948 514619942216 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:31:39,644 autoreload 25123 500266063176 Watching for file changes with StatReloader
+INFO 2025-09-30 00:32:17,779 autoreload 25123 500266063176 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:32:21,847 autoreload 25160 490864391496 Watching for file changes with StatReloader
+INFO 2025-09-30 00:32:26,136 autoreload 25160 490864391496 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:32:30,070 autoreload 25194 526756283720 Watching for file changes with StatReloader
+INFO 2025-09-30 00:33:21,880 autoreload 25194 526756283720 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:33:25,694 autoreload 25450 514199483720 Watching for file changes with StatReloader
+INFO 2025-09-30 00:33:30,126 autoreload 25450 514199483720 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:33:34,438 autoreload 25478 495149425992 Watching for file changes with StatReloader
+INFO 2025-09-30 00:33:59,441 autoreload 25478 495149425992 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:34:03,444 autoreload 25699 533312730440 Watching for file changes with StatReloader
+INFO 2025-09-30 00:34:30,297 autoreload 25699 533312730440 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:34:34,246 autoreload 25862 544118252872 Watching for file changes with StatReloader
+INFO 2025-09-30 00:34:39,920 autoreload 25862 544118252872 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:34:43,771 autoreload 25890 515368527176 Watching for file changes with StatReloader
+INFO 2025-09-30 00:35:06,902 autoreload 25890 515368527176 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:35:10,799 autoreload 25923 543222048072 Watching for file changes with StatReloader
+INFO 2025-09-30 00:35:54,981 autoreload 25923 543222048072 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:35:58,803 autoreload 25997 543262897480 Watching for file changes with StatReloader
+INFO 2025-09-30 00:37:37,254 autoreload 25997 543262897480 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:37:41,238 autoreload 26265 539219252552 Watching for file changes with StatReloader
+INFO 2025-09-30 00:37:46,263 autoreload 26265 539219252552 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:37:50,559 autoreload 26680 480110204232 Watching for file changes with StatReloader
+INFO 2025-09-30 00:38:58,028 autoreload 26680 480110204232 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:39:01,512 autoreload 26807 502980822344 Watching for file changes with StatReloader
+INFO 2025-09-30 00:39:09,009 autoreload 26807 502980822344 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:39:13,095 autoreload 26830 521184224584 Watching for file changes with StatReloader
+INFO 2025-09-30 00:42:14,187 autoreload 26830 521184224584 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:42:17,795 autoreload 27625 483574707528 Watching for file changes with StatReloader
+INFO 2025-09-30 00:42:23,150 autoreload 27625 483574707528 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:42:27,032 autoreload 27638 483036026184 Watching for file changes with StatReloader
+INFO 2025-09-30 00:48:33,433 autoreload 27638 483036026184 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:48:37,836 autoreload 30340 505064817992 Watching for file changes with StatReloader
+INFO 2025-09-30 00:48:47,423 autoreload 30340 505064817992 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:48:51,343 autoreload 30357 533726205256 Watching for file changes with StatReloader
+INFO 2025-09-30 00:49:19,356 autoreload 30357 533726205256 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:49:23,115 autoreload 30395 481249400136 Watching for file changes with StatReloader
+INFO 2025-09-30 00:49:28,459 autoreload 30395 481249400136 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:49:32,520 autoreload 30421 514028057928 Watching for file changes with StatReloader
+INFO 2025-09-30 00:49:43,638 autoreload 30421 514028057928 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:49:47,212 autoreload 30665 519490172232 Watching for file changes with StatReloader
+INFO 2025-09-30 00:50:20,451 autoreload 30665 519490172232 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:50:24,403 autoreload 30823 535630660936 Watching for file changes with StatReloader
+INFO 2025-09-30 00:50:38,475 autoreload 30823 535630660936 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:50:42,517 autoreload 30845 499006821704 Watching for file changes with StatReloader
+INFO 2025-09-30 00:50:48,470 autoreload 30845 499006821704 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:50:52,271 autoreload 30887 547398366536 Watching for file changes with StatReloader
+INFO 2025-09-30 00:51:00,263 autoreload 30887 547398366536 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:51:04,550 autoreload 30932 492369057096 Watching for file changes with StatReloader
+INFO 2025-09-30 00:53:22,964 autoreload 30932 492369057096 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:53:26,754 autoreload 31147 533501240648 Watching for file changes with StatReloader
+INFO 2025-09-30 00:54:58,442 autoreload 31147 533501240648 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:55:02,200 autoreload 31244 525573764424 Watching for file changes with StatReloader
+INFO 2025-09-30 00:55:07,025 autoreload 31244 525573764424 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:55:10,923 autoreload 31268 503098836296 Watching for file changes with StatReloader
+INFO 2025-09-30 00:55:19,604 autoreload 31268 503098836296 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:55:23,599 autoreload 31282 510727378248 Watching for file changes with StatReloader
+INFO 2025-09-30 00:55:54,906 autoreload 31282 510727378248 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:55:59,005 autoreload 31480 501669135688 Watching for file changes with StatReloader
+INFO 2025-09-30 00:56:09,555 autoreload 31480 501669135688 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:56:13,316 autoreload 31499 523370526024 Watching for file changes with StatReloader
+INFO 2025-09-30 00:56:31,845 autoreload 31499 523370526024 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:56:36,243 autoreload 31521 531499230536 Watching for file changes with StatReloader
+INFO 2025-09-30 00:56:41,686 autoreload 31521 531499230536 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:56:45,905 autoreload 31545 520184898888 Watching for file changes with StatReloader
+INFO 2025-09-30 00:56:54,080 autoreload 31545 520184898888 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:56:58,515 autoreload 31576 513370223944 Watching for file changes with StatReloader
+INFO 2025-09-30 00:57:04,228 autoreload 31576 513370223944 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 00:57:08,380 autoreload 31620 498667672904 Watching for file changes with StatReloader
+INFO 2025-09-30 01:02:36,529 autoreload 31620 498667672904 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:02:40,321 autoreload 748 488048072008 Watching for file changes with StatReloader
+INFO 2025-09-30 01:02:44,883 autoreload 748 488048072008 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:02:49,047 autoreload 853 501351646536 Watching for file changes with StatReloader
+INFO 2025-09-30 01:02:53,982 autoreload 853 501351646536 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:02:58,241 autoreload 906 482150241608 Watching for file changes with StatReloader
+INFO 2025-09-30 01:03:19,959 autoreload 906 482150241608 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:03:23,678 autoreload 1179 501190174024 Watching for file changes with StatReloader
+INFO 2025-09-30 01:06:59,574 autoreload 1179 501190174024 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:07:03,277 autoreload 2007 521236526408 Watching for file changes with StatReloader
+INFO 2025-09-30 01:07:27,895 autoreload 2007 521236526408 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:07:31,673 autoreload 2068 497391469896 Watching for file changes with StatReloader
+INFO 2025-09-30 01:08:17,312 autoreload 2068 497391469896 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:08:21,357 autoreload 2173 491590223176 Watching for file changes with StatReloader
+INFO 2025-09-30 01:08:30,636 autoreload 2173 491590223176 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:08:34,677 autoreload 2236 500159124808 Watching for file changes with StatReloader
+INFO 2025-09-30 01:08:59,106 autoreload 2236 500159124808 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:09:03,284 autoreload 2305 515472381256 Watching for file changes with StatReloader
+INFO 2025-09-30 01:09:36,219 autoreload 2305 515472381256 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:09:40,157 autoreload 2365 538144408904 Watching for file changes with StatReloader
+INFO 2025-09-30 01:09:45,678 autoreload 2365 538144408904 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:09:49,519 autoreload 2386 538223125832 Watching for file changes with StatReloader
+INFO 2025-09-30 01:14:45,234 autoreload 2386 538223125832 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:14:49,431 autoreload 2926 494969685320 Watching for file changes with StatReloader
+INFO 2025-09-30 01:14:54,161 autoreload 2926 494969685320 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:14:57,594 autoreload 2946 541859312968 Watching for file changes with StatReloader
+INFO 2025-09-30 01:15:19,123 autoreload 2946 541859312968 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:15:23,400 autoreload 2994 509293061448 Watching for file changes with StatReloader
+INFO 2025-09-30 01:21:10,338 autoreload 2994 509293061448 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:21:14,511 autoreload 4369 486341412168 Watching for file changes with StatReloader
+INFO 2025-09-30 01:23:02,877 autoreload 4369 486341412168 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:23:06,667 autoreload 5291 530763969864 Watching for file changes with StatReloader
+INFO 2025-09-30 01:23:15,650 autoreload 5291 530763969864 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:23:19,304 autoreload 5321 499276481864 Watching for file changes with StatReloader
+INFO 2025-09-30 01:23:55,919 autoreload 5321 499276481864 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:24:00,038 autoreload 5354 539480315208 Watching for file changes with StatReloader
+INFO 2025-09-30 01:28:00,863 autoreload 5354 539480315208 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:28:04,873 autoreload 5724 515317544264 Watching for file changes with StatReloader
+INFO 2025-09-30 01:28:11,000 autoreload 5724 515317544264 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:28:15,134 autoreload 5739 508747543880 Watching for file changes with StatReloader
+INFO 2025-09-30 01:28:32,812 autoreload 5739 508747543880 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:28:36,622 autoreload 5816 504320947528 Watching for file changes with StatReloader
+INFO 2025-09-30 01:28:56,318 autoreload 5816 504320947528 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:29:00,048 autoreload 5851 513409660232 Watching for file changes with StatReloader
+INFO 2025-09-30 01:29:06,199 autoreload 5851 513409660232 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:29:10,140 autoreload 5887 496459478344 Watching for file changes with StatReloader
+INFO 2025-09-30 01:30:06,176 autoreload 5887 496459478344 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:30:10,172 autoreload 5918 491587921224 Watching for file changes with StatReloader
+INFO 2025-09-30 01:30:14,720 autoreload 5918 491587921224 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:30:18,251 autoreload 5930 509172266312 Watching for file changes with StatReloader
+INFO 2025-09-30 01:30:39,636 autoreload 5930 509172266312 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:30:43,808 autoreload 5962 514457965896 Watching for file changes with StatReloader
+INFO 2025-09-30 01:30:48,861 autoreload 5962 514457965896 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:30:52,563 autoreload 5974 483087152456 Watching for file changes with StatReloader
+INFO 2025-09-30 01:31:09,386 autoreload 5974 483087152456 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:31:13,027 autoreload 5999 511379047752 Watching for file changes with StatReloader
+INFO 2025-09-30 01:31:18,916 autoreload 5999 511379047752 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:31:22,795 autoreload 6013 496888776008 Watching for file changes with StatReloader
+INFO 2025-09-30 01:36:07,708 autoreload 6013 496888776008 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:36:11,741 autoreload 6317 527025976648 Watching for file changes with StatReloader
+INFO 2025-09-30 01:36:21,093 autoreload 6317 527025976648 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:36:25,141 autoreload 6338 493718852936 Watching for file changes with StatReloader
+INFO 2025-09-30 01:36:34,738 autoreload 6338 493718852936 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:36:38,751 autoreload 6368 484869760328 Watching for file changes with StatReloader
+INFO 2025-09-30 01:37:50,112 autoreload 6368 484869760328 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:37:54,784 autoreload 6560 539984131400 Watching for file changes with StatReloader
+INFO 2025-09-30 01:38:15,051 autoreload 6560 539984131400 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:38:18,785 autoreload 6609 536903284040 Watching for file changes with StatReloader
+INFO 2025-09-30 01:38:27,695 autoreload 6609 536903284040 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:38:31,456 autoreload 6621 490901050696 Watching for file changes with StatReloader
+INFO 2025-09-30 01:39:38,033 autoreload 6621 490901050696 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:39:41,723 autoreload 6722 543021077832 Watching for file changes with StatReloader
+INFO 2025-09-30 01:40:05,396 autoreload 6722 543021077832 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:40:09,316 autoreload 6742 487643215176 Watching for file changes with StatReloader
+INFO 2025-09-30 01:40:13,832 autoreload 6742 487643215176 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:40:17,372 autoreload 6762 484154402120 Watching for file changes with StatReloader
+INFO 2025-09-30 01:40:45,004 autoreload 6762 484154402120 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:40:48,739 autoreload 6880 538273277256 Watching for file changes with StatReloader
+INFO 2025-09-30 01:43:03,912 autoreload 6880 538273277256 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:43:07,919 autoreload 7122 508714980680 Watching for file changes with StatReloader
+INFO 2025-09-30 01:43:14,111 autoreload 7122 508714980680 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/vtpass.py changed, reloading.
+INFO 2025-09-30 01:43:18,078 autoreload 7261 524928374088 Watching for file changes with StatReloader
+INFO 2025-09-30 01:44:34,089 autoreload 7261 524928374088 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-30 01:44:37,999 autoreload 7321 488428053832 Watching for file changes with StatReloader
+INFO 2025-09-30 01:44:45,006 autoreload 7321 488428053832 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-30 01:44:48,939 autoreload 7341 544257004872 Watching for file changes with StatReloader
+INFO 2025-09-30 01:44:55,509 autoreload 7341 544257004872 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-30 01:44:59,567 autoreload 7358 522193511752 Watching for file changes with StatReloader
+INFO 2025-09-30 01:45:10,600 autoreload 7358 522193511752 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-30 01:45:14,522 autoreload 7376 505621857608 Watching for file changes with StatReloader
+INFO 2025-09-30 01:45:19,516 autoreload 7376 505621857608 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
+INFO 2025-09-30 01:45:23,148 autoreload 7386 505209845064 Watching for file changes with StatReloader

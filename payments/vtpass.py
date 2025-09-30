@@ -1,23 +1,28 @@
 import requests
 import json
 
-
-VTPASS_SECRET_KEY="SK_9852a61f197eff92720ba13d5546290c2c324252887"
-VTPASS_PUBLIC_KEY="PK_98658bf618cc8f7f32529a4c97647871e001f290a21"
-
-BASE_URL = "https://sandbox.vtpass.com/api"
-PUBLIC_KEY = VTPASS_PUBLIC_KEY
-SECRET_KEY = VTPASS_SECRET_KEY
+BASE_URL = "https://sandbox.vtpass.com/api/pay"
 
 headers = {
-        "X-Token": PUBLIC_KEY,
-        "X-Secret": SECRET_KEY,
-        "Content-Type": "application/json"
+    "api-key": "9f44fd266a39628487cc752191c29ec4",
+    "secret-key": "SK_2440fa66473d148a04135f09de475323037a97d37e4",
+    "public-key" : "PK_524de00d4c278ff8509968b01dc0fd355ff8d7dd7a6",
+    "Content-Type": "application/json"
+}
+
+def top_up(user_data):
+    response = requests.post(BASE_URL, headers=headers, json=user_data) 
+    return response.json()
+
+if __name__ == "__main__":
+    data = {
+        "request_id": "202202071830YUS83meika",
+        "serviceID": "mtn",
+        "amount": 1000,
+        "phone": "08011111111" 
     }
-def buy_airtime(**kwargs):
-        response = requests.post(BASE_URL, headers=headers, data = kwargs)
-        return response
-        
-def buy_data(**kwargs):
-        response = requests.post(BASE_URL, headers=headers, data = kwargs)
-        return response
+    print(top_up(data)) # Added .json() to print the response body
+
+
+#PK_539615071cdf1deca97d8443d5424b78c51450365ae
+#SK_740ed33540d764195239ff4f65927c5a991c19f8da0
