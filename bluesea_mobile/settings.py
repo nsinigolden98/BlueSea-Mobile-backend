@@ -48,9 +48,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    #'drf_material',
-    #'rest_wind',
-    'drf_redesign',
 
     # rest framework
     'rest_framework',
@@ -60,8 +57,8 @@ INSTALLED_APPS = [
     # local apps
     'accounts',
     'wallet',
-    'payments',
     'transactions',
+    'group_payment',
 ]
 
 MIDDLEWARE = [
@@ -79,11 +76,6 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    'DEFAULT_PARSER_CLASSES': [
-        'rest_framework.parsers.JSONParser', # This is what you need
-        'rest_framework.parsers.FormParser',
-        'rest_framework.parsers.MultiPartParser'
-    ],
 }
 
 
@@ -159,7 +151,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
