@@ -8,3 +8,17 @@ __pycache__/
 .git-rewrite
 
 debug.log
+
+# migration files
+**/migrations/*.py
+**/migrations/*.pyc
+**/migrations/__pycache__/*
+*.pyc
+*.pyo
+*.pyd
+
+# logs
+*.log
+logs/
+*.log.*
+debug.log
