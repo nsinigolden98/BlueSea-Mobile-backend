@@ -36,7 +36,8 @@ class AirtimeTopUp(models.Model):
     amount = models.IntegerField()
     network = models.CharField(max_length = 10, choices= NETWORK_TYPES)
     phone_number = models.CharField()
-    reference_id = models.DateTimeField(auto_now_add=True)
+    request_id = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 class ElectricityPayment(models.Model):
     billerCode = models.CharField()
@@ -44,21 +45,21 @@ class ElectricityPayment(models.Model):
     biller_name = models.CharField(max_length = 30, choices= BILLER_NAME)
     meter_type = models.CharField(max_length = 20, choices= METER_TYPES)
     phone_number = models.CharField()
-    reference_id = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     
 class WAECRegitration(models.Model):
     phone_number = models.CharField()
-    reference_id = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     
 class WAECResultChecker(models.Model):
     phone_number = models.CharField()
-    reference_id = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     
 class JAMBRegistration(models.Model):
     billerCode = models.CharField()
     exam_type = models.CharField(max_length = 20, choices= EXAM_TYPES)
     phone_number = models.CharField()
-    reference_id = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     
     
     
