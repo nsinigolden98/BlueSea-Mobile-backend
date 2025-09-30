@@ -47,7 +47,7 @@ class Wallet(models.Model):
         self.save()
 
         WalletTransaction.objects.create(
-            wallet=self,
+           wallet=self,
             amount=Decimal(amount),
             transaction_type='DEBIT',
             description=description,
