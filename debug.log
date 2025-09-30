@@ -11064,3 +11064,491 @@ INFO 2025-09-30 01:45:10,600 autoreload 7358 522193511752 /storage/emulated/0/co
 INFO 2025-09-30 01:45:14,522 autoreload 7376 505621857608 Watching for file changes with StatReloader
 INFO 2025-09-30 01:45:19,516 autoreload 7376 505621857608 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
 INFO 2025-09-30 01:45:23,148 autoreload 7386 505209845064 Watching for file changes with StatReloader
+INFO 2025-09-30 13:28:04,291 autoreload 220 10956 Watching for file changes with StatReloader
+INFO 2025-09-30 13:30:30,682 basehttp 220 4704 "POST /accounts/register/ HTTP/1.1" 201 73
+INFO 2025-09-30 13:31:24,253 views 220 6160 Received webhook payload: {"event":"charge.success","data":{"id":5386565622,"domain":"test","status":"success","reference":"BS-909383e1-955a-4763-9ca9-19d1bf318e35","amount":150000,"message":null,"gateway_response":"Successful","paid_at":"2025-09-30T12:15:39.000Z","created_at":"2025-09-30T12:14:56.000Z","channel":"card","currency":"NGN","ip_address":"102.90.80.192","metadata":{"user_id":"1","payment_reference":"BS-909383e1-955a-4763-9ca9-19d1bf318e35"},"fees_breakdown":null,"log":null,"fees":2250,"fees_split":null,"authorization":{"authorization_code":"AUTH_n0gnddo0ro","bin":"408408","last4":"4081","exp_month":"12","exp_year":"2030","channel":"card","card_type":"visa ","bank":"TEST BANK","country_code":"NG","brand":"visa","reusable":true,"signature":"SIG_ggimb607g35W1MCm3G00","account_name":null,"receiver_bank_account_number":null,"receiver_bank":null},"customer":{"id":307728851,"first_name":null,"last_name":null,"email":"covenantgovernor06@gmail.com","customer_code":"CUS_3e7xsm0yz94xvja","phone":null,"metadata":null,"risk_action":"default","international_format_phone":null},"plan":{},"subaccount":{},"split":{},"order_id":null,"paidAt":"2025-09-30T12:15:39.000Z","requested_amount":150000,"pos_transaction_data":null,"source":{"type":"api","source":"merchant_api","entry_point":"transaction_initialize","identifier":null}}}
+INFO 2025-09-30 13:31:24,311 views 220 6160 Processing webhook event: charge.success
+INFO 2025-09-30 13:31:24,346 views 220 6160 Processing successful charge - Reference: BS-909383e1-955a-4763-9ca9-19d1bf318e35, Raw Amount: 150000, Converted Amount: 1500
+ERROR 2025-09-30 13:31:24,465 views 220 6160 Invalid payment reference: BS-909383e1-955a-4763-9ca9-19d1bf318e35
+WARNING 2025-09-30 13:31:24,506 log 220 6160 Not Found: /transactions/webhook/paystack/
+WARNING 2025-09-30 13:31:24,511 basehttp 220 6160 "POST /transactions/webhook/paystack/ HTTP/1.1" 404 53
+INFO 2025-09-30 13:31:39,150 basehttp 220 12060 "POST /accounts/verify-email/ HTTP/1.1" 200 554
+INFO 2025-09-30 13:33:12,187 basehttp 220 2524 "POST /transactions/fund-wallet/ HTTP/1.1" 200 162
+INFO 2025-09-30 13:33:40,636 views 220 10076 Received webhook payload: {"event":"charge.success","data":{"id":5386613738,"domain":"test","status":"success","reference":"BS-012b5ef1-b74e-40be-b1e1-4766561f4501","amount":150000,"message":null,"gateway_response":"Successful","paid_at":"2025-09-30T12:33:40.000Z","created_at":"2025-09-30T12:33:12.000Z","channel":"card","currency":"NGN","ip_address":"102.90.80.192","metadata":{"user_id":"1","payment_reference":"BS-012b5ef1-b74e-40be-b1e1-4766561f4501"},"fees_breakdown":null,"log":null,"fees":2250,"fees_split":null,"authorization":{"authorization_code":"AUTH_x40segfqtp","bin":"408408","last4":"4081","exp_month":"12","exp_year":"2030","channel":"card","card_type":"visa ","bank":"TEST BANK","country_code":"NG","brand":"visa","reusable":true,"signature":"SIG_ggimb607g35W1MCm3G00","account_name":null,"receiver_bank_account_number":null,"receiver_bank":null},"customer":{"id":307728851,"first_name":null,"last_name":null,"email":"covenantgovernor06@gmail.com","customer_code":"CUS_3e7xsm0yz94xvja","phone":null,"metadata":null,"risk_action":"default","international_format_phone":null},"plan":{},"subaccount":{},"split":{},"order_id":null,"paidAt":"2025-09-30T12:33:40.000Z","requested_amount":150000,"pos_transaction_data":null,"source":{"type":"api","source":"merchant_api","entry_point":"transaction_initialize","identifier":null}}}
+INFO 2025-09-30 13:33:40,668 views 220 10076 Processing webhook event: charge.success
+INFO 2025-09-30 13:33:40,670 views 220 10076 Processing successful charge - Reference: BS-012b5ef1-b74e-40be-b1e1-4766561f4501, Raw Amount: 150000, Converted Amount: 1500
+INFO 2025-09-30 13:33:40,718 views 220 10076 Found pending funding request: Amount: 1500.00, User: covenantgovernor06@gmail.com
+INFO 2025-09-30 13:33:40,735 views 220 10076 Found wallet for user: covenantgovernor06@gmail.com, Current balance: 0.00
+INFO 2025-09-30 13:33:40,773 views 220 10076 Wallet funded successfully. Old balance: 0.00, New balance: 1500.00
+INFO 2025-09-30 13:33:40,805 basehttp 220 10076 "POST /transactions/webhook/paystack/ HTTP/1.1" 200 104
+INFO 2025-09-30 13:34:46,542 views 220 2628 Received webhook payload: {"event":"charge.success","data":{"id":5386565622,"domain":"test","status":"success","reference":"BS-909383e1-955a-4763-9ca9-19d1bf318e35","amount":150000,"message":null,"gateway_response":"Successful","paid_at":"2025-09-30T12:15:39.000Z","created_at":"2025-09-30T12:14:56.000Z","channel":"card","currency":"NGN","ip_address":"102.90.80.192","metadata":{"user_id":"1","payment_reference":"BS-909383e1-955a-4763-9ca9-19d1bf318e35"},"fees_breakdown":null,"log":null,"fees":2250,"fees_split":null,"authorization":{"authorization_code":"AUTH_n0gnddo0ro","bin":"408408","last4":"4081","exp_month":"12","exp_year":"2030","channel":"card","card_type":"visa ","bank":"TEST BANK","country_code":"NG","brand":"visa","reusable":true,"signature":"SIG_ggimb607g35W1MCm3G00","account_name":null,"receiver_bank_account_number":null,"receiver_bank":null},"customer":{"id":307728851,"first_name":null,"last_name":null,"email":"covenantgovernor06@gmail.com","customer_code":"CUS_3e7xsm0yz94xvja","phone":null,"metadata":null,"risk_action":"default","international_format_phone":null},"plan":{},"subaccount":{},"split":{},"order_id":null,"paidAt":"2025-09-30T12:15:39.000Z","requested_amount":150000,"pos_transaction_data":null,"source":{"type":"api","source":"merchant_api","entry_point":"transaction_initialize","identifier":null}}}
+INFO 2025-09-30 13:34:46,549 views 220 2628 Processing webhook event: charge.success
+INFO 2025-09-30 13:34:46,550 views 220 2628 Processing successful charge - Reference: BS-909383e1-955a-4763-9ca9-19d1bf318e35, Raw Amount: 150000, Converted Amount: 1500
+ERROR 2025-09-30 13:34:46,565 views 220 2628 Invalid payment reference: BS-909383e1-955a-4763-9ca9-19d1bf318e35
+WARNING 2025-09-30 13:34:46,567 log 220 2628 Not Found: /transactions/webhook/paystack/
+WARNING 2025-09-30 13:34:46,572 basehttp 220 2628 "POST /transactions/webhook/paystack/ HTTP/1.1" 404 53
+INFO 2025-09-30 13:36:16,308 basehttp 220 8580 "POST /transactions/fund-wallet/ HTTP/1.1" 200 164
+INFO 2025-09-30 13:36:51,146 views 220 9424 Received webhook payload: {"event":"charge.success","data":{"id":5386623279,"domain":"test","status":"success","reference":"BS-870608d0-daea-474c-a2cf-845b06acd625","amount":15000000,"message":null,"gateway_response":"Successful","paid_at":"2025-09-30T12:36:50.000Z","created_at":"2025-09-30T12:36:16.000Z","channel":"card","currency":"NGN","ip_address":"102.90.80.192","metadata":{"user_id":"1","payment_reference":"BS-870608d0-daea-474c-a2cf-845b06acd625"},"fees_breakdown":null,"log":null,"fees":200000,"fees_split":null,"authorization":{"authorization_code":"AUTH_ifvy6dk34j","bin":"408408","last4":"4081","exp_month":"12","exp_year":"2030","channel":"card","card_type":"visa ","bank":"TEST BANK","country_code":"NG","brand":"visa","reusable":true,"signature":"SIG_ggimb607g35W1MCm3G00","account_name":null,"receiver_bank_account_number":null,"receiver_bank":null},"customer":{"id":307728851,"first_name":null,"last_name":null,"email":"covenantgovernor06@gmail.com","customer_code":"CUS_3e7xsm0yz94xvja","phone":null,"metadata":null,"risk_action":"default","international_format_phone":null},"plan":{},"subaccount":{},"split":{},"order_id":null,"paidAt":"2025-09-30T12:36:50.000Z","requested_amount":15000000,"pos_transaction_data":null,"source":{"type":"api","source":"merchant_api","entry_point":"transaction_initialize","identifier":null}}}
+INFO 2025-09-30 13:36:51,188 views 220 9424 Processing webhook event: charge.success
+INFO 2025-09-30 13:36:51,216 views 220 9424 Processing successful charge - Reference: BS-870608d0-daea-474c-a2cf-845b06acd625, Raw Amount: 15000000, Converted Amount: 150000
+INFO 2025-09-30 13:36:51,294 views 220 9424 Found pending funding request: Amount: 150000.00, User: covenantgovernor06@gmail.com
+INFO 2025-09-30 13:36:51,310 views 220 9424 Found wallet for user: covenantgovernor06@gmail.com, Current balance: 1500.00
+INFO 2025-09-30 13:36:51,360 views 220 9424 Wallet funded successfully. Old balance: 1500.00, New balance: 151500.00
+INFO 2025-09-30 13:36:51,382 basehttp 220 9424 "POST /transactions/webhook/paystack/ HTTP/1.1" 200 109
+INFO 2025-09-30 13:39:21,256 autoreload 220 10956 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\urls.py changed, reloading.
+INFO 2025-09-30 13:39:25,863 autoreload 7288 3044 Watching for file changes with StatReloader
+INFO 2025-09-30 13:39:32,592 autoreload 7288 3044 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\urls.py changed, reloading.
+INFO 2025-09-30 13:39:38,974 autoreload 2480 6724 Watching for file changes with StatReloader
+ERROR 2025-09-30 13:42:09,303 log 2480 9532 Internal Server Error: /payments/airtime
+Traceback (most recent call last):
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\utils\deprecation.py", line 122, in __call__
+    response = self.process_response(request, response)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\middleware\common.py", line 108, in process_response
+    return self.response_redirect_class(self.get_full_path_with_slash(request))
+                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\middleware\common.py", line 87, in get_full_path_with_slash
+    raise RuntimeError(
+    ...<9 lines>...
+    )
+RuntimeError: You called this URL via POST, but the URL doesn't end in a slash and you have APPEND_SLASH set. Django can't redirect to the slash URL while maintaining POST data. Change your form to point to 127.0.0.1:8000/payments/airtime/ (note the trailing slash), or set APPEND_SLASH=False in your Django settings.
+ERROR 2025-09-30 13:42:09,391 basehttp 2480 9532 "POST /payments/airtime HTTP/1.1" 500 78251
+ERROR 2025-09-30 13:42:32,669 log 2480 8372 Internal Server Error: /payments/airtime/
+Traceback (most recent call last):
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\views\generic\base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py", line 28, in post
+    "request_id": serializer.data["reference_id"],
+                  ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+KeyError: 'reference_id'
+ERROR 2025-09-30 13:42:32,841 basehttp 2480 8372 "POST /payments/airtime/ HTTP/1.1" 500 101223
+INFO 2025-09-30 13:45:20,380 autoreload 2480 6724 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:45:25,511 autoreload 3912 7776 Watching for file changes with StatReloader
+INFO 2025-09-30 13:45:28,739 autoreload 3912 7776 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:45:32,280 autoreload 4264 9876 Watching for file changes with StatReloader
+INFO 2025-09-30 13:45:44,113 autoreload 4264 9876 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:45:48,391 autoreload 7284 2336 Watching for file changes with StatReloader
+INFO 2025-09-30 13:45:56,951 autoreload 7284 2336 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:46:00,083 autoreload 5036 8116 Watching for file changes with StatReloader
+INFO 2025-09-30 13:46:04,548 autoreload 5036 8116 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:46:10,236 autoreload 4016 10652 Watching for file changes with StatReloader
+INFO 2025-09-30 13:46:18,427 autoreload 4016 10652 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:46:23,826 autoreload 8580 10328 Watching for file changes with StatReloader
+INFO 2025-09-30 13:46:28,429 autoreload 8580 10328 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:46:32,725 autoreload 7436 400 Watching for file changes with StatReloader
+INFO 2025-09-30 13:46:40,710 autoreload 7436 400 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:46:45,188 autoreload 4220 8340 Watching for file changes with StatReloader
+INFO 2025-09-30 13:46:50,608 autoreload 4220 8340 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:46:53,407 autoreload 8564 2084 Watching for file changes with StatReloader
+INFO 2025-09-30 13:47:21,082 autoreload 8564 2084 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:47:25,471 autoreload 788 10588 Watching for file changes with StatReloader
+INFO 2025-09-30 13:47:42,698 autoreload 788 10588 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:47:45,809 autoreload 12060 7868 Watching for file changes with StatReloader
+INFO 2025-09-30 13:47:55,441 autoreload 12060 7868 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:47:59,115 autoreload 8720 12248 Watching for file changes with StatReloader
+INFO 2025-09-30 13:48:04,260 autoreload 8720 12248 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:48:08,439 autoreload 9500 32 Watching for file changes with StatReloader
+INFO 2025-09-30 13:48:15,889 autoreload 9500 32 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:48:17,978 autoreload 2464 3496 Watching for file changes with StatReloader
+INFO 2025-09-30 13:48:22,322 autoreload 2464 3496 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:48:27,931 autoreload 10552 9448 Watching for file changes with StatReloader
+INFO 2025-09-30 13:48:33,183 autoreload 10552 9448 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:48:37,662 autoreload 4716 4772 Watching for file changes with StatReloader
+ERROR 2025-09-30 13:49:03,562 log 4716 3988 Internal Server Error: /payments/airtime/
+Traceback (most recent call last):
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\views\generic\base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py", line 27, in post
+    ref_id = AirtimeTopUp.objects.get(id=serializer.data['id'])
+                                         ~~~~~~~~~~~~~~~^^^^^^
+KeyError: 'id'
+ERROR 2025-09-30 13:49:03,743 basehttp 4716 3988 "POST /payments/airtime/ HTTP/1.1" 500 101113
+INFO 2025-09-30 13:49:33,929 autoreload 4716 4772 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:49:37,919 autoreload 10380 3060 Watching for file changes with StatReloader
+INFO 2025-09-30 13:51:24,801 autoreload 10380 3060 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:51:28,735 autoreload 11996 9152 Watching for file changes with StatReloader
+ERROR 2025-09-30 13:51:47,320 log 11996 10036 Internal Server Error: /payments/airtime/
+Traceback (most recent call last):
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\views\generic\base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py", line 27, in post
+    ref_id = AirtimeTopUp.objects.get(id=request.data['id'])
+                                         ^^^^
+NameError: name 'requ' is not defined
+ERROR 2025-09-30 13:51:47,399 basehttp 11996 10036 "POST /payments/airtime/ HTTP/1.1" 500 101249
+INFO 2025-09-30 13:52:24,494 autoreload 11996 9152 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:52:28,168 autoreload 11532 5320 Watching for file changes with StatReloader
+ERROR 2025-09-30 13:52:36,357 log 11532 3328 Internal Server Error: /payments/airtime/
+Traceback (most recent call last):
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\views\generic\base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py", line 35, in post
+    Wallet.debit(amount)
+    ~~~~~~~~~~~~^^^^^^^^
+TypeError: Wallet.debit() missing 1 required positional argument: 'amount'
+ERROR 2025-09-30 13:52:36,517 basehttp 11532 3328 "POST /payments/airtime/ HTTP/1.1" 500 102080
+INFO 2025-09-30 13:54:02,454 autoreload 11532 5320 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 13:54:06,731 autoreload 8964 8300 Watching for file changes with StatReloader
+ERROR 2025-09-30 13:54:22,734 log 8964 6008 Internal Server Error: /payments/airtime/
+Traceback (most recent call last):
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\views\generic\base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py", line 35, in post
+    Wallet.debit(amount, ref_id)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\models.py", line 40, in debit
+    if amount <= 0:
+       ^^^^^^^^^^^
+TypeError: '<=' not supported between instances of 'AirtimeTopUp' and 'int'
+ERROR 2025-09-30 13:54:23,045 basehttp 8964 6008 "POST /payments/airtime/ HTTP/1.1" 500 106357
+INFO 2025-09-30 14:19:36,935 autoreload 8964 8300 C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\models.py changed, reloading.
+INFO 2025-09-30 14:19:43,236 autoreload 8276 8936 Watching for file changes with StatReloader
+ERROR 2025-09-30 14:19:46,332 log 8276 2764 Internal Server Error: /payments/airtime/
+Traceback (most recent call last):
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\views\generic\base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py", line 35, in post
+    Wallet.debit(amount, ref_id)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\models.py", line 40, in debit
+    if amount <= '0':
+       ^^^^^^^^^^^^^
+TypeError: '<=' not supported between instances of 'AirtimeTopUp' and 'str'
+ERROR 2025-09-30 14:19:46,380 basehttp 8276 2764 "POST /payments/airtime/ HTTP/1.1" 500 106385
+INFO 2025-09-30 14:21:18,937 autoreload 8276 8936 C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\models.py changed, reloading.
+INFO 2025-09-30 14:21:22,389 autoreload 3780 4420 Watching for file changes with StatReloader
+INFO 2025-09-30 14:21:40,725 autoreload 3780 4420 C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\models.py changed, reloading.
+INFO 2025-09-30 14:21:48,305 autoreload 2140 3332 Watching for file changes with StatReloader
+ERROR 2025-09-30 14:21:56,293 log 2140 9452 Internal Server Error: /payments/airtime/
+Traceback (most recent call last):
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\views\generic\base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py", line 35, in post
+    Wallet.debit(amount, ref_id)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\models.py", line 40, in debit
+    if int(amount) <= 0:
+       ~~~^^^^^^^^
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'AirtimeTopUp'
+ERROR 2025-09-30 14:21:56,499 basehttp 2140 9452 "POST /payments/airtime/ HTTP/1.1" 500 106379
+INFO 2025-09-30 14:23:15,089 autoreload 2140 3332 C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\models.py changed, reloading.
+INFO 2025-09-30 14:23:20,258 autoreload 3660 8056 Watching for file changes with StatReloader
+INFO 2025-09-30 14:23:27,278 autoreload 3660 8056 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:23:30,043 autoreload 3956 7724 Watching for file changes with StatReloader
+ERROR 2025-09-30 14:23:42,754 log 3956 9160 Internal Server Error: /payments/airtime/
+Traceback (most recent call last):
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\views\generic\base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py", line 35, in post
+    Wallet.debit(amount, ref_id)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\wallet\models.py", line 40, in debit
+    if amount <= 0:
+       ^^^^^^^^^^^
+TypeError: '<=' not supported between instances of 'AirtimeTopUp' and 'int'
+ERROR 2025-09-30 14:23:42,805 basehttp 3956 9160 "POST /payments/airtime/ HTTP/1.1" 500 106361
+INFO 2025-09-30 14:24:02,354 autoreload 3956 7724 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:24:06,775 autoreload 8564 6136 Watching for file changes with StatReloader
+INFO 2025-09-30 14:24:33,559 basehttp 8564 9952 "POST /payments/airtime/ HTTP/1.1" 200 737
+INFO 2025-09-30 14:27:42,391 autoreload 8564 6136 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:27:49,523 autoreload 6140 9852 Watching for file changes with StatReloader
+INFO 2025-09-30 14:27:52,173 autoreload 6140 9852 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:27:56,675 autoreload 7772 8092 Watching for file changes with StatReloader
+INFO 2025-09-30 14:28:02,916 autoreload 7772 8092 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:28:08,689 autoreload 12192 8616 Watching for file changes with StatReloader
+INFO 2025-09-30 14:28:23,670 basehttp 12192 5464 "POST /payments/airtime/ HTTP/1.1" 200 88
+INFO 2025-09-30 14:31:12,212 autoreload 12192 8616 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:31:17,093 autoreload 5032 808 Watching for file changes with StatReloader
+INFO 2025-09-30 14:31:36,103 autoreload 5032 808 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:31:41,174 autoreload 10776 12156 Watching for file changes with StatReloader
+INFO 2025-09-30 14:32:03,704 basehttp 10776 5644 "POST /payments/airtime/ HTTP/1.1" 200 731
+INFO 2025-09-30 14:32:51,112 autoreload 10776 12156 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:32:56,498 autoreload 11180 8316 Watching for file changes with StatReloader
+INFO 2025-09-30 14:33:43,007 autoreload 11180 8316 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:33:47,840 autoreload 2376 2556 Watching for file changes with StatReloader
+INFO 2025-09-30 14:33:59,510 autoreload 2376 2556 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\vtpass.py changed, reloading.
+INFO 2025-09-30 14:34:04,576 autoreload 12140 7660 Watching for file changes with StatReloader
+INFO 2025-09-30 14:34:43,149 autoreload 12140 7660 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\vtpass.py changed, reloading.
+INFO 2025-09-30 14:34:50,494 autoreload 10124 6004 Watching for file changes with StatReloader
+INFO 2025-09-30 14:34:56,372 autoreload 10124 6004 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\vtpass.py changed, reloading.
+INFO 2025-09-30 14:35:01,196 autoreload 3988 4740 Watching for file changes with StatReloader
+INFO 2025-09-30 14:35:07,231 autoreload 3988 4740 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\vtpass.py changed, reloading.
+INFO 2025-09-30 14:35:09,854 autoreload 7128 5096 Watching for file changes with StatReloader
+INFO 2025-09-30 14:35:18,321 autoreload 7128 5096 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\vtpass.py changed, reloading.
+INFO 2025-09-30 14:35:22,127 autoreload 8844 8344 Watching for file changes with StatReloader
+INFO 2025-09-30 14:35:33,793 autoreload 8844 8344 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:35:37,908 autoreload 2764 7620 Watching for file changes with StatReloader
+INFO 2025-09-30 14:35:49,119 autoreload 2764 7620 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:35:56,774 autoreload 5664 11204 Watching for file changes with StatReloader
+INFO 2025-09-30 14:36:02,742 autoreload 5664 11204 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:36:05,442 autoreload 1992 1188 Watching for file changes with StatReloader
+INFO 2025-09-30 14:36:09,967 autoreload 1992 1188 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:36:12,982 autoreload 2160 11228 Watching for file changes with StatReloader
+INFO 2025-09-30 14:36:18,698 autoreload 2160 11228 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:36:22,803 autoreload 11928 12140 Watching for file changes with StatReloader
+INFO 2025-09-30 14:36:41,425 basehttp 11928 10200 "POST /payments/airtime/ HTTP/1.1" 200 729
+INFO 2025-09-30 14:37:29,270 autoreload 11928 12140 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\vtpass.py changed, reloading.
+INFO 2025-09-30 14:37:34,976 autoreload 2088 7548 Watching for file changes with StatReloader
+INFO 2025-09-30 14:37:38,034 autoreload 2088 7548 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\vtpass.py changed, reloading.
+INFO 2025-09-30 14:37:43,769 autoreload 3576 5880 Watching for file changes with StatReloader
+INFO 2025-09-30 14:40:29,620 basehttp 3576 7312 "POST /payments/airtime/ HTTP/1.1" 200 729
+INFO 2025-09-30 14:40:49,768 autoreload 3576 5880 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:40:53,986 autoreload 5116 2748 Watching for file changes with StatReloader
+INFO 2025-09-30 14:41:09,516 autoreload 5116 2748 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:41:13,815 autoreload 4640 8112 Watching for file changes with StatReloader
+INFO 2025-09-30 14:41:22,124 autoreload 4640 8112 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:41:28,180 autoreload 1816 8324 Watching for file changes with StatReloader
+INFO 2025-09-30 14:41:54,406 basehttp 1816 8328 "POST /payments/airtime/ HTTP/1.1" 200 729
+INFO 2025-09-30 14:45:06,725 autoreload 1816 8324 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:45:12,445 autoreload 1920 9480 Watching for file changes with StatReloader
+INFO 2025-09-30 14:45:19,490 autoreload 1920 9480 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:45:21,971 autoreload 3056 2916 Watching for file changes with StatReloader
+INFO 2025-09-30 14:45:28,072 autoreload 3056 2916 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:45:32,018 autoreload 2476 2508 Watching for file changes with StatReloader
+INFO 2025-09-30 14:45:40,361 autoreload 2476 2508 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:45:44,383 autoreload 3044 4496 Watching for file changes with StatReloader
+INFO 2025-09-30 14:45:48,422 autoreload 3044 4496 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:45:52,785 autoreload 8260 2628 Watching for file changes with StatReloader
+INFO 2025-09-30 14:45:58,752 autoreload 8260 2628 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:46:03,718 autoreload 9748 7960 Watching for file changes with StatReloader
+INFO 2025-09-30 14:46:22,085 autoreload 9748 7960 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:46:25,785 autoreload 11896 7584 Watching for file changes with StatReloader
+INFO 2025-09-30 14:46:57,941 basehttp 11896 11216 "POST /payments/airtime/ HTTP/1.1" 200 728
+INFO 2025-09-30 14:47:22,754 autoreload 11896 7584 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:47:29,799 autoreload 5932 2544 Watching for file changes with StatReloader
+INFO 2025-09-30 14:47:33,184 autoreload 5932 2544 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:47:38,167 autoreload 5292 6724 Watching for file changes with StatReloader
+INFO 2025-09-30 14:47:41,531 autoreload 5292 6724 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:47:45,148 autoreload 3416 6716 Watching for file changes with StatReloader
+INFO 2025-09-30 14:48:08,143 basehttp 3416 3372 "POST /payments/airtime/ HTTP/1.1" 200 728
+INFO 2025-09-30 14:52:29,934 autoreload 3416 6716 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:52:34,860 autoreload 7352 2160 Watching for file changes with StatReloader
+INFO 2025-09-30 14:53:06,034 autoreload 7352 2160 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:53:11,301 autoreload 2088 1892 Watching for file changes with StatReloader
+INFO 2025-09-30 14:53:22,485 autoreload 2088 1892 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:53:27,646 autoreload 10800 7412 Watching for file changes with StatReloader
+INFO 2025-09-30 14:54:08,806 autoreload 10800 7412 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:54:14,866 autoreload 3356 9500 Watching for file changes with StatReloader
+INFO 2025-09-30 14:54:29,802 autoreload 3356 9500 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:54:34,285 autoreload 9412 5240 Watching for file changes with StatReloader
+INFO 2025-09-30 14:56:03,131 basehttp 9412 7368 "POST /payments/airtime/ HTTP/1.1" 200 729
+INFO 2025-09-30 14:58:14,180 basehttp 9412 10668 "POST /payments/airtime/ HTTP/1.1" 200 729
+INFO 2025-09-30 14:59:16,094 views 9412 8648 Received webhook payload: {"event":"charge.success","data":{"id":5386565622,"domain":"test","status":"success","reference":"BS-909383e1-955a-4763-9ca9-19d1bf318e35","amount":150000,"message":null,"gateway_response":"Successful","paid_at":"2025-09-30T12:15:39.000Z","created_at":"2025-09-30T12:14:56.000Z","channel":"card","currency":"NGN","ip_address":"102.90.80.192","metadata":{"user_id":"1","payment_reference":"BS-909383e1-955a-4763-9ca9-19d1bf318e35"},"fees_breakdown":null,"log":null,"fees":2250,"fees_split":null,"authorization":{"authorization_code":"AUTH_n0gnddo0ro","bin":"408408","last4":"4081","exp_month":"12","exp_year":"2030","channel":"card","card_type":"visa ","bank":"TEST BANK","country_code":"NG","brand":"visa","reusable":true,"signature":"SIG_ggimb607g35W1MCm3G00","account_name":null,"receiver_bank_account_number":null,"receiver_bank":null},"customer":{"id":307728851,"first_name":null,"last_name":null,"email":"covenantgovernor06@gmail.com","customer_code":"CUS_3e7xsm0yz94xvja","phone":null,"metadata":null,"risk_action":"default","international_format_phone":null},"plan":{},"subaccount":{},"split":{},"order_id":null,"paidAt":"2025-09-30T12:15:39.000Z","requested_amount":150000,"pos_transaction_data":null,"source":{"type":"api","source":"merchant_api","entry_point":"transaction_initialize","identifier":null}}}
+INFO 2025-09-30 14:59:16,160 views 9412 8648 Processing webhook event: charge.success
+INFO 2025-09-30 14:59:16,162 views 9412 8648 Processing successful charge - Reference: BS-909383e1-955a-4763-9ca9-19d1bf318e35, Raw Amount: 150000, Converted Amount: 1500
+ERROR 2025-09-30 14:59:16,197 views 9412 8648 Invalid payment reference: BS-909383e1-955a-4763-9ca9-19d1bf318e35
+WARNING 2025-09-30 14:59:16,213 log 9412 8648 Not Found: /transactions/webhook/paystack/
+WARNING 2025-09-30 14:59:16,229 basehttp 9412 8648 "POST /transactions/webhook/paystack/ HTTP/1.1" 404 53
+ERROR 2025-09-30 14:59:21,375 log 9412 2100 Internal Server Error: /payments/airtime/
+Traceback (most recent call last):
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\django\views\generic\base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\venv\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py", line 40, in post
+    Wallet.debit(amount, reference=ref_id)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Wallet.debit() missing 1 required positional argument: 'amount'
+ERROR 2025-09-30 14:59:21,410 basehttp 9412 2100 "POST /payments/airtime/ HTTP/1.1" 500 104347
+INFO 2025-09-30 14:59:43,791 autoreload 9412 5240 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 14:59:48,670 autoreload 2000 8608 Watching for file changes with StatReloader
+INFO 2025-09-30 15:00:18,812 basehttp 2000 8260 "POST /payments/airtime/ HTTP/1.1" 200 736
+INFO 2025-09-30 15:00:55,853 autoreload 2000 8608 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 15:01:00,734 autoreload 9056 9524 Watching for file changes with StatReloader
+INFO 2025-09-30 15:02:33,483 autoreload 9056 9524 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 15:02:36,245 autoreload 7672 11296 Watching for file changes with StatReloader
+INFO 2025-09-30 15:04:43,278 autoreload 7672 11296 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\models.py changed, reloading.
+INFO 2025-09-30 15:04:47,606 autoreload 4780 11548 Watching for file changes with StatReloader
+INFO 2025-09-30 15:04:49,772 autoreload 4780 11548 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\models.py changed, reloading.
+INFO 2025-09-30 15:04:54,798 autoreload 6720 1604 Watching for file changes with StatReloader
+INFO 2025-09-30 15:04:57,488 autoreload 6720 1604 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\models.py changed, reloading.
+INFO 2025-09-30 15:05:02,969 autoreload 9432 8360 Watching for file changes with StatReloader
+INFO 2025-09-30 15:06:55,824 autoreload 9432 8360 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\serializers.py changed, reloading.
+INFO 2025-09-30 15:06:59,962 autoreload 5036 1408 Watching for file changes with StatReloader
+INFO 2025-09-30 15:07:41,040 autoreload 5036 1408 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\serializers.py changed, reloading.
+INFO 2025-09-30 15:07:45,050 autoreload 1604 10072 Watching for file changes with StatReloader
+INFO 2025-09-30 15:08:54,916 autoreload 1604 10072 C:\Users\Governor\Documents\BlueSea-Mobile-backend\accounts\views.py changed, reloading.
+INFO 2025-09-30 15:08:59,182 autoreload 10520 11644 Watching for file changes with StatReloader
+INFO 2025-09-30 15:09:04,977 autoreload 10520 11644 C:\Users\Governor\Documents\BlueSea-Mobile-backend\accounts\views.py changed, reloading.
+INFO 2025-09-30 15:09:09,501 autoreload 9332 9372 Watching for file changes with StatReloader
+INFO 2025-09-30 15:09:17,136 autoreload 9332 9372 C:\Users\Governor\Documents\BlueSea-Mobile-backend\accounts\views.py changed, reloading.
+INFO 2025-09-30 15:09:21,550 autoreload 7888 6136 Watching for file changes with StatReloader
+INFO 2025-09-30 15:09:47,713 autoreload 7888 6136 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\serializers.py changed, reloading.
+INFO 2025-09-30 15:09:54,240 autoreload 4400 10624 Watching for file changes with StatReloader
+INFO 2025-09-30 15:10:45,774 autoreload 4400 10624 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\models.py changed, reloading.
+INFO 2025-09-30 15:10:51,205 autoreload 4624 3912 Watching for file changes with StatReloader
+INFO 2025-09-30 15:11:13,031 autoreload 4624 3912 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\models.py changed, reloading.
+INFO 2025-09-30 15:11:17,917 autoreload 7888 1752 Watching for file changes with StatReloader
+INFO 2025-09-30 15:11:26,518 autoreload 7888 1752 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\models.py changed, reloading.
+INFO 2025-09-30 15:11:31,221 autoreload 7496 9748 Watching for file changes with StatReloader
+INFO 2025-09-30 15:12:33,390 autoreload 7496 9748 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\models.py changed, reloading.
+INFO 2025-09-30 15:12:37,730 autoreload 4784 3784 Watching for file changes with StatReloader
+INFO 2025-09-30 15:13:27,265 autoreload 4784 3784 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\models.py changed, reloading.
+INFO 2025-09-30 15:13:31,721 autoreload 11200 5252 Watching for file changes with StatReloader
+INFO 2025-09-30 15:14:32,094 autoreload 11200 5252 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\serializers.py changed, reloading.
+INFO 2025-09-30 15:14:36,502 autoreload 8560 8404 Watching for file changes with StatReloader
+INFO 2025-09-30 15:23:08,531 autoreload 8560 8404 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 15:23:14,671 autoreload 972 5292 Watching for file changes with StatReloader
+INFO 2025-09-30 15:23:21,376 autoreload 972 5292 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 15:23:25,501 autoreload 4472 984 Watching for file changes with StatReloader
+INFO 2025-09-30 15:23:34,173 autoreload 4472 984 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 15:23:37,500 autoreload 8532 196 Watching for file changes with StatReloader
+INFO 2025-09-30 15:23:54,471 autoreload 8532 196 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 15:24:01,075 autoreload 9872 5576 Watching for file changes with StatReloader
+INFO 2025-09-30 15:24:09,776 autoreload 9872 5576 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 15:24:13,768 autoreload 6056 4020 Watching for file changes with StatReloader
+INFO 2025-09-30 15:24:46,016 autoreload 6056 4020 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 15:24:53,182 autoreload 2768 7940 Watching for file changes with StatReloader
+INFO 2025-09-30 15:25:16,262 autoreload 2768 7940 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 15:25:20,586 autoreload 2980 8648 Watching for file changes with StatReloader
+INFO 2025-09-30 15:25:35,799 autoreload 2980 8648 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 15:25:40,722 autoreload 9880 11208 Watching for file changes with StatReloader
+INFO 2025-09-30 15:25:49,329 autoreload 9880 11208 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\views.py changed, reloading.
+INFO 2025-09-30 15:25:52,827 autoreload 680 3324 Watching for file changes with StatReloader
+INFO 2025-09-30 15:26:08,811 autoreload 680 3324 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\models.py changed, reloading.
+INFO 2025-09-30 15:26:12,849 autoreload 10444 8792 Watching for file changes with StatReloader
+INFO 2025-09-30 15:26:22,228 autoreload 10444 8792 C:\Users\Governor\Documents\BlueSea-Mobile-backend\payments\models.py changed, reloading.
+INFO 2025-09-30 15:26:26,994 autoreload 8908 11952 Watching for file changes with StatReloader

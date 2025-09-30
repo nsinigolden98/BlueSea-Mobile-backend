@@ -10,9 +10,9 @@ from .serializers import (
     WAECResultCheckerSerializer,
     ElectricityPaymentSerializer,
     )
+from .models import AirtimeTopUp, ElectricityPayment, JAMBRegistration, WAECRegitration, WAECResultChecker
 from wallet.models import Wallet
-from .vtpass import top_up
-
+from .vtpass import *
 
 class AirtimeTopUpViews(APIView):
     
@@ -23,16 +23,21 @@ class AirtimeTopUpViews(APIView):
                 serializer.save()
             
                 with transaction.atomic():
-                    amount = serializer.data['amount'] 
+                    request_id = generate_reference_id()
+                    amount = int(serializer.data['amount'])
                     data = {
-                        "request_id": serializer.data["reference_id"],
+                        # "request_id": str(ref_id.reference_id).replace(" ",""),
+                        "request_id": request_id,
                         "serviceID": serializer.data["network"],
                         "amount": amount,
                         "phone": serializer.data["phone_number"]
                     }
-                    Wallet.debit(amount) 
+                    # Wallet.debit(amount, ref_id)
                     buy_airtime_response = top_up(data)
-                    return Response(buy_airtime_response )
+                    if buy_airtime_response.get("response_description") == "TRANSACTION SUCCESSFUL":
+                        Wallet.debit(amount, reference=request_id)
+                    
+                    return Response(buy_airtime_response)
                     
 class ElectricityPaymentViews(APIView):
     def post(self, request):
