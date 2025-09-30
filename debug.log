@@ -11064,3 +11064,37 @@ INFO 2025-09-30 01:45:10,600 autoreload 7358 522193511752 /storage/emulated/0/co
 INFO 2025-09-30 01:45:14,522 autoreload 7376 505621857608 Watching for file changes with StatReloader
 INFO 2025-09-30 01:45:19,516 autoreload 7376 505621857608 /storage/emulated/0/codes/BlueSea-Mobile-backend/payments/models.py changed, reloading.
 INFO 2025-09-30 01:45:23,148 autoreload 7386 505209845064 Watching for file changes with StatReloader
+INFO 2025-09-30 11:42:40,399 autoreload 2763 492196664648 Watching for file changes with StatReloader
+INFO 2025-09-30 11:44:42,068 basehttp 2763 492103005424 "GET /payments/airtime-top-up HTTP/1.1" 301 0
+WARNING 2025-09-30 11:44:42,582 log 2763 492103005424 Method Not Allowed: /payments/airtime-top-up/
+WARNING 2025-09-30 11:44:42,585 basehttp 2763 492103005424 "GET /payments/airtime-top-up/ HTTP/1.1" 405 10436
+WARNING 2025-09-30 11:44:42,871 log 2763 492103005424 Not Found: /static/rest_framework/css/bootstrap.min.css
+WARNING 2025-09-30 11:44:42,877 basehttp 2763 492103005424 "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 404 179
+WARNING 2025-09-30 11:44:42,940 log 2763 492100916464 Not Found: /static/rest_framework/css/bootstrap-tweaks.css
+WARNING 2025-09-30 11:44:42,948 log 2763 492098835696 Not Found: /static/rest_framework/css/default.css
+WARNING 2025-09-30 11:44:42,953 log 2763 492097795312 Not Found: /static/rest_framework/js/jquery-3.7.1.min.js
+WARNING 2025-09-30 11:44:42,958 log 2763 492096754928 Not Found: /static/rest_framework/js/ajax-form.js
+WARNING 2025-09-30 11:44:42,950 log 2763 492103005424 Not Found: /static/rest_framework/js/csrf.js
+WARNING 2025-09-30 11:44:42,963 log 2763 492099876080 Not Found: /static/rest_framework/css/prettify.css
+WARNING 2025-09-30 11:44:42,974 basehttp 2763 492100916464 "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 404 179
+WARNING 2025-09-30 11:44:42,978 basehttp 2763 492103005424 "GET /static/rest_framework/js/csrf.js HTTP/1.1" 404 179
+WARNING 2025-09-30 11:44:42,983 basehttp 2763 492096754928 "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-30 11:44:42,984 basehttp 2763 492098835696 "GET /static/rest_framework/css/default.css HTTP/1.1" 404 179
+WARNING 2025-09-30 11:44:42,989 basehttp 2763 492097795312 "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 404 179
+WARNING 2025-09-30 11:44:42,991 basehttp 2763 492099876080 "GET /static/rest_framework/css/prettify.css HTTP/1.1" 404 179
+WARNING 2025-09-30 11:44:43,023 log 2763 492100916464 Not Found: /static/rest_framework/js/bootstrap.min.js
+WARNING 2025-09-30 11:44:43,048 log 2763 492096754928 Not Found: /static/rest_framework/js/prettify-min.js
+WARNING 2025-09-30 11:44:43,050 log 2763 492098835696 Not Found: /static/rest_framework/js/default.js
+WARNING 2025-09-30 11:44:43,052 log 2763 492099876080 Not Found: /static/rest_framework/js/load-ajax-form.js
+WARNING 2025-09-30 11:44:43,058 basehttp 2763 492100916464 "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 404 179
+WARNING 2025-09-30 11:44:43,063 basehttp 2763 492096754928 "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 404 179
+WARNING 2025-09-30 11:44:43,069 basehttp 2763 492098835696 "GET /static/rest_framework/js/default.js HTTP/1.1" 404 179
+WARNING 2025-09-30 11:44:43,072 basehttp 2763 492099876080 "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 404 179
+WARNING 2025-09-30 11:44:43,115 log 2763 492099876080 Not Found: /favicon.ico
+WARNING 2025-09-30 11:44:43,118 basehttp 2763 492099876080 "GET /favicon.ico HTTP/1.1" 404 179
+INFO 2025-09-30 12:01:58,964 autoreload 2763 492196664648 /storage/emulated/0/Codes/BlueSea-Mobile-backend/payments/serializers.py changed, reloading.
+INFO 2025-09-30 12:02:03,664 autoreload 4542 534896387400 Watching for file changes with StatReloader
+INFO 2025-09-30 12:04:44,452 autoreload 4542 534896387400 /storage/emulated/0/Codes/BlueSea-Mobile-backend/payments/serializers.py changed, reloading.
+INFO 2025-09-30 12:04:48,160 autoreload 5119 480210904392 Watching for file changes with StatReloader
+INFO 2025-09-30 12:04:53,258 autoreload 5119 480210904392 /storage/emulated/0/Codes/BlueSea-Mobile-backend/payments/serializers.py changed, reloading.
+INFO 2025-09-30 12:04:57,346 autoreload 5192 539631195464 Watching for file changes with StatReloader
