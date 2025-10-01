@@ -58,10 +58,6 @@ INSTALLED_APPS = [
     'accounts',
     'wallet',
     'transactions',
-<<<<<<< HEAD
-=======
-    'group_payment',
->>>>>>> 6eb8871e701699431c7c9eb9b21adcd9b881a7f6
     'payments',
 ]
 

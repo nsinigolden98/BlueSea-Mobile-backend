@@ -5,11 +5,19 @@ from .views import (
     WAECRegitrationViews,
     WAECResultCheckerViews,
     ElectricityPaymentViews,
+    DSTVPaymentViews,
+    GOTVPaymentViews,
+    StartimesPaymentViews,
+    ShowMaxPaymentViews,
     )
 
 urlpatterns = [
-    path('airtime/', AirtimeTopUpViews.as_view(), name='educational-payment'),
+    path('airtime/', AirtimeTopUpViews.as_view(), name='airtime'),
     #path('data_top_up/', top_up, name='top_up'),
+    path('dstv/', DSTVPaymentViews.as_view(), name='dstv-payment'),
+    path('gotv/', GOTVPaymentViews.as_view(), name='gotv-payment'),
+    path('startimes/', StartimesPaymentViews.as_view(), name='startimes-payment'),
+    path('showmax/', ShowMaxPaymentViews.as_view(), name='showmax-payment'),
     path('electricity/', ElectricityPaymentViews.as_view(), name='electricity-payment'),
     path('jamb-registration/', JAMBRegistrationViews.as_view(), name='jamb-registration'),
     path('waec-result/', WAECResultCheckerViews.as_view(), name='waec-result-checker'),
