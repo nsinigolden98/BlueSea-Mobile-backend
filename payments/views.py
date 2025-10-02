@@ -13,6 +13,10 @@ from .serializers import (
     GOTVPaymentSerializer,
     StartimesPaymentSerializer,
     ShowMaxPaymentSerializer,
+    MTNDataTopUpSerializer,
+    AirtelDataTopUpSerializer,
+    GloDataTopUpSerializer,
+    EtisalatDataTopUpSerializer,
     )
 from .models import (
     AirtimeTopUp, 
@@ -28,7 +32,11 @@ from .vtpass import (
     dstv_dict,
     gotv_dict,
     startimes_dict,
-    showmax_dict
+    showmax_dict,
+    mtn_dict,
+    airtel_dict,
+    glo_dict,
+    etisalat_dict,
     )
 
 class AirtimeTopUpViews(APIView):
@@ -57,6 +65,110 @@ class AirtimeTopUpViews(APIView):
                     
                     return Response(buy_airtime_response)
 
+class MTNDataTopUpViews(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        serializer = MTNDataTopUpSerializer(data = request.data)
+        if serializer.is_valid(raise_exception=True):
+            request_id = generate_reference_id()
+            serializer.save(request_id = request_id)
+            with transaction.atomic():
+                amount = mtn_dict[serializer.data["plan"]][1]
+                variation_code = mtn_dict[serializer.data["plan"]][0]
+                data = {
+                        "request_id": request_id,
+                        "serviceID": "mtn-data",
+                        "billerCode": serializer.data["billerCode"],
+                        "variation_code": variation_code,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                    }
+                # Wallet.debit(amount) 
+                user_wallet = request.user.wallet
+
+                subscription_response = top_up(data)
+                if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
+                    user_wallet.debit(amount=amount, reference=request_id)
+                return Response(subscription_response)
+                
+class AirtelDataTopUpViews(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        serializer = AirtelDataTopUpSerializer(data = request.data)
+        if serializer.is_valid(raise_exception=True):
+            request_id = generate_reference_id()
+            serializer.save(request_id = request_id)
+            with transaction.atomic():
+                amount = airtel_dict[serializer.data["plan"]][1]
+                variation_code = airtel_dict[serializer.data["plan"]][0]
+                data = {
+                        "request_id": request_id,
+                        "serviceID": "airtel-data",
+                        "billerCode": serializer.data["billerCode"],
+                        "variation_code": variation_code,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                    }
+                # Wallet.debit(amount) 
+                user_wallet = request.user.wallet
+
+                subscription_response = top_up(data)
+                if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
+                    user_wallet.debit(amount=amount, reference=request_id)
+                return Response(subscription_response)
+                
+class GloDataTopUpViews(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        serializer = GloDataTopUpSerializer(data = request.data)
+        if serializer.is_valid(raise_exception=True):
+            request_id = generate_reference_id()
+            serializer.save(request_id = request_id)
+            with transaction.atomic():
+                amount = glo_dict[serializer.data["plan"]][1]
+                variation_code = glo_dict[serializer.data["plan"]][0]
+                data = {
+                        "request_id": request_id,
+                        "serviceID": "glo-data",
+                        "billerCode": serializer.data["billerCode"],
+                        "variation_code": variation_code,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                    }
+                # Wallet.debit(amount) 
+                user_wallet = request.user.wallet
+
+                subscription_response = top_up(data)
+                if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
+                    user_wallet.debit(amount=amount, reference=request_id)
+                return Response(subscription_response)
+                
+class EtisalatDataTopUpViews(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        serializer = EtisalatDataTopUpSerializer(data = request.data)
+        if serializer.is_valid(raise_exception=True):
+            request_id = generate_reference_id()
+            serializer.save(request_id = request_id)
+            with transaction.atomic():
+                amount = etisalat_dict[serializer.data["plan"]][1]
+                variation_code = etisalat_dict[serializer.data["plan"]][0]
+                data = {
+                        "request_id": request_id,
+                        "serviceID": "etisalat-data",
+                        "billerCode": serializer.data["billerCode"],
+                        "variation_code": variation_code,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                    }
+                # Wallet.debit(amount) 
+                user_wallet = request.user.wallet
+
+                subscription_response = top_up(data)
+                if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
+                    user_wallet.debit(amount=amount, reference=request_id)
+                return Response(subscription_response)
+                
 class DSTVPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -82,7 +194,7 @@ class DSTVPaymentViews(APIView):
 
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, reference=serializer.data["reference_id"])
+                    user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
 class GOTVPaymentViews(APIView):
@@ -110,7 +222,7 @@ class GOTVPaymentViews(APIView):
 
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, reference=serializer.data["reference_id"])
+                    user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
 class StartimesPaymentViews(APIView):
@@ -136,7 +248,7 @@ class StartimesPaymentViews(APIView):
 
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, reference=serializer.data["reference_id"])
+                    user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
 class ShowMaxPaymentViews(APIView):
@@ -161,7 +273,7 @@ class ShowMaxPaymentViews(APIView):
 
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, reference=serializer.data["reference_id"])
+                    user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
 class ElectricityPaymentViews(APIView):
@@ -186,7 +298,7 @@ class ElectricityPaymentViews(APIView):
 
                 electricity_response = top_up(data)
                 if electricity_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, reference=serializer.data["reference_id"])
+                    user_wallet.debit(amount=amount, reference=request_id)
                 return Response(electricity_response)
                 
 class WAECRegitrationViews(APIView):

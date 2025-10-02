@@ -9,12 +9,40 @@ from .models import (
     GOTVPayment,
     StartimesPayment,
     ShowMaxPayment,
+    AirtelDataTopUp,
+    GloDataTopUp,
+    EtisalatDataTopUp,
+    MTNDataTopUp,
         )
         
 class AirtimeTopUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = AirtimeTopUp
         fields= ["amount", "network", "phone_number"]
+        read_only_fields= ["id","request_id", "created_at"]
+
+class MTNDataTopUpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MTNDataTopUp
+        fields= ["plan", "billerCode", "phone_number"]
+        read_only_fields= ["id","request_id", "created_at"]
+        
+class AirtelDataTopUpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AirtelDataTopUp
+        fields= ["plan", "billerCode", "phone_number"]
+        read_only_fields= ["id","request_id", "created_at"]
+
+class GloDataTopUpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GloDataTopUp
+        fields= ["plan", "billerCode", "phone_number"]
+        read_only_fields= ["id","request_id", "created_at"]
+        
+class EtisalatDataTopUpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EtisalatDataTopUp
+        fields= ["plan", "billerCode", "phone_number"]
         read_only_fields= ["id","request_id", "created_at"]
         
 class DSTVPaymentSerializer(serializers.ModelSerializer):
