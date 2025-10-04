@@ -5,10 +5,7 @@ from rest_framework.response import Response
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
-from .utils import send_email_verification, generate_verification_code, CustomPasswordResetTokenGenerator, gen_simple_token
-# from .utils import ResponseHandler
-# from .permissions import EmailVerified
-from django.contrib.auth.hashers import check_password,make_password
+from .utils import send_email_verification
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -30,6 +27,8 @@ from .serializers import *
 import os
 from wallet.models import Wallet
 
+from wallet.models import Wallet
+
 import dotenv
 
 dotenv.load_dotenv()
@@ -49,7 +48,6 @@ class RegisterView(APIView):
                     role = account.role
                     # account.save()
                     Wallet.objects.create(user=account)
-
 
                     otp = get_random_string(6, '0123456789')
                     timestamp = timezone.now()

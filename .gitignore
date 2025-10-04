@@ -1,10 +1,24 @@
 .env
+db.sqlite3
+# Ignore Python cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-db.sqlite3
+.git-rewrite
 
-*/migrations/__pycache__/
-*/migrations/__pycache__/*
-*/migrations/*.pyc
+debug.log
+
+# migration files
+**/migrations/*.py
+**/migrations/*.pyc
+**/migrations/__pycache__/*
+*.pyc
+*.pyo
+*.pyd
+
+# logs
+*.log
+logs/
+*.log.*
+debug.log

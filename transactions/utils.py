@@ -121,4 +121,6 @@
 #     @staticmethod
 #     def transaction_history(user):
 #         wallet = WalletConfig.user_wallet(user)
+
 #         return wallet.transactions.all()
+
