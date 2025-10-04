@@ -17,6 +17,7 @@ from .serializers import (
     AirtelDataTopUpSerializer,
     GloDataTopUpSerializer,
     EtisalatDataTopUpSerializer,
+    GroupPaymentSerializer,
     )
 from .models import (
     AirtimeTopUp, 
@@ -38,18 +39,29 @@ from .vtpass import (
     glo_dict,
     etisalat_dict,
     )
-
+    
+class GroupPaymentViews(APIView):
+    pass
+    """
+    def post(request):
+        serializer = GroupPaymentSerializer(data = request.data)
+        if serializer.is_valid(raise_exception=True):
+            request_id = generate_reference_id()
+            serializer.save(request_id = request_id)
+            """
+            
+    
 class AirtimeTopUpViews(APIView):
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     
     def post(self, request):
         serializer = AirtimeTopUpSerializer(data = request.data)
         
         if serializer.is_valid(raise_exception=True):
-                request_id = generate_reference_id()
-                serializer.save(request_id = request_id)
-                
-                with transaction.atomic():
+            request_id = generate_reference_id()
+            serializer.save(request_id = request_id)
+            
+            with transaction.atomic():
                     amount = int(serializer.data['amount'])
                     data = {
                         "request_id": request_id,
@@ -57,11 +69,11 @@ class AirtimeTopUpViews(APIView):
                         "amount": amount,
                         "phone": serializer.data["phone_number"]
                     }
-                    #user_wallet = request.user.wallet
-                    # Wallet.debit(amount, ref_id)
+                    user_wallet = request.user.wallet
+                    #Wallet.debit(amount, ref_id)
                     buy_airtime_response = top_up(data)
-                    #if buy_airtime_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                        #user_wallet.debit(amount=amount, reference=request_id)
+                    if buy_airtime_response.get("response_description") == "TRANSACTION SUCCESSFUL":
+                        user_wallet.debit(amount=amount, reference=request_id)
                     
                     return Response(buy_airtime_response)
 
@@ -372,4 +384,5 @@ class JAMBRegistrationViews(APIView):
                 if jamb_registration_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(jamb_registration_response)
-                
+ 
+ 

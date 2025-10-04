@@ -13,12 +13,13 @@ from .models import (
     GloDataTopUp,
     EtisalatDataTopUp,
     MTNDataTopUp,
+    GroupPayment,
         )
         
 class AirtimeTopUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = AirtimeTopUp
-        fields= ["amount", "network", "phone_number"]
+        fields= ["amount", "network", "phone_number", "group_payment"]
         read_only_fields= ["id","request_id", "created_at"]
 
 class MTNDataTopUpSerializer(serializers.ModelSerializer):
@@ -92,3 +93,9 @@ class JAMBRegistrationSerializer(serializers.ModelSerializer):
         model = JAMBRegistration
         fields= ["billerCode","exam_type","phone_number"]
         read_only_fields= ["id","request_id","created_at"] 
+        
+class GroupPaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GroupPayment
+        fields = ["participant_phone_no"]
+        read_only_fields = ["id","request_id","created_at"]
