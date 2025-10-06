@@ -3,6 +3,12 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+from decimal import Decimal
+from group_payment.models import Group, GroupMember
+from wallet.models import Wallet
+from .models import GroupPayment, GroupPaymentContribution
+from transactions.models import WalletTransaction
 from .serializers import ( 
     AirtimeTopUpSerializer, 
     JAMBRegistrationSerializer,
@@ -26,7 +32,6 @@ from .models import (
     WAECRegitration, 
     WAECResultChecker
     )
-from wallet.models import Wallet
 from .vtpass import (
     generate_reference_id, 
     top_up,
@@ -41,16 +46,211 @@ from .vtpass import (
     )
     
 class GroupPaymentViews(APIView):
-    pass
-    """
-    def post(request):
-        serializer = GroupPaymentSerializer(data = request.data)
-        if serializer.is_valid(raise_exception=True):
-            request_id = generate_reference_id()
-            serializer.save(request_id = request_id)
-            """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        group_id = request.data.get('group_id')
+        payment_type = request.data.get('payment_type')
+        total_amount = Decimal(str(request.data.get('total_amount')))
+        service_details = request.data.get('service_details')
+        split_type = request.data.get('split_type', 'equal')
+        custom_splits = request.data.get('custom_splits', {})
+
+        group = get_object_or_404(Group, id=group_id)
+        
+        #TODO: work on check if user is admin
+        is_admin = GroupMember.objects.filter(
+            group=group,
+            user=request.user,
+            role__in=['admin', 'owner']
+        ).exists()
+        
+        if not is_admin:
+            return Response(
+                {'error': 'Only group admins can initiate payments'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        members = GroupMember.objects.filter(group=group).select_related('user', 'user__wallet')
+
+        if members.count() == 0:
+            return Response(
+                {'error': 'No active members in group'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Calculate split amounts
+        member_amounts = self._calculate_splits(
+            members, total_amount, split_type, custom_splits
+        )
+
+        try:
+            with transaction.atomic():
+                group_payment = GroupPayment.objects.create(
+                    group=group,
+                    initiated_by=request.user,
+                    payment_type=payment_type,
+                    total_amount=total_amount,
+                    service_details=service_details,
+                    status='processing'
+                )
+
+                contributions = []
+                for member, amount in member_amounts.items():
+                    wallet = member.user.wallet
+                    
+                    if wallet.balance < amount:
+                        raise InsufficientFundsException(
+                            f"Insufficient funds for {member.user.get_full_name()}"
+                        )
+                    
+                    # Debit wallet
+                    wallet.debit(amount, reference=f'GP-{group_payment.id}-{member.user.id}')
+
+                    # Create transaction record
+                    WalletTransaction.objects.create(
+                        wallet=wallet,
+                        transaction_type='debit',
+                        amount=amount,
+                        description=f'Group payment contribution - {payment_type}',
+                        reference=f'GP-{group_payment.id}-{member.user.id}',
+                        status='completed'
+                    )
+
+                    # Create contribution record
+                    contribution = GroupPaymentContribution.objects.create(
+                        group_payment=group_payment,
+                        member=member,
+                        amount=amount,
+                        status='completed'
+                    )
+                    contributions.append(contribution)
+
+                    # Send notification to member
+                    send_notification(
+                        user=member.user,
+                        title='Payment Contribution',
+                        message=f'₦{amount} debited for {group.name} group payment',
+                        notification_type='payment'
+                    )
+
+                # All debits successful, now call VTU API
+                vtu_response = self._call_vtu_api(payment_type, service_details, total_amount)
+                
+                if vtu_response.get('status') == 'success':
+                    group_payment.status = 'completed'
+                    group_payment.vtu_reference = vtu_response.get('reference')
+                    group_payment.save()
+
+                    # Notify all members of successful purchase
+                    for member in members:
+                        send_notification(
+                            user=member.user,
+                            title='Group Purchase Successful',
+                            message=f'{group.name}: {payment_type} purchase of ₦{total_amount} completed',
+                            notification_type='payment_success'
+                        )
+
+                    return Response({
+                        'message': 'Group payment completed successfully',
+                        'payment_id': group_payment.id,
+                        'vtu_reference': vtu_response.get('reference')
+                    }, status=status.HTTP_200_OK)
+                else:
+                    # VTU API failed, raise exception to trigger rollback
+                    raise VTUAPIException(vtu_response.get('message', 'VTU API failed'))
+
+        except InsufficientFundsException as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except VTUAPIException as e:
+            return Response(
+                {'error': f'Payment failed: {str(e)}. All debits have been reversed.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        except Exception as e:
+            return Response(
+                {'error': f'An error occurred: {str(e)}. All debits have been reversed.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def _calculate_splits(self, members, total_amount, split_type, custom_splits):
+        """Calculate how much each member should pay"""
+        member_amounts = {}
+        
+        if split_type == 'equal':
+            amount_per_member = total_amount / members.count()
+            for member in members:
+                member_amounts[member] = amount_per_member
+        
+        elif split_type == 'percentage':
+            for member in members:
+                percentage = Decimal(str(custom_splits.get(str(member.user.id), 0)))
+                member_amounts[member] = (total_amount * percentage) / 100
+        
+        return member_amounts
+
+    def _call_vtu_api(self, payment_type, service_details, amount):
+        """Call the appropriate VTU API based on payment type"""
+        from .services import VTUService
+        
+        vtu_service = VTUService()
+        
+        if payment_type == 'airtime':
+            return vtu_service.purchase_airtime(
+                phone_number=service_details.get('phone_number'),
+                amount=amount,
+                network=service_details.get('network')
+            )
+        elif payment_type == 'data':
+            return vtu_service.purchase_data(
+                phone_number=service_details.get('phone_number'),
+                plan_id=service_details.get('plan_id'),
+                network=service_details.get('network')
+            )
+        elif payment_type == 'electricity':
+            return vtu_service.purchase_electricity(
+                meter_number=service_details.get('meter_number'),
+                amount=amount,
+                disco=service_details.get('disco')
+            )
+        # Add more payment types as needed
+
+    def get(self, request):
+        """Get group payment history"""
+        group_id = request.query_params.get('group_id')
+        
+        if group_id:
+            # Verify user is member of the group
+            is_member = GroupMember.objects.filter(
+                group_id=group_id,
+                user=request.user
+            ).exists()
             
-    
+            if not is_member:
+                return Response(
+                    {'error': 'You are not a member of this group'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            payments = GroupPayment.objects.filter(group_id=group_id).order_by('-created_at')
+        else:
+            # Get all payments for groups user belongs to
+            user_groups = GroupMember.objects.filter(user=request.user).values_list('group_id', flat=True)
+            payments = GroupPayment.objects.filter(group_id__in=user_groups).order_by('-created_at')
+        
+        serializer = GroupPaymentSerializer(payments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class InsufficientFundsException(Exception):
+    pass
+
+class VTUAPIException(Exception):
+    pass
+
 class AirtimeTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -76,6 +276,7 @@ class AirtimeTopUpViews(APIView):
                         user_wallet.debit(amount=amount, reference=request_id)
                     
                     return Response(buy_airtime_response)
+
 
 class MTNDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
@@ -103,6 +304,7 @@ class MTNDataTopUpViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
+
 class AirtelDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -129,6 +331,7 @@ class AirtelDataTopUpViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
+
 class GloDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -155,6 +358,7 @@ class GloDataTopUpViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
+
 class EtisalatDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -181,6 +385,7 @@ class EtisalatDataTopUpViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
+
 class DSTVPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -209,6 +414,7 @@ class DSTVPaymentViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
+
 class GOTVPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -237,6 +443,7 @@ class GOTVPaymentViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
+
 class StartimesPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -263,6 +470,7 @@ class StartimesPaymentViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
+
 class ShowMaxPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -288,6 +496,7 @@ class ShowMaxPaymentViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
+
 class ElectricityPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -312,7 +521,8 @@ class ElectricityPaymentViews(APIView):
                 if electricity_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(electricity_response)
-                
+
+
 class WAECRegitrationViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -336,6 +546,7 @@ class WAECRegitrationViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(registration_response)
                 
+
 class WAECResultCheckerViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -360,6 +571,7 @@ class WAECResultCheckerViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(registration_response)
                 
+
 class JAMBRegistrationViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -384,5 +596,4 @@ class JAMBRegistrationViews(APIView):
                 if jamb_registration_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(jamb_registration_response)
- 
- 
+
