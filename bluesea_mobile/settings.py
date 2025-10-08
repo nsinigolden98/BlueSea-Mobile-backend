@@ -60,7 +60,7 @@ INSTALLED_APPS = [
     'transactions',
     'payments',
     'group_payment',
-    'notifications',
+    'notifications',    
 ]
 
 MIDDLEWARE = [
