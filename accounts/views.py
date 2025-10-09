@@ -25,6 +25,7 @@ from django.contrib.auth import authenticate, get_user_model
 from .models import Profile, EmailVerification, ResetPassword, ResetPasswordValuationToken
 from .serializers import *
 import os
+from wallet.models import Wallet
 
 from wallet.models import Wallet
 

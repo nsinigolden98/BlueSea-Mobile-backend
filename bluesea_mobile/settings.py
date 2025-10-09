@@ -59,6 +59,8 @@ INSTALLED_APPS = [
     'wallet',
     'transactions',
     'payments',
+    'group_payment',
+    'notifications',    
 ]
 
 MIDDLEWARE = [

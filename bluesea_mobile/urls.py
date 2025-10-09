@@ -24,3 +24,4 @@ urlpatterns = [
     # path('wallet/', include('wallet.urls')),
     path('transactions/', include('transactions.urls')),
 ]
+

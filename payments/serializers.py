@@ -14,8 +14,9 @@ from .models import (
     EtisalatDataTopUp,
     MTNDataTopUp,
     GroupPayment,
-        )
-        
+    GroupPaymentContribution,
+)
+
 class AirtimeTopUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = AirtimeTopUp
@@ -94,8 +95,26 @@ class JAMBRegistrationSerializer(serializers.ModelSerializer):
         fields= ["billerCode","exam_type","phone_number"]
         read_only_fields= ["id","request_id","created_at"] 
         
+
+class GroupPaymentContributionSerializer(serializers.ModelSerializer):
+    member_name = serializers.CharField(source='member.user.get_full_name', read_only=True)
+    member_email = serializers.EmailField(source='member.user.email', read_only=True)
+
+    class Meta:
+        model = GroupPaymentContribution
+        fields = ['id', 'member_name', 'member_email', 'amount', 'status', 'created_at']
+
+
+
 class GroupPaymentSerializer(serializers.ModelSerializer):
+    contributions = GroupPaymentContributionSerializer(many=True, read_only=True)
+    initiated_by_name = serializers.CharField(source='initiated_by.get_full_name', read_only=True)
+    group_name = serializers.CharField(source='group.name', read_only=True)
+
     class Meta:
         model = GroupPayment
-        fields = ["participant_phone_no"]
-        read_only_fields = ["id","request_id","created_at"]
+        fields = [
+            'id', 'group', 'group_name', 'initiated_by', 'initiated_by_name',
+            'payment_type', 'total_amount', 'service_details', 'status',
+            'vtu_reference', 'contributions', 'created_at', 'updated_at'
+        ]

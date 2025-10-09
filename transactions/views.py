@@ -2,10 +2,6 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
 import json
 from decimal import Decimal
 from rest_framework.views import APIView
@@ -15,10 +11,6 @@ from wallet.models import Wallet
 from wallet.serializers import WalletSerializer
 import uuid
 from .paystack import checkout
-from django.urls import reverse
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.conf import settings
 import hmac
@@ -62,6 +54,7 @@ class InitializeFunding(APIView):
             #     payment_reference=payment_reference,
             #     status="PENDING"
             # )
+
             FundWallet.objects.create(
                 user=request.user,
                 amount=amount,
@@ -379,3 +372,4 @@ class PaymentWebhook(APIView):
                 "success": False, 
                 "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
