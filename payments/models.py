@@ -557,11 +557,11 @@ STARTIMES_PLANS = [
     ("Global (Dish) - 6500 Naira - 1Week", "Global (Dish) - 6500 Naira - 1Week"),
 ]
 
+
 class AirtimeTopUp(models.Model):
     amount = models.IntegerField()
     network = models.CharField(max_length = 10, choices= NETWORK_TYPES)
     phone_number = models.CharField()
-    #group_payment = models.BooleanField()
     request_id = models.CharField(max_length=20, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     

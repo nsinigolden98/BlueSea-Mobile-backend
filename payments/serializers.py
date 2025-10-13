@@ -20,7 +20,7 @@ from .models import (
 class AirtimeTopUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = AirtimeTopUp
-        fields= ["amount", "network", "phone_number", "group_payment"]
+        fields= ["amount", "network", "phone_number"]
         read_only_fields= ["id","request_id", "created_at"]
 
 class MTNDataTopUpSerializer(serializers.ModelSerializer):

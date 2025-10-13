@@ -385,7 +385,7 @@ class GroupPaymentHistory(APIView):
 
 
 class AirtimeTopUpViews(APIView):
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
     
     def post(self, request):
         serializer = AirtimeTopUpSerializer(data = request.data)
@@ -402,11 +402,11 @@ class AirtimeTopUpViews(APIView):
                     "amount": amount,
                     "phone": serializer.data["phone_number"]
                 }
-                user_wallet = request.user.wallet
+                #user_wallet = request.user.wallet
                 #Wallet.debit(amount, ref_id)
                 buy_airtime_response = top_up(data)
-                if buy_airtime_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, reference=request_id)
+                #if buy_airtime_response.get("response_description") == "TRANSACTION SUCCESSFUL":
+                    #user_wallet.debit(amount=amount, reference=request_id)
                 
                 return Response(buy_airtime_response)
 
