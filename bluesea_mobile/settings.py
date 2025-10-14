@@ -211,3 +211,6 @@ LOGGING = {
         },
     },
 }
+
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
+APPLE_CLIENT_ID = os.environ.get('APPLE_CLIENT_ID')

@@ -23,6 +23,9 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.permissions import AllowAny
 from django.contrib.auth import authenticate, get_user_model
 from .models import Profile, EmailVerification, ResetPassword, ResetPasswordValuationToken
+from .social_auth import GoogleAuth, AppleAuth, get_or_create_social_user
+from .social_serializers import GoogleLoginSerializer, AppleLoginSerializer
+import logging
 from .serializers import *
 import os
 from wallet.models import Wallet
@@ -34,6 +37,9 @@ import dotenv
 dotenv.load_dotenv()
 
 User = get_user_model()
+
+
+logger = logging.getLogger(__name__)
 
 
 class RegisterView(APIView):
@@ -211,3 +217,164 @@ class LoginView(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
+    
+
+
+
+class GoogleLoginView(APIView):
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        try:
+            serializer = GoogleLoginSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Invalid request data",
+                        "errors": serializer.errors
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            id_token = serializer.validated_data['id_token']
+            
+            # Verify Google token
+            success, result = GoogleAuth.verify_google_token(id_token)
+            
+            if not success:
+                logger.error(f"Google authentication failed: {result}")
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Google authentication failed",
+                        "error": result
+                    },
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            
+            # Get or create user
+            user, is_new = get_or_create_social_user('google', result)
+            
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
+            refresh['role'] = user.role
+            
+            # Serialize user data
+            user_serializer = ProfileSerializer(user)
+            
+            logger.info(f"Google login successful for user: {user.email}, New user: {is_new}")
+            
+            return Response(
+                {
+                    "success": True,
+                    "message": "Login successful" if not is_new else "Account created successfully",
+                    "access_token": str(refresh.access_token),
+                    "refresh_token": str(refresh),
+                    "user": user_serializer.data,
+                    "is_new_user": is_new
+                },
+                status=status.HTTP_200_OK
+            )
+            
+        except ValueError as e:
+            logger.error(f"ValueError in Google login: {str(e)}")
+            return Response(
+                {
+                    "success": False,
+                    "message": str(e)
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error in Google login: {str(e)}", exc_info=True)
+            return Response(
+                {
+                    "success": False,
+                    "message": "An error occurred during Google login",
+                    "error": str(e) if settings.DEBUG else "Internal server error"
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class AppleLoginView(APIView):
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        try:
+            serializer = AppleLoginSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Invalid request data",
+                        "errors": serializer.errors
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            id_token = serializer.validated_data['id_token']
+            user_data_extra = serializer.validated_data.get('user')
+            
+            # Verify Apple token
+            success, result = AppleAuth.verify_apple_token(id_token)
+            
+            if not success:
+                logger.error(f"Apple authentication failed: {result}")
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Apple authentication failed",
+                        "error": result
+                    },
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            
+            # Get or create user (pass extra user data for name on first sign-in)
+            user, is_new = get_or_create_social_user('apple', result, user_data_extra)
+            
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
+            refresh['role'] = user.role
+            
+            # Serialize user data
+            user_serializer = ProfileSerializer(user)
+            
+            logger.info(f"Apple login successful for user: {user.email}, New user: {is_new}")
+            
+            return Response(
+                {
+                    "success": True,
+                    "message": "Login successful" if not is_new else "Account created successfully",
+                    "access_token": str(refresh.access_token),
+                    "refresh_token": str(refresh),
+                    "user": user_serializer.data,
+                    "is_new_user": is_new
+                },
+                status=status.HTTP_200_OK
+            )
+            
+        except ValueError as e:
+            logger.error(f"ValueError in Apple login: {str(e)}")
+            return Response(
+                {
+                    "success": False,
+                    "message": str(e)
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error in Apple login: {str(e)}", exc_info=True)
+            return Response(
+                {
+                    "success": False,
+                    "message": "An error occurred during Apple login",
+                    "error": str(e) if settings.DEBUG else "Internal server error"
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
