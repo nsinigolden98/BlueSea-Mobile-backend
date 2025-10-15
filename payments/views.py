@@ -24,6 +24,7 @@ from .serializers import (
     GloDataTopUpSerializer,
     EtisalatDataTopUpSerializer,
     GroupPaymentSerializer,
+    Airtime2CashSerializer,
     )
 from .vtpass import (
     generate_reference_id, 
@@ -37,9 +38,48 @@ from .vtpass import (
     glo_dict,
     etisalat_dict,
     )
+from .vtuafrica import (
+    test_connection,
+    airtime2cash,
+    )
 from notifications.utils import contribution_notification, group_payment_success, group_payment_failed
 from bluesea_mobile.utils import InsufficientFundsException, VTUAPIException
+
+class Airtime2CashViews(APIView):
+    permission_classes = [IsAuthenticated]
     
+    def post(self, request):
+        serializer = Airtime2CashSerializer(data = request.data)
+        
+        if serializer.is_valid(raise_exception=True):
+            request_id = generate_reference_id()
+            serializer.save(request_id = request_id)
+            
+            with transaction.atomic():
+                amount = int(serializer.data['amount'])
+    
+                get_sitephone = user_data = {
+                                            "apikey":"",
+                                            "serviceName":"Airtime2Cash",
+                                            "network":serializer.data["network"]
+                                        }
+
+                sitephone= test_connection(get_sitephone)
+                if sitephone !=  "Unavailable":
+                    user_data = {
+                                "apikey":"",
+                                "network":serializer.data["network"],
+                                "sender":"",
+                                "sendernumber":serializer.data["phone_number"],
+                                "amount":amount,
+                                "ref": request_id,
+                                "sitephone": sitephone
+                    }
+                    user_wallet = request.user.wallet
+                    airtime2cash_response = airtime2cash(user_data)
+                    if airtime2cash_response["code"] == 101:
+                        user_wallet.credit(amount=amount, reference=request_id)
+                        
 class GroupPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -353,8 +393,6 @@ class GroupPaymentViews(APIView):
             registration_response = top_up(details)
             return registration_response
 
-
-
 class GroupPaymentHistory(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -382,10 +420,8 @@ class GroupPaymentHistory(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-
-
 class AirtimeTopUpViews(APIView):
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     
     def post(self, request):
         serializer = AirtimeTopUpSerializer(data = request.data)
@@ -402,11 +438,11 @@ class AirtimeTopUpViews(APIView):
                     "amount": amount,
                     "phone": serializer.data["phone_number"]
                 }
-                #user_wallet = request.user.wallet
-                #Wallet.debit(amount, ref_id)
+                user_wallet = request.user.wallet
+             
                 buy_airtime_response = top_up(data)
-                #if buy_airtime_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    #user_wallet.debit(amount=amount, reference=request_id)
+                if buy_airtime_response.get("response_description") == "TRANSACTION SUCCESSFUL":
+                    user_wallet.debit(amount=amount, reference=request_id)
                 
                 return Response(buy_airtime_response)
 
@@ -437,7 +473,6 @@ class MTNDataTopUpViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
-
 class AirtelDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -464,7 +499,6 @@ class AirtelDataTopUpViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
-
 class GloDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -491,7 +525,6 @@ class GloDataTopUpViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
-
 class EtisalatDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -518,7 +551,6 @@ class EtisalatDataTopUpViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
-
 class DSTVPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -547,7 +579,6 @@ class DSTVPaymentViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
-
 class GOTVPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -576,7 +607,6 @@ class GOTVPaymentViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
-
 class StartimesPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -603,7 +633,6 @@ class StartimesPaymentViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
-
 class ShowMaxPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -629,7 +658,6 @@ class ShowMaxPaymentViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(subscription_response)
                 
-
 class ElectricityPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -655,7 +683,6 @@ class ElectricityPaymentViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(electricity_response)
 
-
 class WAECRegitrationViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -679,7 +706,6 @@ class WAECRegitrationViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(registration_response)
                 
-
 class WAECResultCheckerViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -704,7 +730,6 @@ class WAECResultCheckerViews(APIView):
                     user_wallet.debit(amount=amount, reference=request_id)
                 return Response(registration_response)
                 
-
 class JAMBRegistrationViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):

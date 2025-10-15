@@ -15,8 +15,6 @@ def test_connection(user_data):
     else:
         return "Unavailable"
         
-def airtime_2cash(user_data):
+def airtime2cash(user_data):
     response = requests.post(A2C_host, headers=headers, json=user_data) 
     return response.json()
-    
-
