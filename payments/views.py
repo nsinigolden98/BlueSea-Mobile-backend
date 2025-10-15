@@ -438,8 +438,7 @@ class AirtimeTopUpViews(APIView):
                     "amount": amount,
                     "phone": serializer.data["phone_number"]
                 }
-                user_wallet = request.user.wallet
-             
+                user_wallet = request.user.wallet 
                 buy_airtime_response = top_up(data)
                 if buy_airtime_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
@@ -625,7 +624,7 @@ class StartimesPaymentViews(APIView):
                         "amount": amount,
                         "phone": serializer.data["phone_number"],
                     }
-                # Wallet.debit(amount) 
+                
                 user_wallet = request.user.wallet
 
                 subscription_response = top_up(data)
@@ -650,7 +649,7 @@ class ShowMaxPaymentViews(APIView):
                         "variation_code": variation_code,
                         "amount": amount,
                     }
-                # Wallet.debit(amount) 
+                
                 user_wallet = request.user.wallet
 
                 subscription_response = top_up(data)
@@ -674,8 +673,7 @@ class ElectricityPaymentViews(APIView):
                         "variation_code": serializer.data["meter_type"],
                         "amount": amount,
                         "phone": serializer.data["phone_number"]
-                    }
-                # Wallet.debit(amount) 
+                    } 
                 user_wallet = request.user.wallet
 
                 electricity_response = top_up(data)
@@ -699,7 +697,7 @@ class WAECRegitrationViews(APIView):
                     "quantity" : 1,
                     "phone": serializer.data["phone_number"]
                 }
-                # Wallet.debit(amount)
+                
                 user_wallet = request.user.wallet 
                 registration_response = top_up(data)
                 if registration_response.get("response_description") == "TRANSACTION SUCCESSFUL":
@@ -722,7 +720,7 @@ class WAECResultCheckerViews(APIView):
                         "quantity" : 1,
                         "phone": serializer.data["phone_number"]
                     }
-                # Wallet.debit(amount)
+
                 user_wallet = request.user.wallet
 
                 registration_response = top_up(data)
@@ -748,7 +746,7 @@ class JAMBRegistrationViews(APIView):
                     "billerCode" : serializer.data["billerCode"],
                     "phone": serializer.data["phone_number"]
                 }
-                # Wallet.debit(amount)
+                
                 user_wallet = request.user.wallet 
                 jamb_registration_response = top_up(data)
                 if jamb_registration_response.get("response_description") == "TRANSACTION SUCCESSFUL":
