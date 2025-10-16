@@ -39,11 +39,12 @@ from .vtpass import (
     etisalat_dict,
     )
 from .vtuafrica import (
-    test_connection,
-    airtime2cash,
+    top_up2,
     )
 from notifications.utils import contribution_notification, group_payment_success, group_payment_failed
 from bluesea_mobile.utils import InsufficientFundsException, VTUAPIException
+
+VTU_AFRICA_APIKEY = ""
 
 class Airtime2CashViews(APIView):
     permission_classes = [IsAuthenticated]
@@ -58,13 +59,13 @@ class Airtime2CashViews(APIView):
             with transaction.atomic():
                 amount = int(serializer.data['amount'])
     
-                get_sitephone = user_data = {
-                                            "apikey":"",
-                                            "serviceName":"Airtime2Cash",
-                                            "network":serializer.data["network"]
+                user_data = {
+                             "apikey":"",
+                             "serviceName":"Airtime2Cash",
+                            "network":serializer.data["network"]
                                         }
 
-                sitephone= test_connection(get_sitephone)
+                sitephone= top_up2(user_data,"merchant-verify")
                 if sitephone !=  "Unavailable":
                     user_data = {
                                 "apikey":"",
@@ -76,7 +77,7 @@ class Airtime2CashViews(APIView):
                                 "sitephone": sitephone
                     }
                     user_wallet = request.user.wallet
-                    airtime2cash_response = airtime2cash(user_data)
+                    airtime2cash_response = top_up2(user_data, "airtime-cash")
                     if airtime2cash_response["code"] == 101:
                         user_wallet.credit(amount=amount, reference=request_id)
                         
@@ -419,7 +420,6 @@ class GroupPaymentHistory(APIView):
         serializer = GroupPaymentSerializer(payments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
 class AirtimeTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -442,9 +442,19 @@ class AirtimeTopUpViews(APIView):
                 buy_airtime_response = top_up(data)
                 if buy_airtime_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
-                
-                return Response(buy_airtime_response)
-
+                    return Response(buy_airtime_response)
+                else :
+                    data = {
+                        "apikey": VTU_AFRICA_APIKEY,
+                        "ref": request_id,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                        "network": serializer.data["network"],
+                    }
+                    back_up = top_up2(data,"airtime")
+                    if back_up["code"] == 101:
+                        user_wallet.debit(amount=amount, reference=request_id)
+                        return Response(back_up)
 
 class MTNDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
