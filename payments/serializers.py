@@ -121,6 +121,6 @@ class GroupPaymentSerializer(serializers.ModelSerializer):
 
 class Airtime2CashSerializer(serializers.ModelSerializer):
     class Meta:
-        model = AirtimeTopUp
+        model = Airtime2Cash
         fields= ["amount", "network", "phone_number"]
         read_only_fields= ["id","request_id", "created_at"]

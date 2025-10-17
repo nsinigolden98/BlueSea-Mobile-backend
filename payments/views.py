@@ -26,7 +26,7 @@ from .serializers import (
     GroupPaymentSerializer,
     Airtime2CashSerializer,
     )
-from .vtpass import (
+from vtpass import (
     generate_reference_id, 
     top_up,
     dstv_dict,
@@ -38,7 +38,7 @@ from .vtpass import (
     glo_dict,
     etisalat_dict,
     )
-from .vtuafrica import (
+from vtuafrica import (
     top_up2,
     )
 from notifications.utils import contribution_notification, group_payment_success, group_payment_failed
@@ -689,7 +689,21 @@ class ElectricityPaymentViews(APIView):
                 electricity_response = top_up(data)
                 if electricity_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
-                return Response(electricity_response)
+                    return Response(electricity_response)
+                else :
+                    data = {
+                        "apikey": VTU_AFRICA_APIKEY,
+                        "service": serializer.data["biller_name"],
+                        "meterNo": serializer.data["billerCode"],
+                        "metertype": serializer.data["meter_type"],
+                        "amount": amount,
+                        "ref": request_id,
+                        "webhookURL": "",
+                    }
+                    back_up = top_up2(data,"electric")
+                    if back_up["code"] == 101:
+                        user_wallet.debit(amount=amount, reference=request_id)
+                        return Response(back_up)
 
 class WAECRegitrationViews(APIView):
     permission_classes = [IsAuthenticated]
