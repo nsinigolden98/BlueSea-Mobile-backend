@@ -26,6 +26,7 @@ urlpatterns = [
     path('market_place/', include('market_place.urls')),
     # path('wallet/', include('wallet.urls')),
     path('transactions/', include('transactions.urls')),
+    path('bonus/', include('bonus.urls')),
 ]
 
 if settings.DEBUG:

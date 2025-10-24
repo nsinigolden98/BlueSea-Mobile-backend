@@ -48,8 +48,8 @@ class RegisterView(APIView):
             serializer = UserSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 with transaction.atomic():
-                    print(serializer)
                     account = serializer.save()
+                    role = account.role
                     # account.save()
                     Wallet.objects.create(user=account)
 

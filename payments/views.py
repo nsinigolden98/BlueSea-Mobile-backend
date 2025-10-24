@@ -43,6 +43,11 @@ from .vtuafrica import (
     )
 from notifications.utils import contribution_notification, group_payment_success, group_payment_failed
 from bluesea_mobile.utils import InsufficientFundsException, VTUAPIException
+from bonus.utils import award_daily_login_bonus, award_points, award_referral_bonus, award_vtu_purchase_points, user_points_summary, redeem_points
+from bonus.models import Referral, BonusCampaign, BonusHistory, BonusPoint
+import logging
+
+logger = logging.getLogger(__name__)
 
 VTU_AFRICA_APIKEY = ""
 
@@ -81,6 +86,7 @@ class Airtime2CashViews(APIView):
                     if airtime2cash_response["code"] == 101:
                         user_wallet.credit(amount=amount, reference=request_id)
                         
+
 class GroupPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -442,6 +448,7 @@ class AirtimeTopUpViews(APIView):
                 buy_airtime_response = top_up(data)
                 if buy_airtime_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
                     return Response(buy_airtime_response)
                 else :
                     data = {
@@ -455,6 +462,34 @@ class AirtimeTopUpViews(APIView):
                     if back_up["code"] == 101:
                         user_wallet.debit(amount=amount, reference=request_id)
                         return Response(back_up)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
+                
+                return Response(buy_airtime_response)
+
 
 class MTNDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
@@ -480,6 +515,31 @@ class MTNDataTopUpViews(APIView):
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
 class AirtelDataTopUpViews(APIView):
@@ -506,6 +566,31 @@ class AirtelDataTopUpViews(APIView):
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
 class GloDataTopUpViews(APIView):
@@ -532,6 +617,31 @@ class GloDataTopUpViews(APIView):
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
 class EtisalatDataTopUpViews(APIView):
@@ -558,6 +668,31 @@ class EtisalatDataTopUpViews(APIView):
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
 class DSTVPaymentViews(APIView):
@@ -586,6 +721,31 @@ class DSTVPaymentViews(APIView):
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
 class GOTVPaymentViews(APIView):
@@ -614,6 +774,31 @@ class GOTVPaymentViews(APIView):
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
 class StartimesPaymentViews(APIView):
@@ -640,6 +825,31 @@ class StartimesPaymentViews(APIView):
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
 class ShowMaxPaymentViews(APIView):
@@ -665,6 +875,31 @@ class ShowMaxPaymentViews(APIView):
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
 class ElectricityPaymentViews(APIView):
@@ -705,6 +940,33 @@ class ElectricityPaymentViews(APIView):
                         user_wallet.debit(amount=amount, reference=request_id)
                         return Response(back_up)
 
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
+                return Response(electricity_response)
+
+
 class WAECRegitrationViews(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -726,6 +988,31 @@ class WAECRegitrationViews(APIView):
                 registration_response = top_up(data)
                 if registration_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(registration_response)
                 
 class WAECResultCheckerViews(APIView):
@@ -750,6 +1037,31 @@ class WAECResultCheckerViews(APIView):
                 registration_response = top_up(data)
                 if registration_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(registration_response)
                 
 class JAMBRegistrationViews(APIView):
@@ -775,5 +1087,30 @@ class JAMBRegistrationViews(APIView):
                 jamb_registration_response = top_up(data)
                 if jamb_registration_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(jamb_registration_response)
 
