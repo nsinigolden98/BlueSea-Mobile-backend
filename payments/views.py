@@ -26,7 +26,7 @@ from .serializers import (
     GroupPaymentSerializer,
     Airtime2CashSerializer,
     )
-from vtpass import (
+from .vtpass import (
     generate_reference_id, 
     top_up,
     dstv_dict,
@@ -38,7 +38,7 @@ from vtpass import (
     glo_dict,
     etisalat_dict,
     )
-from vtuafrica import (
+from .vtuafrica import (
     top_up2,
     )
 from notifications.utils import contribution_notification, group_payment_success, group_payment_failed
