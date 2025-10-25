@@ -183,6 +183,7 @@ EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL')
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 FROM_EMAIL = EMAIL_HOST_USER
+#FROM_EMAIL = os.environ.get('EMAIL_HOST_USER')
 
 
 PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY')
@@ -231,3 +232,15 @@ LOGGING = {
 
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
 APPLE_CLIENT_ID = os.environ.get('APPLE_CLIENT_ID')
+
+# Set to True only if you are okay with ANY domain accessing your backend 
+# (not recommended for production).
+CORS_ALLOW_ALL_ORIGINS = False 
+
+# Use the specific URL/port of your frontend development server
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8001",
+    "http://127.0.0.1:8000",
+    # Add other local ports if needed, like Vue (8080) or Angular (4200)
+]
+
