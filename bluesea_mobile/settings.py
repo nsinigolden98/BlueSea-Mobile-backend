@@ -235,11 +235,11 @@ APPLE_CLIENT_ID = os.environ.get('APPLE_CLIENT_ID')
 
 # Set to True only if you are okay with ANY domain accessing your backend 
 # (not recommended for production).
-CORS_ALLOW_ALL_ORIGINS = False 
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Use the specific URL/port of your frontend development server
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8001",
+    "http://localhost:5168",
     "http://127.0.0.1:8000",
     # Add other local ports if needed, like Vue (8080) or Angular (4200)
 ]
