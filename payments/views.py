@@ -46,6 +46,8 @@ from bluesea_mobile.utils import InsufficientFundsException, VTUAPIException
 from bonus.utils import award_daily_login_bonus, award_points, award_referral_bonus, award_vtu_purchase_points, user_points_summary, redeem_points
 from bonus.models import Referral, BonusCampaign, BonusHistory, BonusPoint
 import logging
+from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 logger = logging.getLogger(__name__)
 
