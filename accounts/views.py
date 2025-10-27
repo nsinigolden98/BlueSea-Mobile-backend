@@ -1,10 +1,7 @@
 from django.shortcuts import render
 from rest_framework import status
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.response import Response
-from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.views import APIView
-from rest_framework.authtoken.models import Token
 from .utils import send_email_verification
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.views.decorators.csrf import csrf_exempt
@@ -16,7 +13,6 @@ from datetime import timedelta
 from django.core import signing
 from django.conf import settings
 from django.db import transaction
-from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import AccessToken

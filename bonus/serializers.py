@@ -34,13 +34,13 @@ class BonusHistorySerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class RedeemPointsSerializer(serializers.Serializer):
-    points = serializers.IntegerField(min_value=10)
+# class RedeemPointsSerializer(serializers.Serializer):
+#     points = serializers.IntegerField(min_value=10)
     
-    def validate_points(self, value):
-        if value % 10 != 0:
-            raise serializers.ValidationError("Points must be in multiples of 10")
-        return value
+#     def validate_points(self, value):
+#         if value % 10 != 0:
+#             raise serializers.ValidationError("Points must be in multiples of 10")
+#         return value
 
 
 class BonusCampaignSerializer(serializers.ModelSerializer):

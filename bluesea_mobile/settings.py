@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     'notifications', 
     'bonus',
     'autotopup',
+    'loyalty_market',
 ]
 
 MIDDLEWARE = [

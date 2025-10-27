@@ -77,47 +77,47 @@ class BonusHistoryView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class RedeemPointsView(APIView):
-    permission_classes = [IsAuthenticated]
+# class RedeemPointsView(APIView):
+#     permission_classes = [IsAuthenticated]
     
-    def post(self, request):
-        serializer = RedeemPointsSerializer(data=request.data)
+#     def post(self, request):
+#         serializer = RedeemPointsSerializer(data=request.data)
         
-        if not serializer.is_valid():
-            return Response({
-                'success': False,
-                'errors': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+#         if not serializer.is_valid():
+#             return Response({
+#                 'success': False,
+#                 'errors': serializer.errors
+#             }, status=status.HTTP_400_BAD_REQUEST)
         
-        points = serializer.validated_data['points']
+#         points = serializer.validated_data['points']
         
-        try:
-            history, wallet_amount = redeem_points(
-                user=request.user,
-                points=points
-            )
+#         try:
+#             history, wallet_amount = redeem_points(
+#                 user=request.user,
+#                 points=points
+#             )
             
-            return Response({
-                'success': True,
-                'message': f'Successfully redeemed {points} points for ₦{wallet_amount}',
-                'data': {
-                    'points_redeemed': points,
-                    'wallet_amount': str(wallet_amount),
-                    'new_balance': BonusPoint.objects.get(user=request.user).points
-                }
-            }, status=status.HTTP_200_OK)
+#             return Response({
+#                 'success': True,
+#                 'message': f'Successfully redeemed {points} points for ₦{wallet_amount}',
+#                 'data': {
+#                     'points_redeemed': points,
+#                     'wallet_amount': str(wallet_amount),
+#                     'new_balance': BonusPoint.objects.get(user=request.user).points
+#                 }
+#             }, status=status.HTTP_200_OK)
             
-        except ValueError as e:
-            return Response({
-                'success': False,
-                'error': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            logger.error(f"Error redeeming points for {request.user.email}: {str(e)}")
-            return Response({
-                'success': False,
-                'error': 'Failed to redeem points'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#         except ValueError as e:
+#             return Response({
+#                 'success': False,
+#                 'error': str(e)
+#             }, status=status.HTTP_400_BAD_REQUEST)
+#         except Exception as e:
+#             logger.error(f"Error redeeming points for {request.user.email}: {str(e)}")
+#             return Response({
+#                 'success': False,
+#                 'error': 'Failed to redeem points'
+#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class ClaimDailyLoginView(APIView):

@@ -18,6 +18,7 @@ urlpatterns = [
     # path('api/wallet/', include('wallet.urls')),
     path('api/transactions/', include('transactions.urls')),
     path('api/bonus/', include('bonus.urls')),
+    path('api/market/', include('loyalty_market.urls')),
 ]
 
 if settings.DEBUG:
