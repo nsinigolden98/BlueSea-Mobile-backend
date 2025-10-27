@@ -10,7 +10,7 @@ class UserSerializer(serializers.Serializer):
     email = serializers.EmailField()
     phone = serializers.CharField()
     password = serializers.CharField(write_only=True)
-
+    
     def validate_email(self, value):
         if Profile.objects.filter(email=value).exists():
             raise ValidationError("Email already exists.")
@@ -41,7 +41,6 @@ class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     phone = serializers.CharField()
     password = serializers.CharField(write_only=True)
-
 
 class EditPasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField()

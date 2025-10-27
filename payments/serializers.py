@@ -15,12 +15,13 @@ from .models import (
     MTNDataTopUp,
     GroupPayment,
     GroupPaymentContribution,
+    Airtime2Cash,
 )
 
 class AirtimeTopUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = AirtimeTopUp
-        fields= ["amount", "network", "phone_number", "group_payment"]
+        fields= ["amount", "network", "phone_number"]
         read_only_fields= ["id","request_id", "created_at"]
 
 class MTNDataTopUpSerializer(serializers.ModelSerializer):
@@ -104,8 +105,6 @@ class GroupPaymentContributionSerializer(serializers.ModelSerializer):
         model = GroupPaymentContribution
         fields = ['id', 'member_name', 'member_email', 'amount', 'status', 'created_at']
 
-
-
 class GroupPaymentSerializer(serializers.ModelSerializer):
     contributions = GroupPaymentContributionSerializer(many=True, read_only=True)
     initiated_by_name = serializers.CharField(source='initiated_by.get_full_name', read_only=True)
@@ -118,3 +117,10 @@ class GroupPaymentSerializer(serializers.ModelSerializer):
             'payment_type', 'total_amount', 'service_details', 'status',
             'vtu_reference', 'contributions', 'created_at', 'updated_at'
         ]
+        
+
+class Airtime2CashSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Airtime2Cash
+        fields= ["amount", "network", "phone_number"]
+        read_only_fields= ["id","request_id", "created_at"]

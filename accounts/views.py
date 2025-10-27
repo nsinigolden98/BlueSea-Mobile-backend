@@ -32,8 +32,6 @@ from wallet.models import Wallet
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
-from wallet.models import Wallet
-
 import dotenv
 
 dotenv.load_dotenv()

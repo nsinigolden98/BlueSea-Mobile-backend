@@ -24,6 +24,7 @@ from .serializers import (
     GloDataTopUpSerializer,
     EtisalatDataTopUpSerializer,
     GroupPaymentSerializer,
+    Airtime2CashSerializer,
     )
 from .vtpass import (
     generate_reference_id, 
@@ -37,16 +38,54 @@ from .vtpass import (
     glo_dict,
     etisalat_dict,
     )
+from .vtuafrica import (
+    top_up2,
+    )
 from notifications.utils import contribution_notification, group_payment_success, group_payment_failed
 from bluesea_mobile.utils import InsufficientFundsException, VTUAPIException
-from bonus.utils import award_daily_login_bonus, award_points, award_referral_bonus, award_vtu_purchase_points
+from bonus.utils import award_daily_login_bonus, award_points, award_referral_bonus, award_vtu_purchase_points, user_points_summary, redeem_points
 from bonus.models import Referral, BonusCampaign, BonusHistory, BonusPoint
-from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
-from drf_spectacular.types import OpenApiTypes
 import logging
 
 logger = logging.getLogger(__name__)
 
+VTU_AFRICA_APIKEY = ""
+
+class Airtime2CashViews(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        serializer = Airtime2CashSerializer(data = request.data)
+        
+        if serializer.is_valid(raise_exception=True):
+            request_id = generate_reference_id()
+            serializer.save(request_id = request_id)
+            
+            with transaction.atomic():
+                amount = int(serializer.data['amount'])
+    
+                user_data = {
+                             "apikey":"",
+                             "serviceName":"Airtime2Cash",
+                            "network":serializer.data["network"]
+                                        }
+
+                sitephone= top_up2(user_data,"merchant-verify")
+                if sitephone !=  "Unavailable":
+                    user_data = {
+                                "apikey":"",
+                                "network":serializer.data["network"],
+                                "sender":"",
+                                "sendernumber":serializer.data["phone_number"],
+                                "amount":amount,
+                                "ref": request_id,
+                                "sitephone": sitephone
+                    }
+                    user_wallet = request.user.wallet
+                    airtime2cash_response = top_up2(user_data, "airtime-cash")
+                    if airtime2cash_response["code"] == 101:
+                        user_wallet.credit(amount=amount, reference=request_id)
+                        
 
 class GroupPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
@@ -389,8 +428,6 @@ class GroupPaymentViews(APIView):
             registration_response = top_up(details)
             return registration_response
 
-
-
 class GroupPaymentHistory(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -432,9 +469,6 @@ class GroupPaymentHistory(APIView):
         serializer = GroupPaymentSerializer(payments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-
-
 class AirtimeTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -474,11 +508,24 @@ class AirtimeTopUpViews(APIView):
                     "amount": amount,
                     "phone": serializer.data["phone_number"]
                 }
-                user_wallet = request.user.wallet
-                #Wallet.debit(amount, ref_id)
+                user_wallet = request.user.wallet 
                 buy_airtime_response = top_up(data)
                 if buy_airtime_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    return Response(buy_airtime_response)
+                else :
+                    data = {
+                        "apikey": VTU_AFRICA_APIKEY,
+                        "ref": request_id,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                        "network": serializer.data["network"],
+                    }
+                    back_up = top_up2(data,"airtime")
+                    if back_up["code"] == 101:
+                        user_wallet.debit(amount=amount, reference=request_id)
+                        return Response(back_up)
 
                     # Award bonus points
                     try:
@@ -570,7 +617,6 @@ class MTNDataTopUpViews(APIView):
                         logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
-
 class AirtelDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -633,7 +679,6 @@ class AirtelDataTopUpViews(APIView):
                         logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
-
 class GloDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -696,7 +741,6 @@ class GloDataTopUpViews(APIView):
                         logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
-
 class EtisalatDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -759,7 +803,6 @@ class EtisalatDataTopUpViews(APIView):
                         logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
-
 class DSTVPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -824,7 +867,6 @@ class DSTVPaymentViews(APIView):
                         logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
-
 class GOTVPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -889,7 +931,6 @@ class GOTVPaymentViews(APIView):
                         logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
-
 class StartimesPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -919,7 +960,7 @@ class StartimesPaymentViews(APIView):
                         "amount": amount,
                         "phone": serializer.data["phone_number"],
                     }
-                # Wallet.debit(amount) 
+                
                 user_wallet = request.user.wallet
 
                 subscription_response = top_up(data)
@@ -952,7 +993,6 @@ class StartimesPaymentViews(APIView):
                         logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
-
 class ShowMaxPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -981,7 +1021,7 @@ class ShowMaxPaymentViews(APIView):
                         "variation_code": variation_code,
                         "amount": amount,
                     }
-                # Wallet.debit(amount) 
+                
                 user_wallet = request.user.wallet
 
                 subscription_response = top_up(data)
@@ -1014,7 +1054,6 @@ class ShowMaxPaymentViews(APIView):
                         logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
-
 class ElectricityPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -1042,13 +1081,27 @@ class ElectricityPaymentViews(APIView):
                         "variation_code": serializer.data["meter_type"],
                         "amount": amount,
                         "phone": serializer.data["phone_number"]
-                    }
-                # Wallet.debit(amount) 
+                    } 
                 user_wallet = request.user.wallet
 
                 electricity_response = top_up(data)
                 if electricity_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+                    return Response(electricity_response)
+                else :
+                    data = {
+                        "apikey": VTU_AFRICA_APIKEY,
+                        "service": serializer.data["biller_name"],
+                        "meterNo": serializer.data["billerCode"],
+                        "metertype": serializer.data["meter_type"],
+                        "amount": amount,
+                        "ref": request_id,
+                        "webhookURL": "",
+                    }
+                    back_up = top_up2(data,"electric")
+                    if back_up["code"] == 101:
+                        user_wallet.debit(amount=amount, reference=request_id)
+                        return Response(back_up)
 
                     # Award bonus points
                     try:
@@ -1104,7 +1157,7 @@ class WAECRegitrationViews(APIView):
                     "quantity" : 1,
                     "phone": serializer.data["phone_number"]
                 }
-                # Wallet.debit(amount)
+                
                 user_wallet = request.user.wallet 
                 registration_response = top_up(data)
                 if registration_response.get("response_description") == "TRANSACTION SUCCESSFUL":
@@ -1136,7 +1189,6 @@ class WAECRegitrationViews(APIView):
                         logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(registration_response)
                 
-
 class WAECResultCheckerViews(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -1164,7 +1216,7 @@ class WAECResultCheckerViews(APIView):
                         "quantity" : 1,
                         "phone": serializer.data["phone_number"]
                     }
-                # Wallet.debit(amount)
+
                 user_wallet = request.user.wallet
 
                 registration_response = top_up(data)
@@ -1197,7 +1249,6 @@ class WAECResultCheckerViews(APIView):
                         logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(registration_response)
                 
-
 class JAMBRegistrationViews(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -1227,7 +1278,7 @@ class JAMBRegistrationViews(APIView):
                     "billerCode" : serializer.data["billerCode"],
                     "phone": serializer.data["phone_number"]
                 }
-                # Wallet.debit(amount)
+                
                 user_wallet = request.user.wallet 
                 jamb_registration_response = top_up(data)
                 if jamb_registration_response.get("response_description") == "TRANSACTION SUCCESSFUL":
