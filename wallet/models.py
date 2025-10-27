@@ -10,12 +10,17 @@ from transactions.models import WalletTransaction
 class Wallet(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wallet')
     balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, validators=[MinValueValidator(Decimal('0.00'))])
+    locked_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, validators=[MinValueValidator(Decimal('0.00'))])  # Add this field
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.user.username}'s Wallet - {self.balance}"
+    
+    @property
+    def available_balance(self):
+        return self.balance - (self.locked_balance or Decimal('0.00'))
     
 
     def credit(self, amount, description="Credit", reference=None):

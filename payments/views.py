@@ -39,9 +39,10 @@ from .vtpass import (
     )
 from notifications.utils import contribution_notification, group_payment_success, group_payment_failed
 from bluesea_mobile.utils import InsufficientFundsException, VTUAPIException
-from ..bonus.utils import award_daily_login_bonus, award_points, award_referral_bonus, award_vtu_purchase_points, user_points_summary, redeem_points
-from ..bonus.models import Referral, BonusCampaign, BonusHistory, BonusPoint
-
+from bonus.utils import award_daily_login_bonus, award_points, award_referral_bonus, award_vtu_purchase_points
+from bonus.models import Referral, BonusCampaign, BonusHistory, BonusPoint
+from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 import logging
 
 logger = logging.getLogger(__name__)
@@ -50,6 +51,34 @@ logger = logging.getLogger(__name__)
 class GroupPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Create group payment",
+        description="Initiate a group payment for services like airtime, data, electricity, etc.",
+        request=OpenApiTypes.OBJECT,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT,
+            500: OpenApiTypes.OBJECT
+        },
+        examples=[
+            OpenApiExample(
+                'Group Airtime Payment',
+                value={
+                    "group_id": 1,
+                    "payment_type": "airtime",
+                    "total_amount": "1000.00",
+                    "service_details": {
+                        "network": "mtn",
+                        "phone_number": "08012345678"
+                    },
+                    "split_type": "equal"
+                },
+                request_only=True
+            )
+        ],
+        tags=['Payments']
+    )
     def post(self, request):
         group_id = request.data.get('group_id')
         payment_type = request.data.get('payment_type')
@@ -365,6 +394,21 @@ class GroupPaymentViews(APIView):
 class GroupPaymentHistory(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Get group payment history",
+        description="Retrieve payment history for a specific group or all user's groups",
+        parameters=[
+            OpenApiParameter(
+                name='group_id',
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description='Filter by specific group ID',
+                required=False
+            )
+        ],
+        responses={200: GroupPaymentSerializer(many=True)},
+        tags=['Payments']
+    )
     def get(self, request):
         group_id = request.query_params.get('group_id')
         
@@ -394,6 +438,27 @@ class GroupPaymentHistory(APIView):
 class AirtimeTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
     
+    @extend_schema(
+        summary="Purchase airtime",
+        description="Buy airtime for a phone number",
+        request=AirtimeTopUpSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        examples=[
+            OpenApiExample(
+                'Airtime Purchase',
+                value={
+                    "network": "mtn",
+                    "phone_number": "08012345678",
+                    "amount": "100"
+                },
+                request_only=True
+            )
+        ],
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = AirtimeTopUpSerializer(data = request.data)
         
@@ -445,6 +510,17 @@ class AirtimeTopUpViews(APIView):
 
 class MTNDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Purchase MTN data",
+        description="Buy MTN data bundle",
+        request=MTNDataTopUpSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = MTNDataTopUpSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -497,6 +573,17 @@ class MTNDataTopUpViews(APIView):
 
 class AirtelDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Purchase Airtel data",
+        description="Buy Airtel data bundle",
+        request=AirtelDataTopUpSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = AirtelDataTopUpSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -549,6 +636,17 @@ class AirtelDataTopUpViews(APIView):
 
 class GloDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Purchase Glo data",
+        description="Buy Glo data bundle",
+        request=GloDataTopUpSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = GloDataTopUpSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -601,6 +699,17 @@ class GloDataTopUpViews(APIView):
 
 class EtisalatDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Purchase 9mobile data",
+        description="Buy 9mobile (Etisalat) data bundle",
+        request=EtisalatDataTopUpSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = EtisalatDataTopUpSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -653,6 +762,17 @@ class EtisalatDataTopUpViews(APIView):
 
 class DSTVPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Pay for DSTV subscription",
+        description="Purchase DSTV subscription plan",
+        request=DSTVPaymentSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = DSTVPaymentSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -707,6 +827,17 @@ class DSTVPaymentViews(APIView):
 
 class GOTVPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Pay for GOTV subscription",
+        description="Purchase GOTV subscription plan",
+        request=GOTVPaymentSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = GOTVPaymentSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -761,6 +892,17 @@ class GOTVPaymentViews(APIView):
 
 class StartimesPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Pay for Startimes subscription",
+        description="Purchase Startimes subscription plan",
+        request=StartimesPaymentSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = StartimesPaymentSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -813,6 +955,17 @@ class StartimesPaymentViews(APIView):
 
 class ShowMaxPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Pay for ShowMax subscription",
+        description="Purchase ShowMax subscription plan",
+        request=ShowMaxPaymentSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = ShowMaxPaymentSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -864,6 +1017,17 @@ class ShowMaxPaymentViews(APIView):
 
 class ElectricityPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Pay electricity bill",
+        description="Purchase electricity/power units",
+        request=ElectricityPaymentSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = ElectricityPaymentSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -915,6 +1079,17 @@ class ElectricityPaymentViews(APIView):
 
 class WAECRegitrationViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="WAEC registration",
+        description="Register for WAEC examination",
+        request=WAECRegitrationSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = WAECRegitrationSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -964,6 +1139,17 @@ class WAECRegitrationViews(APIView):
 
 class WAECResultCheckerViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Purchase WAEC result checker",
+        description="Buy WAEC result checker PIN",
+        request=WAECResultCheckerSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = WAECResultCheckerSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -1014,6 +1200,17 @@ class WAECResultCheckerViews(APIView):
 
 class JAMBRegistrationViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="JAMB registration",
+        description="Register for JAMB examination",
+        request=JAMBRegistrationSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = JAMBRegistrationSerializer(data = request.data)
         

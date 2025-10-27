@@ -54,6 +54,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    'drf_spectacular',
+    'drf_spectacular_sidecar',
 
     # local apps
     'accounts',
@@ -62,7 +64,8 @@ INSTALLED_APPS = [
     'payments',
     'group_payment',
     'notifications', 
-    'bonus',   
+    'bonus',
+    'autotopup',
 ]
 
 MIDDLEWARE = [
@@ -81,6 +84,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 
@@ -229,3 +233,19 @@ LOGGING = {
 
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
 APPLE_CLIENT_ID = os.environ.get('APPLE_CLIENT_ID')
+
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'BlueSea Mobile API',
+    'DESCRIPTION': 'API documentation for BlueSea Mobile application',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
+
+
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Africa/Lagos'

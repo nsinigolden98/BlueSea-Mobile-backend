@@ -29,6 +29,8 @@ import logging
 from .serializers import *
 import os
 from wallet.models import Wallet
+from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 from wallet.models import Wallet
 
@@ -45,6 +47,39 @@ logger = logging.getLogger(__name__)
 class RegisterView(APIView):
     authentication_classes = []
     permission_classes = []
+    
+    @extend_schema(
+        summary="Register a new user",
+        description="Create a new user account and send email verification",
+        request=UserSerializer,
+        responses={
+            201: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            500: OpenApiTypes.OBJECT
+        },
+        examples=[
+            OpenApiExample(
+                'Registration Request',
+                value={
+                    "username": "john_doe",
+                    "email": "john@example.com",
+                    "password": "SecurePassword123",
+                    "phone_number": "08012345678",
+                    "role": "user"
+                },
+                request_only=True
+            ),
+            OpenApiExample(
+                'Success Response',
+                value={
+                    "message": "Account successfully created, check your email",
+                    "state": True
+                },
+                response_only=True
+            )
+        ],
+        tags=['Authentication']
+    )
     def post(self, request):
         try:
             serializer = UserSerializer(data=request.data)
@@ -106,6 +141,26 @@ class VerifyEmail(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @extend_schema(
+        summary="Verify email address",
+        description="Verify user's email using OTP code sent to their email",
+        request=OTPVerificationSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        examples=[
+            OpenApiExample(
+                'Verification Request',
+                value={
+                    "email": "john@example.com",
+                    "otp": "123456"
+                },
+                request_only=True
+            )
+        ],
+        tags=['Authentication']
+    )
     def post(self, request):
         serializer = OTPVerificationSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
@@ -150,6 +205,24 @@ class ResendOtp(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @extend_schema(
+        summary="Resend OTP",
+        description="Resend verification OTP to user's email",
+        request=OpenApiTypes.OBJECT,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            500: OpenApiTypes.OBJECT
+        },
+        examples=[
+            OpenApiExample(
+                'Resend OTP Request',
+                value={"email": "john@example.com"},
+                request_only=True
+            )
+        ],
+        tags=['Authentication']
+    )
     def post(self, request):
 
         try:
@@ -215,10 +288,41 @@ class LoginView(TokenObtainPairView):
     permission_classes = []
     serializer_class = MyTokenObtainPairSerializer
 
+    @extend_schema(
+        summary="User login",
+        description="Authenticate user and return JWT tokens",
+        request=MyTokenObtainPairSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            401: OpenApiTypes.OBJECT
+        },
+        examples=[
+            OpenApiExample(
+                'Login Request',
+                value={
+                    "username": "john_doe",
+                    "password": "SecurePassword123"
+                },
+                request_only=True
+            ),
+            OpenApiExample(
+                'Success Response',
+                value={
+                    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+                    "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+                    "user": {
+                        "id": 1,
+                        "username": "john_doe",
+                        "email": "john@example.com"
+                    }
+                },
+                response_only=True
+            )
+        ],
+        tags=['Authentication']
+    )
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
-    
-
 
 
 class GoogleLoginView(APIView):
@@ -226,6 +330,16 @@ class GoogleLoginView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
     
+    @extend_schema(
+        summary="Google OAuth login",
+        description="Authenticate user using Google OAuth token",
+        request=GoogleLoginSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Authentication']
+    )
     def post(self, request):
         try:
             serializer = GoogleLoginSerializer(data=request.data)
@@ -305,6 +419,16 @@ class AppleLoginView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
     
+    @extend_schema(
+        summary="Apple OAuth login",
+        description="Authenticate user using Apple OAuth token",
+        request=AppleLoginSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Authentication']
+    )
     def post(self, request):
         try:
             serializer = AppleLoginSerializer(data=request.data)

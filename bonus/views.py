@@ -13,7 +13,7 @@ from .serializers import (
 from .utils import (
     redeem_points, 
     award_daily_login_bonus, 
-    get_user_points_summary
+    user_points_summary
 )
 import logging
 
@@ -25,7 +25,7 @@ class BonusPointsSummaryView(APIView):
     
     def get(self, request):
         try:
-            summary = get_user_points_summary(request.user)
+            summary = user_points_summary(request.user)
             return Response({
                 'success': True,
                 'data': summary
