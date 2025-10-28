@@ -16,20 +16,8 @@ from .serializers import (
 )
 from rest_framework import serializers
 
-class AutoTopUpListCreateView(APIView):
+class AutoTopUpCreateView(APIView):
     permission_classes = [IsAuthenticated]
-    
-    @extend_schema(
-        summary="List all auto top-ups",
-        description="Get a list of all auto top-ups for the authenticated user",
-        responses={200: AutoTopUpSerializer(many=True)},
-        tags=['Auto Top-Up']
-    )
-    def get(self, request):
-        """List all auto top-ups for the authenticated user"""
-        auto_topups = AutoTopUp.objects.filter(user=request.user).select_related('user__wallet')
-        serializer = AutoTopUpSerializer(auto_topups, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
     
     @extend_schema(
         summary="Create a new auto top-up",
@@ -91,6 +79,23 @@ class AutoTopUpListCreateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class GetUserAutoTopUpsView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="List user's auto top-ups",
+        description="Retrieve all auto top-up schedules for the authenticated user.",
+        responses={
+            200: AutoTopUpSerializer(many=True),
+        },
+        tags=['Auto Top-Up']
+    )
+    def get(self, request):
+        auto_topups = AutoTopUp.objects.filter(user=request.user).select_related('user__wallet')
+        serializer = AutoTopUpSerializer(auto_topups, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
 class AutoTopUpDetailView(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -110,7 +115,6 @@ class AutoTopUpDetailView(APIView):
         tags=['Auto Top-Up']
     )
     def get(self, request, pk):
-        """Get auto top-up details with history"""
         auto_topup = self.get_object(pk, request.user)
         if not auto_topup:
             return Response(
@@ -133,7 +137,6 @@ class AutoTopUpDetailView(APIView):
     )
     @transaction.atomic
     def put(self, request, pk):
-        """Update auto top-up"""
         auto_topup = self.get_object(pk, request.user)
         if not auto_topup:
             return Response(
@@ -160,7 +163,6 @@ class AutoTopUpDetailView(APIView):
     )
     @transaction.atomic
     def patch(self, request, pk):
-        """Partially update auto top-up"""
         auto_topup = self.get_object(pk, request.user)
         if not auto_topup:
             return Response(
@@ -317,7 +319,6 @@ class AutoTopUpHistoryView(APIView):
         tags=['Auto Top-Up']
     )
     def get(self, request, pk):
-        """Get history for specific auto top-up"""
         try:
             auto_topup = AutoTopUp.objects.get(pk=pk, user=request.user)
         except AutoTopUp.DoesNotExist:

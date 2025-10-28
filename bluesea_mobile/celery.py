@@ -9,8 +9,12 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
 app.conf.beat_schedule = {
-    'process-auto-topups-every-5-minutes': {
+    'process-auto-topups-every-minute': {
         'task': 'autotopup.tasks.process_auto_topups',
-        'schedule': crontab(minute='*/5'),
+        'schedule': 60.0,
     },
 }
+
+@app.task(bind=True)
+def debug_task(self):
+    print(f'Request: {self.request!r}')

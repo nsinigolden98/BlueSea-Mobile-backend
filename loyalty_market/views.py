@@ -49,6 +49,21 @@ class UserPointsView(APIView):
         return Response({"total_points": total_points}, status=status.HTTP_200_OK)
 
 
+class AdminCreateRewardView(APIView):
+    permission_classes = [IsAuthenticated]  
+    # TODO: Add admin check
+
+    def post(self, request):
+        serializer = RewardSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            logger.error(f"Reward creation failed: {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class RedeemPointsView(APIView):
     permission_classes = [IsAuthenticated]
 
