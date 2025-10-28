@@ -19,6 +19,7 @@ urlpatterns = [
     path('api/transactions/', include('transactions.urls')),
     path('api/bonus/', include('bonus.urls')),
     path('api/market/', include('loyalty_market.urls')),
+    path('api/user_preference/', include('user_preference.urls')),
 ]
 
 if settings.DEBUG:

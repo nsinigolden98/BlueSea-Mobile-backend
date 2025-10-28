@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'market_place',
     'group_payment',
     'notifications', 
+    'user_preference',
     'bonus',
     'autotopup',
     'loyalty_market',
