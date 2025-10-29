@@ -11,4 +11,6 @@ urlpatterns = [
     path('resend-otp/', views.ResendOtp.as_view(), name='resend-otp'),
     path('auth/google/', views.GoogleLoginView.as_view(), name='google-login'),
     path('auth/apple/', views.AppleLoginView.as_view(), name='apple-login'),
+    path('reset-password/', views.PasswordResetView.as_view(), name='reset-password'),
+    # path('edit-password/', views.EditPasswordView.as_view(), name='edit-password'),
 ]

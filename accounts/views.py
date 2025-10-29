@@ -496,3 +496,150 @@ class AppleLoginView(APIView):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+
+class LogoutView(APIView):
+    authentication_classes = [JWTAuthentication]
+    
+    # @extend_schema(
+    #     summary="User logout",
+    #     description="Logout user by blacklisting their refresh token",
+    #     request=OpenApiTypes.OBJECT,
+    #     responses={
+    #         200: OpenApiTypes.OBJECT,
+    #         400: OpenApiTypes.OBJECT
+    #     },
+    #     examples=[
+    #         OpenApiExample(
+    #             'Logout Request',
+    #             value={
+    #                 "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+    #             },
+    #             request_only=True
+    #         )
+    #     ],
+    #     tags=['Authentication']
+    # )
+    def post(self, request):
+        try:
+            refresh_token = request.data.get("refresh_token")
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response(
+                {
+                    "message": "Logout successful",
+                    "state": True
+                },
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            # logger.error(f"Error during logout: {str(e)}")
+            return Response(
+                {
+                    "message": "Invalid token or logout failed",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class PasswordResetView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request):
+        try:
+            serializer = ResetPasswordSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+
+                user, code = serializer.save()
+
+                send_mail = send_email_verification(
+                    subject="Password Reset Verification Code",
+                    template="accounts/password_reset.html",
+                    email=user.email,
+                    context = {"token": code}
+                )
+
+                if send_mail:
+                    return Response(
+                        {
+                            "message":"Password reset OTP sent to your email",
+                            "state": True
+                        },
+                        status=status.HTTP_200_OK
+                    )
+                return Response(
+                    {
+                        "message":"Failed to send password reset OTP, try again",
+                        "state": False
+                    },
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        except Exception as e:
+            print(str(e))
+            return Response(
+                {
+                    "message":"An error occurred",
+                    "state": False
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+class VerifyResetPasswordOTPView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request):
+        try:
+            serializer = OTPVerificationSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                return Response(
+                    {
+                        "message":"OTP verified successfully",
+                        "state": True
+                    },
+                    status=status.HTTP_200_OK
+                )
+        except Exception as e:
+            print(str(e))
+            return Response(
+                {
+                    "message":"An error occurred",
+                    "state": False
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class ResetPassword(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request):
+        try:
+            token = request.data.get("token")
+            new_password = request.data.get("new_password")
+            data = signing.loads(token)
+            email = data['email']
+            user = Profile.objects.get(email=email)
+            user.set_password(new_password)
+
+            user.save()
+            return Response(
+                {
+                    "message": "Password Reset Successfully", 
+                    "state": True
+                },
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            print(str(e))
+            return Response(
+                {
+                    "message": "An error occured",
+                    "state": False
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
