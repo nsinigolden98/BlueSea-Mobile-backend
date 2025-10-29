@@ -50,20 +50,17 @@ class EditPasswordSerializer(serializers.Serializer):
 
 class OTPVerificationSerializer(serializers.Serializer):
     otp = serializers.IntegerField()
-    # phone = serializers.CharField() 
     email = serializers.EmailField()
 
 
 class ResetPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    phone = serializers.CharField()
 
     def validate(self, data):
         email = data.get('email')
-        phone = data.get('phone')
 
         try:
-            owner = Profile.objects.get(email=email, phone=phone)
+            owner = Profile.objects.get(email=email)
         except Profile.DoesNotExist:
             raise ValidationError("No user found with the provided email and username.")
         return data
