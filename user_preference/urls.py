@@ -2,7 +2,7 @@ from django.urls import path
 from .views import UserPreferenceView
 
 # Define the app namespace
-app_name = 'preferences'
+app_name = 'user_preference'
 
 urlpatterns = [
     # Endpoint: GET, PUT, PATCH /api/preferences/settings/

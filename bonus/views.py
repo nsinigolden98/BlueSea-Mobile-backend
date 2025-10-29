@@ -7,7 +7,7 @@ from .models import BonusPoint, BonusHistory, BonusCampaign
 from .serializers import (
     BonusPointSerializer, 
     BonusHistorySerializer, 
-    RedeemPointsSerializer,
+   # RedeemPointsSerializer,
     BonusCampaignSerializer
 )
 from .utils import (

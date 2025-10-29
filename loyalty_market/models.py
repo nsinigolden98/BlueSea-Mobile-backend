@@ -14,8 +14,8 @@ class Reward(models.Model):
         ('manual', 'Manual Fulfilment'),
         ('instant', 'Instant Delivery'),
     ]
-    id = models.UUIDField()
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reward user")
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reward_user")
     title = models.CharField(max_length=255)
     description = models.TextField()
     image_url = models.URLField(null=True, blank=True)
@@ -38,8 +38,8 @@ class RedemptionTransaction(models.Model):
         ('refunded', 'Refunded'),
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name="redemption user")
-    reward_id = models.ForeignKey(Reward, on_delete=models.CASCADE, related_name="redemption reward")
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name="redemption_user")
+    reward_id = models.ForeignKey(Reward, on_delete=models.CASCADE, related_name="redemption_reward")
     points_deducted = models.IntegerField(default=0)
     status = models.CharField(max_length=20, choices=REDEMPTION_STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
