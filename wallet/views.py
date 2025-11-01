@@ -20,7 +20,7 @@ from rest_framework.views import APIView
 from .models import Wallet
 from transactions.models import WalletTransaction, FundWallet
 from .serializers import WalletSerializer
-from transactions.serializers import WalletTransactionSerializer, FundWalletSerializer
+from transactions.serializers import WalletTransactionSerializer
 
 
 class WalletBalance(APIView):
