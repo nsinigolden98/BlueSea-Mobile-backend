@@ -14,6 +14,7 @@ from .views import (
     GloDataTopUpViews,
     EtisalatDataTopUpViews,
     GroupPaymentViews,
+    GroupPaymentHistory,
     Airtime2CashViews,
     )
 
@@ -33,4 +34,5 @@ urlpatterns = [
     path('waec-registration/', JAMBRegistrationViews.as_view(), name='waec-registration'),
     path('group-payment/', GroupPaymentViews.as_view(), name='group-payment'),
     path('airtime-buyback/', Airtime2CashViews.as_view(),name='airtime-buyback'),
+    path('group-payment/history/', GroupPaymentHistory.as_view(), name='group-payment-history'),
 ]
