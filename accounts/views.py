@@ -122,6 +122,7 @@ class RegisterView(APIView):
                         )   
         except Exception as e:
             print(str(e))
+            logger.error(f"Registration error: {str(e)}")
             return Response(
                 {
                     "message": "An error occurred during registration",
@@ -544,101 +545,272 @@ class LogoutView(APIView):
             )
 
 
+
 class PasswordResetView(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @extend_schema(
+        summary="Request password reset",
+        description="Send OTP to user's email for password reset",
+        request=ResetPasswordSerializer,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        tags=['Authentication']
+    )
     def post(self, request):
         try:
             serializer = ResetPasswordSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
+                email = serializer.validated_data['email']
+                user = Profile.objects.get(email=email)
+                
+                otp = get_random_string(6, '0123456789')
+                timestamp = timezone.now()
+                
+                ResetPassword.objects.update_or_create(
+                    profile=user,
+                    defaults={'otp': int(otp), 'timestamp': timestamp}
+                )
 
-                user, code = serializer.save()
-
+                # Send email
                 send_mail = send_email_verification(
                     subject="Password Reset Verification Code",
                     template="accounts/password_reset.html",
                     email=user.email,
-                    context = {"token": code}
+                    context={"token": otp, "email": user.email}
                 )
 
                 if send_mail:
                     return Response(
                         {
-                            "message":"Password reset OTP sent to your email",
+                            "message": "Password reset OTP sent to your email",
                             "state": True
                         },
                         status=status.HTTP_200_OK
                     )
                 return Response(
                     {
-                        "message":"Failed to send password reset OTP, try again",
+                        "message": "Failed to send password reset OTP, try again",
                         "state": False
                     },
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
-        except Exception as e:
-            print(str(e))
+        except Profile.DoesNotExist:
             return Response(
                 {
-                    "message":"An error occurred",
-                    "state": False
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        
-class VerifyResetPasswordOTPView(APIView):
-    authentication_classes = []
-    permission_classes = []
-
-    def post(self, request):
-        try:
-            serializer = OTPVerificationSerializer(data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                return Response(
-                    {
-                        "message":"OTP verified successfully",
-                        "state": True
-                    },
-                    status=status.HTTP_200_OK
-                )
-        except Exception as e:
-            print(str(e))
-            return Response(
-                {
-                    "message":"An error occurred",
-                    "state": False
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-
-class ResetPassword(APIView):
-    authentication_classes = []
-    permission_classes = []
-
-    def post(self, request):
-        try:
-            token = request.data.get("token")
-            new_password = request.data.get("new_password")
-            data = signing.loads(token)
-            email = data['email']
-            user = Profile.objects.get(email=email)
-            user.set_password(new_password)
-
-            user.save()
-            return Response(
-                {
-                    "message": "Password Reset Successfully", 
+                    "message": "If an account exists with this email, you will receive a reset code",
                     "state": True
                 },
                 status=status.HTTP_200_OK
             )
         except Exception as e:
-            print(str(e))
+            logger.error(f"Password reset error: {str(e)}")
             return Response(
                 {
-                    "message": "An error occured",
+                    "message": "An error occurred",
+                    "state": False
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        
+class VerifyResetOTPView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    @extend_schema(
+        summary="Verify password reset OTP",
+        description="Verify the OTP and return a token for password reset",
+        request=OTPVerificationSerializer,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        tags=['Authentication']
+    )
+    def post(self, request):
+        try:
+            serializer = OTPVerificationSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                email = serializer.validated_data["email"]
+                user_otp = serializer.validated_data["otp"]
+                
+                try:
+                    user = Profile.objects.get(email=email)
+                    reset_record = ResetPassword.objects.get(profile=user)
+                except (Profile.DoesNotExist, ResetPassword.DoesNotExist):
+                    return Response(
+                        {
+                            "message": "Invalid request",
+                            "state": False
+                        },
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Check for OTP expiration (10 minutes)
+                if reset_record.timestamp + timedelta(minutes=10) < timezone.now():
+                    reset_record.delete()
+                    return Response(
+                        {
+                            "message": "OTP has expired",
+                            "state": False
+                        },
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                if reset_record.otp == user_otp:
+                    # Generate a secure signed 
+                    reset_token = signing.dumps(
+                        {'email': email, 'timestamp': timezone.now().isoformat()},
+                        salt='password-reset'
+                    )
+                    
+                    ResetPasswordValuationToken.objects.create(reset_token=reset_token)
+                    
+                    reset_record.delete()
+                    
+                    return Response(
+                        {
+                            "message": "OTP verified successfully",
+                            "state": True,
+                            "reset_token": reset_token
+                        },
+                        status=status.HTTP_200_OK
+                    )
+                else:
+                    return Response(
+                        {
+                            "message": "Invalid OTP",
+                            "state": False
+                        },
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+        except Exception as e:
+            logger.error(f"OTP verification error: {str(e)}")
+            return Response(
+                {
+                    "message": "An error occurred",
+                    "state": False
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class ResetUserPassword(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    @extend_schema(
+        summary="Reset password",
+        description="Reset user password using verified token",
+        request=OpenApiTypes.OBJECT,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                'Reset Password Request',
+                value={
+                    "token": "signed_token_from_otp_verification",
+                    "new_password": "NewSecurePassword123",
+                    "confirm_password": "NewSecurePassword123"
+                },
+                request_only=True
+            )
+        ],
+        tags=['Authentication']
+    )
+    def post(self, request):
+        try:
+            token = request.data.get("token")
+            new_password = request.data.get("new_password")
+            confirm_password = request.data.get("confirm_password")
+
+            if not all([token, new_password, confirm_password]):
+                return Response(
+                    {
+                        "message": "All fields are required",
+                        "state": False
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            if confirm_password != new_password:
+                return Response(
+                    {
+                        "message": "New password and confirm password do not match",
+                        "state": False
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Add password strength validation
+            if len(new_password) < 8:
+                return Response(
+                    {
+                        "message": "Password must be at least 8 characters long",
+                        "state": False
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            try:
+                # Verify token with timeout
+                data = signing.loads(
+                    token,
+                    salt='password-reset',
+                    max_age=900  
+                )
+            except signing.SignatureExpired:
+                return Response(
+                    {
+                        "message": "Reset token has expired",
+                        "state": False
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            except signing.BadSignature:
+                return Response(
+                    {
+                        "message": "Invalid reset token",
+                        "state": False
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if not ResetPasswordValuationToken.objects.filter(reset_token=token).exists():
+                return Response(
+                    {
+                        "message": "Invalid or already used reset token",
+                        "state": False
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            email = data['email']
+            user = Profile.objects.get(email=email)
+            user.set_password(new_password)
+            user.save()
+            
+            ResetPasswordValuationToken.objects.filter(reset_token=token).delete()
+            
+            ResetPassword.objects.filter(profile=user).delete()
+            
+            return Response(
+                {
+                    "message": "Password reset successfully",
+                    "state": True
+                },
+                status=status.HTTP_200_OK
+            )
+        except Profile.DoesNotExist:
+            return Response(
+                {
+                    "message": "User not found",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"Password reset error: {str(e)}")
+            return Response(
+                {
+                    "message": "An error occurred",
                     "state": False
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

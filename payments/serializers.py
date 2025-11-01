@@ -27,43 +27,43 @@ class AirtimeTopUpSerializer(serializers.ModelSerializer):
 class MTNDataTopUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = MTNDataTopUp
-        fields= ["plan", "billerCode", "phone_number"]
+        fields= ["plan", "billersCode", "phone_number"]
         read_only_fields= ["id","request_id", "created_at"]
         
 class AirtelDataTopUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = AirtelDataTopUp
-        fields= ["plan", "billerCode", "phone_number"]
+        fields= ["plan", "billersCode", "phone_number"]
         read_only_fields= ["id","request_id", "created_at"]
 
 class GloDataTopUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = GloDataTopUp
-        fields= ["plan", "billerCode", "phone_number"]
+        fields= ["plan", "billersCode", "phone_number"]
         read_only_fields= ["id","request_id", "created_at"]
         
 class EtisalatDataTopUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = EtisalatDataTopUp
-        fields= ["plan", "billerCode", "phone_number"]
+        fields= ["plan", "billersCode", "phone_number"]
         read_only_fields= ["id","request_id", "created_at"]
         
 class DSTVPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = DSTVPayment
-        fields= ["billerCode","dstv_plan","subscription_type","phone_number"]
+        fields= ["billersCode","dstv_plan","subscription_type","phone_number"]
         read_only_fields= ["id","request_id","created_at"]
         
 class GOTVPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = GOTVPayment
-        fields= ["billerCode","gotv_plan","subscription_type","phone_number"]
+        fields= ["billersCode","gotv_plan","subscription_type","phone_number"]
         read_only_fields= ["id","request_id","created_at"]
 
 class StartimesPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = StartimesPayment
-        fields= ["billerCode","startimes_plan","phone_number"]
+        fields= ["billersCode","startimes_plan","phone_number"]
         read_only_fields= ["id","request_id","created_at"]
         
 class ShowMaxPaymentSerializer(serializers.ModelSerializer):

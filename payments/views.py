@@ -55,6 +55,14 @@ VTU_AFRICA_APIKEY = ""
 
 class Airtime2CashViews(APIView):
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Convert airtime to cash",
+        description="Convert airtime to wallet balance",
+        request=Airtime2CashSerializer,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        tags=['Payments']
+    )
     
     def post(self, request):
         serializer = Airtime2CashSerializer(data = request.data)
