@@ -5,6 +5,9 @@ from rest_framework import status
 from loyalty_market.models import Reward, RedemptionTransaction
 from loyalty_market.serializers import RewardSerializer, RedeemPointsSerializer
 from bonus.models import BonusPoint
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
+
 
 import logging
 
@@ -12,6 +15,13 @@ logger = logging.getLogger(__name__)
 
 class RewardListView(APIView):
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="List all rewards",
+        description="Get all available rewards in the loyalty marketplace",
+        responses={200: RewardSerializer(many=True)},
+        tags=['Loyalty Market']
+    )
 
     def get(self, request):
 
@@ -23,6 +33,16 @@ class RewardListView(APIView):
 
 class RewardDetailView(APIView):
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Get reward details",
+        description="Retrieve details of a specific reward",
+        parameters=[
+            OpenApiParameter(name='reward_id', type=int, location=OpenApiParameter.PATH, description='Reward ID')
+        ],
+        responses={200: RewardSerializer, 404: OpenApiTypes.OBJECT},
+        tags=['Loyalty Market']
+    )
 
     def get(self, request, reward_id):
         try:
@@ -38,6 +58,13 @@ class RewardDetailView(APIView):
 class UserPointsView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Get user points balance",
+        description="Retrieve the authenticated user's total bonus points",
+        responses={200: OpenApiTypes.OBJECT},
+        tags=['Loyalty Market']
+    )
+
     def get(self, request):
         user = request.user
         try:
@@ -51,6 +78,14 @@ class UserPointsView(APIView):
 
 class AdminCreateRewardView(APIView):
     permission_classes = [IsAuthenticated]  
+
+    @extend_schema(
+        summary="Create new reward (Admin)",
+        description="Create a new reward in the loyalty marketplace (admin only)",
+        request=RewardSerializer,
+        responses={201: RewardSerializer, 400: OpenApiTypes.OBJECT},
+        tags=['Loyalty Market']
+    )
     # TODO: Add admin check
 
     def post(self, request):
@@ -66,6 +101,14 @@ class AdminCreateRewardView(APIView):
 
 class RedeemPointsView(APIView):
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Redeem points for reward",
+        description="Redeem bonus points to claim a reward",
+        request=RedeemPointsSerializer,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        tags=['Loyalty Market']
+    )
 
     def post(self, request):
         serializer = RedeemPointsSerializer(data=request.data)

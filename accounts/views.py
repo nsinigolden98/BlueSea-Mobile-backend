@@ -122,6 +122,7 @@ class RegisterView(APIView):
                         )   
         except Exception as e:
             print(str(e))
+            logger.error(f"Registration error: {str(e)}")
             return Response(
                 {
                     "message": "An error occurred during registration",
@@ -692,7 +693,7 @@ class VerifyResetOTPView(APIView):
             )
 
 
-class ResetPassword(APIView):
+class ResetUserPassword(APIView):
     authentication_classes = []
     permission_classes = []
 

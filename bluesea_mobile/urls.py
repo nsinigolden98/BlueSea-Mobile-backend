@@ -6,20 +6,20 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('schema/', SpectacularAPIView.as_view(), name='schema'),
 
-    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    path('docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
-    path('api/admin/', admin.site.urls),
-    path('api/accounts/', include('accounts.urls')),
-    path('api/payments/', include('payments.urls')),
+    path('admin/', admin.site.urls),
+    path('accounts/', include('accounts.urls')),
+    path('payments/', include('payments.urls')),
     path('market_place/', include('market_place.urls')),
     # path('api/wallet/', include('wallet.urls')),
-    path('api/transactions/', include('transactions.urls')),
-    path('api/bonus/', include('bonus.urls')),
-    path('api/market/', include('loyalty_market.urls')),
-    path('api/user_preference/', include('user_preference.urls')),
+    path('transactions/', include('transactions.urls')),
+    path('bonus/', include('bonus.urls')),
+    path('market/', include('loyalty_market.urls')),
+    path('user_preference/', include('user_preference.urls')),
 ]
 
 if settings.DEBUG:

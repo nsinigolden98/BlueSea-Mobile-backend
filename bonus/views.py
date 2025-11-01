@@ -16,12 +16,21 @@ from .utils import (
     user_points_summary
 )
 import logging
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 logger = logging.getLogger(__name__)
 
 
 class BonusPointsSummaryView(APIView):
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Get bonus points summary",
+        description="Retrieve user's bonus points balance and statistics",
+        responses={200: OpenApiTypes.OBJECT, 500: OpenApiTypes.OBJECT},
+        tags=['Bonus & Rewards']
+    )
     
     def get(self, request):
         try:
@@ -40,6 +49,18 @@ class BonusPointsSummaryView(APIView):
 
 class BonusHistoryView(APIView):
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Get bonus transaction history",
+        description="Retrieve user's bonus points transaction history with pagination",
+        parameters=[
+            OpenApiParameter(name='type', type=str, description='Filter by transaction type', required=False),
+            OpenApiParameter(name='page', type=int, description='Page number', required=False),
+            OpenApiParameter(name='page_size', type=int, description='Items per page (default: 20)', required=False),
+        ],
+        responses={200: BonusHistorySerializer(many=True), 500: OpenApiTypes.OBJECT},
+        tags=['Bonus & Rewards']
+    )
     
     def get(self, request):
         try:
@@ -122,6 +143,13 @@ class BonusHistoryView(APIView):
 
 class ClaimDailyLoginView(APIView):
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Claim daily login bonus",
+        description="Claim daily login bonus points (once per day)",
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 500: OpenApiTypes.OBJECT},
+        tags=['Bonus & Rewards']
+    )
     
     def post(self, request):
         try:
@@ -152,6 +180,13 @@ class ClaimDailyLoginView(APIView):
 
 class ActiveCampaignsView(APIView):
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Get active campaigns",
+        description="Retrieve all currently active bonus campaigns",
+        responses={200: BonusCampaignSerializer(many=True), 500: OpenApiTypes.OBJECT},
+        tags=['Bonus & Rewards']
+    )
     
     def get(self, request):
         try:
