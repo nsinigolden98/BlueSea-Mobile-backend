@@ -791,6 +791,13 @@ class ResetUserPassword(APIView):
             
             ResetPassword.objects.filter(profile=user).delete()
             
+            send_email_verification(
+                subject="Password Reset Successful",
+                email=user.email,
+                template="accounts/password_reset_success.html",
+                context={"email": user.email}
+            )
+            
             return Response(
                 {
                     "message": "Password reset successfully",
