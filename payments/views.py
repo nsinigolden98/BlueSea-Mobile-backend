@@ -48,6 +48,7 @@ from bonus.models import Referral, BonusCampaign, BonusHistory, BonusPoint
 import logging
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +139,7 @@ class GroupPaymentViews(APIView):
 
         group = get_object_or_404(Group, id=group_id)
         
-        #TODO: work on check if user is admin
+        # Check if user is admin/owner
         is_admin = GroupMember.objects.filter(
             group=group,
             user=request.user,
@@ -176,89 +177,128 @@ class GroupPaymentViews(APIView):
                 )
 
                 # Process each member's contribution
-                for member, amount in member_amounts.items():
+                for member in members:
+                    amount = member_amounts.get(member)
                     wallet = member.user.wallet
                     
                     if wallet.balance < amount:
                         raise InsufficientFundsException(
-                            f"Insufficient funds for {member.user.get_full_name()}"
+                            f"Insufficient funds for {member.user.email}"
                         )
                     
-                    wallet.debit(amount, reference=f'GP-{group_payment.id}-{member.user.id}')
-
-                    # Create transaction record
-                    WalletTransaction.objects.create(
-                        wallet=wallet,
-                        transaction_type='debit',
-                        amount=amount,
+                    # Create UNIQUE reference for each member's contribution
+                    unique_reference = f'GP-{group_payment.id}-{member.user.id}-{uuid.uuid4().hex[:8]}'
+                    
+                    # Debit wallet with unique reference
+                    wallet.debit(
+                        amount=amount, 
                         description=f'Group payment contribution - {payment_type}',
-                        reference=f'GP-{group_payment.id}-{member.user.id}',
-                        status='completed'
+                        reference=unique_reference
                     )
 
                     # Create contribution record
-                    contribution = GroupPaymentContribution.objects.create(
+                    GroupPaymentContribution.objects.create(
                         group_payment=group_payment,
                         member=member,
                         amount=amount,
                         status='completed'
                     )
 
-                    contribution_notification(
-                        member=member,
-                        amount=amount,
-                        group_name=group.name,
-                        payment_type=payment_type
-                    )
+                    # Send notification
+                    try:
+                        contribution_notification(
+                            member=member,
+                            amount=amount,
+                            group_name=group.name,
+                            payment_type=payment_type
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to send notification to {member.user.email}: {str(e)}")
 
                 # All debits successful, now call VTU API
                 vtu_response = self.vtu_api(payment_type, service_details, total_amount)
                 
-                if vtu_response.get('status') == 'success':
+                if vtu_response.get('response_description') == 'TRANSACTION SUCCESSFUL':
                     group_payment.status = 'completed'
-                    group_payment.vtu_reference = vtu_response.get('reference')
+                    group_payment.vtu_reference = vtu_response.get('requestId', vtu_response.get('reference'))
                     group_payment.save()
                     
                     # Notify all members of success
                     for member in members:
-                        group_payment_success(
-                            member=member,
-                            amount=total_amount,
-                            group_name=group.name,
-                            payment_type=payment_type,
-                            vtu_reference=vtu_response.get('reference')
+                        try:
+                            group_payment_success(
+                                member=member,
+                                amount=member_amounts.get(member),
+                                group_name=group.name,
+                                payment_type=payment_type,
+                                vtu_reference=vtu_response.get('requestId')
+                            )
+                        except Exception as e:
+                            logger.warning(f"Failed to send success notification: {str(e)}")
+                    
+                    return Response({
+                        'success': True,
+                        'message': 'Group payment completed successfully',
+                        'payment_id': group_payment.id,
+                        'vtu_reference': group_payment.vtu_reference,
+                        'total_amount': str(total_amount),
+                        'member_contributions': {
+                            member.user.email: str(member_amounts.get(member))
+                            for member in members
+                        }
+                    }, status=status.HTTP_200_OK)
+                else:
+                    # VTU API failed
+                    group_payment.status = 'failed'
+                    group_payment.save()
+                    
+                    # Reverse all debits by crediting back
+                    for member in members:
+                        amount = member_amounts.get(member)
+                        wallet = member.user.wallet
+                        reversal_reference = f'REV-{group_payment.id}-{member.user.id}-{uuid.uuid4().hex[:8]}'
+                        
+                        wallet.credit(
+                            amount=amount,
+                            description=f'Reversal - Group payment failed',
+                            reference=reversal_reference
                         )
                     
                     return Response({
-                        'message': 'Group payment completed successfully',
-                        'payment_id': group_payment.id,
-                        'vtu_reference': vtu_response.get('reference')
-                    }, status=status.HTTP_200_OK)
-                else:
-                    raise VTUAPIException(vtu_response.get('message', 'VTU API failed'))
+                        'success': False,
+                        'error': f'VTU service failed: {vtu_response.get("response_description", "Unknown error")}. All debits have been reversed.',
+                        'payment_id': group_payment.id
+                    }, status=status.HTTP_400_BAD_REQUEST)
 
         except InsufficientFundsException as e:
             return Response(
-                {'error': str(e)},
+                {
+                    'success': False,
+                    'error': str(e)
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
+            logger.error(f"Group payment error: {str(e)}", exc_info=True)
+            
+            # Attempt to notify members of failure
             for member in members:
-                group_payment_failed(
-                    member=member,
-                    amount=member_amounts.get(member, 0),
-                    group_name=group.name,
-                    payment_type=payment_type,
-                    reason=str(e)
-                )
+                try:
+                    group_payment_failed(
+                        member=member,
+                        amount=member_amounts.get(member, 0),
+                        group_name=group.name,
+                        payment_type=payment_type,
+                        reason=str(e)
+                    )
+                except Exception as notif_error:
+                    logger.warning(f"Failed to send failure notification: {str(notif_error)}")
             
             return Response(
-                {'error': f'Payment failed: {str(e)}. All debits have been reversed.'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        except Exception as e:
-            return Response(
-                {'error': f'An error occurred: {str(e)}. All debits have been reversed.'},
+                {
+                    'success': False,
+                    'error': f'Payment failed: {str(e)}. All debits have been reversed.'
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
