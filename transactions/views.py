@@ -17,12 +17,22 @@ import hmac
 import hashlib
 import logging
 from django.db import transaction
+from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
+
 
 logger = logging.getLogger(__name__)
 
 
 class GetWalletTransaction(APIView):
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Get wallet transactions",
+        description="Retrieve all wallet transactions for the authenticated user",
+        responses={200: WalletTransactionSerializer(many=True), 404: OpenApiTypes.OBJECT},
+        tags=['Wallet & Transactions']
+    )
 
     def get(self, request):
         user = request.user
@@ -37,6 +47,14 @@ class GetWalletTransaction(APIView):
         
 class InitializeFunding(APIView):
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Initialize wallet funding",
+        description="Initialize Paystack payment to fund user wallet (minimum: ₦100)",
+        request=OpenApiTypes.OBJECT,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        tags=['Wallet & Transactions']
+    )
 
     def post(self, request, *args, **kwargs):
         try:

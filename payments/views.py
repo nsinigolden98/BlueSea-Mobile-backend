@@ -24,6 +24,7 @@ from .serializers import (
     GloDataTopUpSerializer,
     EtisalatDataTopUpSerializer,
     GroupPaymentSerializer,
+    Airtime2CashSerializer,
     )
 from .vtpass import (
     generate_reference_id, 
@@ -37,12 +38,96 @@ from .vtpass import (
     glo_dict,
     etisalat_dict,
     )
+from .vtuafrica import (
+    top_up2,
+    )
 from notifications.utils import contribution_notification, group_payment_success, group_payment_failed
 from bluesea_mobile.utils import InsufficientFundsException, VTUAPIException
+from bonus.utils import award_daily_login_bonus, award_points, award_referral_bonus, award_vtu_purchase_points, user_points_summary, redeem_points
+from bonus.models import Referral, BonusCampaign, BonusHistory, BonusPoint
+import logging
+from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
+
+logger = logging.getLogger(__name__)
+
+VTU_AFRICA_APIKEY = ""
+
+class Airtime2CashViews(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Convert airtime to cash",
+        description="Convert airtime to wallet balance",
+        request=Airtime2CashSerializer,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        tags=['Payments']
+    )
     
+    def post(self, request):
+        serializer = Airtime2CashSerializer(data = request.data)
+        
+        if serializer.is_valid(raise_exception=True):
+            request_id = generate_reference_id()
+            serializer.save(request_id = request_id)
+            
+            with transaction.atomic():
+                amount = int(serializer.data['amount'])
+    
+                user_data = {
+                             "apikey":"",
+                             "serviceName":"Airtime2Cash",
+                            "network":serializer.data["network"]
+                                        }
+
+                sitephone= top_up2(user_data,"merchant-verify")
+                if sitephone !=  "Unavailable":
+                    user_data = {
+                                "apikey":"",
+                                "network":serializer.data["network"],
+                                "sender":"",
+                                "sendernumber":serializer.data["phone_number"],
+                                "amount":amount,
+                                "ref": request_id,
+                                "sitephone": sitephone
+                    }
+                    user_wallet = request.user.wallet
+                    airtime2cash_response = top_up2(user_data, "airtime-cash")
+                    if airtime2cash_response["code"] == 101:
+                        user_wallet.credit(amount=amount, reference=request_id)
+                        
+
 class GroupPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Create group payment",
+        description="Initiate a group payment for services like airtime, data, electricity, etc.",
+        request=OpenApiTypes.OBJECT,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT,
+            500: OpenApiTypes.OBJECT
+        },
+        examples=[
+            OpenApiExample(
+                'Group Airtime Payment',
+                value={
+                    "group_id": 1,
+                    "payment_type": "airtime",
+                    "total_amount": "1000.00",
+                    "service_details": {
+                        "network": "mtn",
+                        "phone_number": "08012345678"
+                    },
+                    "split_type": "equal"
+                },
+                request_only=True
+            )
+        ],
+        tags=['Payments']
+    )
     def post(self, request):
         group_id = request.data.get('group_id')
         payment_type = request.data.get('payment_type')
@@ -353,11 +438,24 @@ class GroupPaymentViews(APIView):
             registration_response = top_up(details)
             return registration_response
 
-
-
 class GroupPaymentHistory(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Get group payment history",
+        description="Retrieve payment history for a specific group or all user's groups",
+        parameters=[
+            OpenApiParameter(
+                name='group_id',
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description='Filter by specific group ID',
+                required=False
+            )
+        ],
+        responses={200: GroupPaymentSerializer(many=True)},
+        tags=['Payments']
+    )
     def get(self, request):
         group_id = request.query_params.get('group_id')
         
@@ -381,12 +479,30 @@ class GroupPaymentHistory(APIView):
         serializer = GroupPaymentSerializer(payments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-
-
 class AirtimeTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
     
+    @extend_schema(
+        summary="Purchase airtime",
+        description="Buy airtime for a phone number",
+        request=AirtimeTopUpSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        examples=[
+            OpenApiExample(
+                'Airtime Purchase',
+                value={
+                    "network": "mtn",
+                    "phone_number": "08012345678",
+                    "amount": "100"
+                },
+                request_only=True
+            )
+        ],
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = AirtimeTopUpSerializer(data = request.data)
         
@@ -402,17 +518,66 @@ class AirtimeTopUpViews(APIView):
                     "amount": amount,
                     "phone": serializer.data["phone_number"]
                 }
-                user_wallet = request.user.wallet
-                #Wallet.debit(amount, ref_id)
+                user_wallet = request.user.wallet 
                 buy_airtime_response = top_up(data)
                 if buy_airtime_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    return Response(buy_airtime_response)
+                else :
+                    data = {
+                        "apikey": VTU_AFRICA_APIKEY,
+                        "ref": request_id,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                        "network": serializer.data["network"],
+                    }
+                    back_up = top_up2(data,"airtime")
+                    if back_up["code"] == 101:
+                        user_wallet.debit(amount=amount, reference=request_id)
+                        return Response(back_up)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 
                 return Response(buy_airtime_response)
 
 
 class MTNDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Purchase MTN data",
+        description="Buy MTN data bundle",
+        request=MTNDataTopUpSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = MTNDataTopUpSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -435,11 +600,46 @@ class MTNDataTopUpViews(APIView):
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
-
 class AirtelDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Purchase Airtel data",
+        description="Buy Airtel data bundle",
+        request=AirtelDataTopUpSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = AirtelDataTopUpSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -462,11 +662,46 @@ class AirtelDataTopUpViews(APIView):
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
-
 class GloDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Purchase Glo data",
+        description="Buy Glo data bundle",
+        request=GloDataTopUpSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = GloDataTopUpSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -489,11 +724,46 @@ class GloDataTopUpViews(APIView):
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
-
 class EtisalatDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Purchase 9mobile data",
+        description="Buy 9mobile (Etisalat) data bundle",
+        request=EtisalatDataTopUpSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = EtisalatDataTopUpSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -516,11 +786,46 @@ class EtisalatDataTopUpViews(APIView):
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
-
 class DSTVPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Pay for DSTV subscription",
+        description="Purchase DSTV subscription plan",
+        request=DSTVPaymentSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = DSTVPaymentSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -545,11 +850,46 @@ class DSTVPaymentViews(APIView):
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
-
 class GOTVPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Pay for GOTV subscription",
+        description="Purchase GOTV subscription plan",
+        request=GOTVPaymentSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = GOTVPaymentSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -574,11 +914,46 @@ class GOTVPaymentViews(APIView):
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
-
 class StartimesPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Pay for Startimes subscription",
+        description="Purchase Startimes subscription plan",
+        request=StartimesPaymentSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = StartimesPaymentSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -595,17 +970,52 @@ class StartimesPaymentViews(APIView):
                         "amount": amount,
                         "phone": serializer.data["phone_number"],
                     }
-                # Wallet.debit(amount) 
+                
                 user_wallet = request.user.wallet
 
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
-
 class ShowMaxPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Pay for ShowMax subscription",
+        description="Purchase ShowMax subscription plan",
+        request=ShowMaxPaymentSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = ShowMaxPaymentSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -621,17 +1031,52 @@ class ShowMaxPaymentViews(APIView):
                         "variation_code": variation_code,
                         "amount": amount,
                     }
-                # Wallet.debit(amount) 
+                
                 user_wallet = request.user.wallet
 
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(subscription_response)
                 
-
 class ElectricityPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Pay electricity bill",
+        description="Purchase electricity/power units",
+        request=ElectricityPaymentSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = ElectricityPaymentSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -646,18 +1091,68 @@ class ElectricityPaymentViews(APIView):
                         "variation_code": serializer.data["meter_type"],
                         "amount": amount,
                         "phone": serializer.data["phone_number"]
-                    }
-                # Wallet.debit(amount) 
+                    } 
                 user_wallet = request.user.wallet
 
                 electricity_response = top_up(data)
                 if electricity_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+                    return Response(electricity_response)
+                else :
+                    data = {
+                        "apikey": VTU_AFRICA_APIKEY,
+                        "service": serializer.data["biller_name"],
+                        "meterNo": serializer.data["billerCode"],
+                        "metertype": serializer.data["meter_type"],
+                        "amount": amount,
+                        "ref": request_id,
+                        "webhookURL": "",
+                    }
+                    back_up = top_up2(data,"electric")
+                    if back_up["code"] == 101:
+                        user_wallet.debit(amount=amount, reference=request_id)
+                        return Response(back_up)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(electricity_response)
 
 
 class WAECRegitrationViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="WAEC registration",
+        description="Register for WAEC examination",
+        request=WAECRegitrationSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = WAECRegitrationSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -672,16 +1167,51 @@ class WAECRegitrationViews(APIView):
                     "quantity" : 1,
                     "phone": serializer.data["phone_number"]
                 }
-                # Wallet.debit(amount)
+                
                 user_wallet = request.user.wallet 
                 registration_response = top_up(data)
                 if registration_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(registration_response)
                 
-
 class WAECResultCheckerViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Purchase WAEC result checker",
+        description="Buy WAEC result checker PIN",
+        request=WAECResultCheckerSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = WAECResultCheckerSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
@@ -696,17 +1226,52 @@ class WAECResultCheckerViews(APIView):
                         "quantity" : 1,
                         "phone": serializer.data["phone_number"]
                     }
-                # Wallet.debit(amount)
+
                 user_wallet = request.user.wallet
 
                 registration_response = top_up(data)
                 if registration_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(registration_response)
                 
-
 class JAMBRegistrationViews(APIView):
     permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="JAMB registration",
+        description="Register for JAMB examination",
+        request=JAMBRegistrationSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Payments']
+    )
     def post(self, request):
         serializer = JAMBRegistrationSerializer(data = request.data)
         
@@ -723,10 +1288,35 @@ class JAMBRegistrationViews(APIView):
                     "billerCode" : serializer.data["billerCode"],
                     "phone": serializer.data["phone_number"]
                 }
-                # Wallet.debit(amount)
+                
                 user_wallet = request.user.wallet 
                 jamb_registration_response = top_up(data)
                 if jamb_registration_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                     user_wallet.debit(amount=amount, reference=request_id)
+
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id
+                        )
+                        
+                        # Check for referral bonus (first transaction)
+                        try:
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status='pending',
+                                first_transaction_completed=False
+                            )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                            
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(jamb_registration_response)
 

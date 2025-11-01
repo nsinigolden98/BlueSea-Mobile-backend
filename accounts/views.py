@@ -1,10 +1,7 @@
 from django.shortcuts import render
 from rest_framework import status
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.response import Response
-from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.views import APIView
-from rest_framework.authtoken.models import Token
 from .utils import send_email_verification
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.views.decorators.csrf import csrf_exempt
@@ -16,7 +13,6 @@ from datetime import timedelta
 from django.core import signing
 from django.conf import settings
 from django.db import transaction
-from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import AccessToken
@@ -29,8 +25,8 @@ import logging
 from .serializers import *
 import os
 from wallet.models import Wallet
-
-from wallet.models import Wallet
+from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 import dotenv
 
@@ -45,6 +41,39 @@ logger = logging.getLogger(__name__)
 class RegisterView(APIView):
     authentication_classes = []
     permission_classes = []
+    
+    @extend_schema(
+        summary="Register a new user",
+        description="Create a new user account and send email verification",
+        request=UserSerializer,
+        responses={
+            201: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            500: OpenApiTypes.OBJECT
+        },
+        examples=[
+            OpenApiExample(
+                'Registration Request',
+                value={
+                    "username": "john_doe",
+                    "email": "john@example.com",
+                    "password": "SecurePassword123",
+                    "phone_number": "08012345678",
+                    "role": "user"
+                },
+                request_only=True
+            ),
+            OpenApiExample(
+                'Success Response',
+                value={
+                    "message": "Account successfully created, check your email",
+                    "state": True
+                },
+                response_only=True
+            )
+        ],
+        tags=['Authentication']
+    )
     def post(self, request):
         try:
             serializer = UserSerializer(data=request.data)
@@ -93,6 +122,7 @@ class RegisterView(APIView):
                         )   
         except Exception as e:
             print(str(e))
+            logger.error(f"Registration error: {str(e)}")
             return Response(
                 {
                     "message": "An error occurred during registration",
@@ -106,6 +136,26 @@ class VerifyEmail(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @extend_schema(
+        summary="Verify email address",
+        description="Verify user's email using OTP code sent to their email",
+        request=OTPVerificationSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        examples=[
+            OpenApiExample(
+                'Verification Request',
+                value={
+                    "email": "john@example.com",
+                    "otp": "123456"
+                },
+                request_only=True
+            )
+        ],
+        tags=['Authentication']
+    )
     def post(self, request):
         serializer = OTPVerificationSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
@@ -150,6 +200,24 @@ class ResendOtp(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @extend_schema(
+        summary="Resend OTP",
+        description="Resend verification OTP to user's email",
+        request=OpenApiTypes.OBJECT,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            500: OpenApiTypes.OBJECT
+        },
+        examples=[
+            OpenApiExample(
+                'Resend OTP Request',
+                value={"email": "john@example.com"},
+                request_only=True
+            )
+        ],
+        tags=['Authentication']
+    )
     def post(self, request):
 
         try:
@@ -215,10 +283,41 @@ class LoginView(TokenObtainPairView):
     permission_classes = []
     serializer_class = MyTokenObtainPairSerializer
 
+    @extend_schema(
+        summary="User login",
+        description="Authenticate user and return JWT tokens",
+        request=MyTokenObtainPairSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            401: OpenApiTypes.OBJECT
+        },
+        examples=[
+            OpenApiExample(
+                'Login Request',
+                value={
+                    "username": "john_doe",
+                    "password": "SecurePassword123"
+                },
+                request_only=True
+            ),
+            OpenApiExample(
+                'Success Response',
+                value={
+                    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+                    "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+                    "user": {
+                        "id": 1,
+                        "username": "john_doe",
+                        "email": "john@example.com"
+                    }
+                },
+                response_only=True
+            )
+        ],
+        tags=['Authentication']
+    )
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
-    
-
 
 
 class GoogleLoginView(APIView):
@@ -226,6 +325,16 @@ class GoogleLoginView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
     
+    @extend_schema(
+        summary="Google OAuth login",
+        description="Authenticate user using Google OAuth token",
+        request=GoogleLoginSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Authentication']
+    )
     def post(self, request):
         try:
             serializer = GoogleLoginSerializer(data=request.data)
@@ -305,6 +414,16 @@ class AppleLoginView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
     
+    @extend_schema(
+        summary="Apple OAuth login",
+        description="Authenticate user using Apple OAuth token",
+        request=AppleLoginSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Authentication']
+    )
     def post(self, request):
         try:
             serializer = AppleLoginSerializer(data=request.data)
@@ -375,6 +494,324 @@ class AppleLoginView(APIView):
                     "success": False,
                     "message": "An error occurred during Apple login",
                     "error": str(e) if settings.DEBUG else "Internal server error"
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+
+class LogoutView(APIView):
+    authentication_classes = [JWTAuthentication]
+    
+    # @extend_schema(
+    #     summary="User logout",
+    #     description="Logout user by blacklisting their refresh token",
+    #     request=OpenApiTypes.OBJECT,
+    #     responses={
+    #         200: OpenApiTypes.OBJECT,
+    #         400: OpenApiTypes.OBJECT
+    #     },
+    #     examples=[
+    #         OpenApiExample(
+    #             'Logout Request',
+    #             value={
+    #                 "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+    #             },
+    #             request_only=True
+    #         )
+    #     ],
+    #     tags=['Authentication']
+    # )
+    def post(self, request):
+        try:
+            refresh_token = request.data.get("refresh_token")
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response(
+                {
+                    "message": "Logout successful",
+                    "state": True
+                },
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            # logger.error(f"Error during logout: {str(e)}")
+            return Response(
+                {
+                    "message": "Invalid token or logout failed",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+
+class PasswordResetView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    @extend_schema(
+        summary="Request password reset",
+        description="Send OTP to user's email for password reset",
+        request=ResetPasswordSerializer,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        tags=['Authentication']
+    )
+    def post(self, request):
+        try:
+            serializer = ResetPasswordSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                email = serializer.validated_data['email']
+                user = Profile.objects.get(email=email)
+                
+                otp = get_random_string(6, '0123456789')
+                timestamp = timezone.now()
+                
+                ResetPassword.objects.update_or_create(
+                    profile=user,
+                    defaults={'otp': int(otp), 'timestamp': timestamp}
+                )
+
+                # Send email
+                send_mail = send_email_verification(
+                    subject="Password Reset Verification Code",
+                    template="accounts/password_reset.html",
+                    email=user.email,
+                    context={"token": otp, "email": user.email}
+                )
+
+                if send_mail:
+                    return Response(
+                        {
+                            "message": "Password reset OTP sent to your email",
+                            "state": True
+                        },
+                        status=status.HTTP_200_OK
+                    )
+                return Response(
+                    {
+                        "message": "Failed to send password reset OTP, try again",
+                        "state": False
+                    },
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        except Profile.DoesNotExist:
+            return Response(
+                {
+                    "message": "If an account exists with this email, you will receive a reset code",
+                    "state": True
+                },
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            logger.error(f"Password reset error: {str(e)}")
+            return Response(
+                {
+                    "message": "An error occurred",
+                    "state": False
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        
+class VerifyResetOTPView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    @extend_schema(
+        summary="Verify password reset OTP",
+        description="Verify the OTP and return a token for password reset",
+        request=OTPVerificationSerializer,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        tags=['Authentication']
+    )
+    def post(self, request):
+        try:
+            serializer = OTPVerificationSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                email = serializer.validated_data["email"]
+                user_otp = serializer.validated_data["otp"]
+                
+                try:
+                    user = Profile.objects.get(email=email)
+                    reset_record = ResetPassword.objects.get(profile=user)
+                except (Profile.DoesNotExist, ResetPassword.DoesNotExist):
+                    return Response(
+                        {
+                            "message": "Invalid request",
+                            "state": False
+                        },
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Check for OTP expiration (10 minutes)
+                if reset_record.timestamp + timedelta(minutes=10) < timezone.now():
+                    reset_record.delete()
+                    return Response(
+                        {
+                            "message": "OTP has expired",
+                            "state": False
+                        },
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                if reset_record.otp == user_otp:
+                    # Generate a secure signed 
+                    reset_token = signing.dumps(
+                        {'email': email, 'timestamp': timezone.now().isoformat()},
+                        salt='password-reset'
+                    )
+                    
+                    ResetPasswordValuationToken.objects.create(reset_token=reset_token)
+                    
+                    reset_record.delete()
+                    
+                    return Response(
+                        {
+                            "message": "OTP verified successfully",
+                            "state": True,
+                            "reset_token": reset_token
+                        },
+                        status=status.HTTP_200_OK
+                    )
+                else:
+                    return Response(
+                        {
+                            "message": "Invalid OTP",
+                            "state": False
+                        },
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+        except Exception as e:
+            logger.error(f"OTP verification error: {str(e)}")
+            return Response(
+                {
+                    "message": "An error occurred",
+                    "state": False
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class ResetUserPassword(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    @extend_schema(
+        summary="Reset password",
+        description="Reset user password using verified token",
+        request=OpenApiTypes.OBJECT,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                'Reset Password Request',
+                value={
+                    "token": "signed_token_from_otp_verification",
+                    "new_password": "NewSecurePassword123",
+                    "confirm_password": "NewSecurePassword123"
+                },
+                request_only=True
+            )
+        ],
+        tags=['Authentication']
+    )
+    def post(self, request):
+        try:
+            token = request.data.get("token")
+            new_password = request.data.get("new_password")
+            confirm_password = request.data.get("confirm_password")
+
+            if not all([token, new_password, confirm_password]):
+                return Response(
+                    {
+                        "message": "All fields are required",
+                        "state": False
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            if confirm_password != new_password:
+                return Response(
+                    {
+                        "message": "New password and confirm password do not match",
+                        "state": False
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Add password strength validation
+            if len(new_password) < 8:
+                return Response(
+                    {
+                        "message": "Password must be at least 8 characters long",
+                        "state": False
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            try:
+                # Verify token with timeout
+                data = signing.loads(
+                    token,
+                    salt='password-reset',
+                    max_age=900  
+                )
+            except signing.SignatureExpired:
+                return Response(
+                    {
+                        "message": "Reset token has expired",
+                        "state": False
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            except signing.BadSignature:
+                return Response(
+                    {
+                        "message": "Invalid reset token",
+                        "state": False
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if not ResetPasswordValuationToken.objects.filter(reset_token=token).exists():
+                return Response(
+                    {
+                        "message": "Invalid or already used reset token",
+                        "state": False
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            email = data['email']
+            user = Profile.objects.get(email=email)
+            user.set_password(new_password)
+            user.save()
+            
+            ResetPasswordValuationToken.objects.filter(reset_token=token).delete()
+            
+            ResetPassword.objects.filter(profile=user).delete()
+            
+            return Response(
+                {
+                    "message": "Password reset successfully",
+                    "state": True
+                },
+                status=status.HTTP_200_OK
+            )
+        except Profile.DoesNotExist:
+            return Response(
+                {
+                    "message": "User not found",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"Password reset error: {str(e)}")
+            return Response(
+                {
+                    "message": "An error occurred",
+                    "state": False
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
