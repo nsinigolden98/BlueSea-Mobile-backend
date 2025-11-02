@@ -3,6 +3,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.db import transaction as db_transaction
+from django.core.cache import cache
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from .models import BonusPoint, BonusHistory, BonusCampaign
 from .serializers import (
     BonusPointSerializer, 
@@ -24,20 +27,36 @@ logger = logging.getLogger(__name__)
 
 class BonusPointsSummaryView(APIView):
     permission_classes = [IsAuthenticated]
-
+    
     @extend_schema(
         summary="Get bonus points summary",
         description="Retrieve user's bonus points balance and statistics",
         responses={200: OpenApiTypes.OBJECT, 500: OpenApiTypes.OBJECT},
         tags=['Bonus & Rewards']
     )
-    
     def get(self, request):
         try:
+            # Try to get from cache first
+            cache_key = f'bonus_summary_{request.user.id}'
+            cached_data = cache.get(cache_key)
+            
+            if cached_data:
+                return Response({
+                    'success': True,
+                    'data': cached_data,
+                    'cached': True
+                }, status=status.HTTP_200_OK)
+            
+            # If not in cache, get from database
             summary = user_points_summary(request.user)
+            
+            # Cache for 5 minutes
+            cache.set(cache_key, summary, timeout=300)
+            
             return Response({
                 'success': True,
-                'data': summary
+                'data': summary,
+                'cached': False
             }, status=status.HTTP_200_OK)
         except Exception as e:
             logger.error(f"Error getting points summary for {request.user.email}: {str(e)}")
@@ -180,14 +199,15 @@ class ClaimDailyLoginView(APIView):
 
 class ActiveCampaignsView(APIView):
     permission_classes = [IsAuthenticated]
-
+    
     @extend_schema(
         summary="Get active campaigns",
         description="Retrieve all currently active bonus campaigns",
         responses={200: BonusCampaignSerializer(many=True), 500: OpenApiTypes.OBJECT},
         tags=['Bonus & Rewards']
     )
-    
+    # Cache for 15 minutes
+    @method_decorator(cache_page(60 * 15)) 
     def get(self, request):
         try:
             from django.utils import timezone

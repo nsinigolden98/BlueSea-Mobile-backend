@@ -37,7 +37,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 #DEBUG = os.environ.get('DEBUG')
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -76,13 +76,13 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.gzip.GZipMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -119,6 +119,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'CONN_MAX_AGE': 600,
     }
 }
 
@@ -130,6 +131,11 @@ DATABASES = {
 #         "PASSWORD": os.environ.get("DATABASE_PASSWORD"),
 #         "HOST": os.environ.get("DATABASE_HOST"),
 #         "PORT": os.environ.get("DATABASE_PORT"),
+#         "CONN_MAX_AGE": 600,
+#         "OPTIONS": {
+#             "connect_timeout": 10,
+#             "options": "-c statement_timeout=30000"
+#         },
 #     }
 # }
 
@@ -258,3 +264,21 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
+
+
+# Cache Configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+        'KEY_PREFIX': 'bluesea',
+        'TIMEOUT': 300,
+    }
+}
+
+# Session Configuration (optional - use Redis for sessions too)
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
