@@ -22,6 +22,7 @@ urlpatterns = [
     path('bonus/', include('bonus.urls')),
     path('market/', include('loyalty_market.urls')),
     path('user_preference/', include('user_preference.urls')),
+    path('autotopup/', include('autotopup.urls')),
 ]
 
 if settings.DEBUG:
