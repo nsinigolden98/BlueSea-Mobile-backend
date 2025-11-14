@@ -5,6 +5,7 @@ from .models import AutoTopUp, AutoTopUpHistory
 
 class AutoTopUpSerializer(serializers.ModelSerializer):
     available_balance = serializers.SerializerMethodField()
+    transaction_pin = serializers.CharField(write_only=True, required=True)
     
     class Meta:
         model = AutoTopUp
@@ -12,7 +13,7 @@ class AutoTopUpSerializer(serializers.ModelSerializer):
             'id', 'service_type', 'amount', 'phone_number', 'network', 'plan',
             'start_date', 'repeat_days', 'is_active', 'next_run', 'is_locked',
             'locked_amount', 'last_run', 'total_runs', 'failed_runs',
-            'created_at', 'updated_at', 'available_balance'
+            'created_at', 'updated_at', 'available_balance', 'transaction_pin'
         ]
         read_only_fields = [
             'id', 'next_run', 'is_locked', 'locked_amount', 'last_run', 'total_runs',
