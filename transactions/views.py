@@ -107,6 +107,7 @@ class InitializeFunding(APIView):
             # })
 
             success, authorization_url = checkout(payload)
+            
 
             if not success:
                 return Response({"success": False, "error": authorization_url}, status=status.HTTP_400_BAD_REQUEST)

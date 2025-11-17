@@ -29,9 +29,9 @@ class WalletBalance(APIView):
     def get(self, request):
         try:
             wallet_user = Wallet.objects.get(user=request.user)
-            wallet = wallet_user.balance
+            wallet = f"₦{wallet_user.balance:,.2f}"
 
-            return Response({"balance": wallet}, status=status.HTTP_200_OK)
+            return Response({"balance": str(wallet)}, status=status.HTTP_200_OK)
         except Wallet.DoesNotExist:
             return Response({"error": "Wallet not found."}, status=status.HTTP_404_NOT_FOUND)
         

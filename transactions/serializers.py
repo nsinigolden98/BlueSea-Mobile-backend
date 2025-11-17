@@ -32,3 +32,4 @@ class WalletFundingSerializer(serializers.ModelSerializer):
     
     def get_formatted_amount(self, obj):
         return f"₦{obj.amount:,.2f}"
+        
