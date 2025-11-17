@@ -1,23 +1,15 @@
-from rest_framework import generics, permissions
-from rest_framework.exceptions import NotFound
-from .models import UserPreference
-from .serializers import UserPreferenceSerializer
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .serializers import CurrentUserSerializer
 
-class UserPreferenceView(generics.RetrieveUpdateDestroyAPIView):
+class CurrentUserView(APIView):
+    # Ensure only authenticated users can access this view
+    permission_classes = [IsAuthenticated]
 
-    serializer_class = UserPreferenceSerializer
-    # Only authenticated users can access their preferences
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_object(self):
-        user = self.request.user
-        if not user.is_authenticated or not user.is_active:
-             raise NotFound("User is not authenticated.")
-             
-        try:
-            preference = UserPreference.objects.get(user=user)
-        except UserPreference.DoesNotExist:
-       
-            preference = UserPreference.objects.create(user=user)
-            
-        return preference
+    def get(self, request):
+        # request.user is automatically set to the authenticated User object
+        # or an AnonymousUser object if not authenticated (which IsAuthenticated prevents)
+        serializer = CurrentUserSerializer(request.user)
+        return Response(serializer.data)
+        
