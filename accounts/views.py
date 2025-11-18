@@ -122,7 +122,18 @@ class RegisterView(APIView):
                                 "state": False
                             },
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                        )   
+                        ) 
+        except serializers.ValidationError as e:
+            logger.error(f"Validation error during registration: {str(e)}")
+            return Response(
+                {
+                    "message": "Registration Failed",
+                    "errors": e.detail,
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         except Exception as e:
             print(str(e))
             logger.error(f"Registration error: {str(e)}")
