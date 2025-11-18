@@ -35,7 +35,7 @@ class Profile(AbstractUser):
     is_admin = models.BooleanField(default=False)
     role = models.CharField(max_length=200, default="user")
     email_verified = models.BooleanField(default=False)
-    transaction_pin = models.IntegerField(null=True, blank=True)
+    transaction_pin = models.CharField(max_length=255, null=True, blank=True)
     pin_is_set = models.BooleanField(default=False)
     created_on = models.DateTimeField(auto_now_add=True)
     
