@@ -22,7 +22,7 @@ class AutoTopUpCreateView(APIView):
     
     @extend_schema(
         summary="Create a new auto top-up",
-        description="Schedule a new auto top-up. Funds will be locked from wallet.",
+        description="Schedule a new auto top-up. Funds will be locked from wallet. Requires transaction PIN.",
         request=AutoTopUpCreateSerializer,
         responses={
             201: AutoTopUpSerializer,
@@ -38,30 +38,46 @@ class AutoTopUpCreateView(APIView):
                     "network": "mtn",
                     "start_date": "2025-11-02T10:00:00Z",
                     "repeat_days": 7,
-                    "is_active": True
+                    "is_active": True,
+                    "transaction_pin": "1234"
                 },
                 request_only=True
             ),
-            OpenApiExample(
-                'Data Auto Top-Up',
-                value={
-                    "service_type": "data",
-                    "amount": "500.00",
-                    "phone_number": "08012345678",
-                    "network": "mtn",
-                    "plan": "mtn-1gb-30days",
-                    "start_date": "2025-11-02T10:00:00Z",
-                    "repeat_days": 30,
-                    "is_active": True
-                },
-                request_only=True
-            )
         ],
         tags=['Auto Top-Up']
     )
     @transaction.atomic
     def post(self, request):
-        serializer = AutoTopUpCreateSerializer(data=request.data, context={'request': request})
+        # Get and validate PIN first
+        transaction_pin = request.data.get('transaction_pin')
+        
+        if not transaction_pin:
+            return Response(
+                {'error': 'Transaction PIN is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if user has set PIN
+        if not request.user.pin_is_set:
+            return Response(
+                {'error': 'Please set your transaction PIN first'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Verify PIN
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response(
+                {'error': 'Invalid transaction PIN'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # user = request.user
+        # if transaction_pin != user.transaction_pin
+        
+        # Remove PIN from data before serialization
+        data = request.data.copy()
+        data.pop('transaction_pin', None)
+        
+        serializer = AutoTopUpCreateSerializer(data=data, context={'request': request})
         
         if serializer.is_valid(raise_exception=True):
             auto_topup = serializer.save()
@@ -356,6 +372,33 @@ class AutoTopUpReactivateView(APIView):
     )
     @transaction.atomic
     def patch(self, request, pk):
+        # Get and validate PIN first
+        transaction_pin = request.data.get('transaction_pin')
+        
+        if not transaction_pin:
+            return Response(
+                {'error': 'Transaction PIN is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if user has set PIN
+        if not request.user.pin_is_set:
+            return Response(
+                {'error': 'Please set your transaction PIN first'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Verify PIN
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response(
+                {'error': 'Invalid transaction PIN'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Remove PIN from data before serialization
+        data = request.data.copy()
+        data.pop('transaction_pin', None)
+        
         try:
             auto_topup = AutoTopUp.objects.get(pk=pk, user=request.user)
         except AutoTopUp.DoesNotExist:

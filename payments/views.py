@@ -130,12 +130,24 @@ class GroupPaymentViews(APIView):
         tags=['Payments']
     )
     def post(self, request):
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+        
         group_id = request.data.get('group_id')
         payment_type = request.data.get('payment_type')
         total_amount = Decimal(str(request.data.get('total_amount')))
         service_details = request.data.get('service_details')
         split_type = request.data.get('split_type', 'equal')
         custom_splits = request.data.get('custom_splits', {})
+
 
         group = get_object_or_404(Group, id=group_id)
         
@@ -544,6 +556,18 @@ class AirtimeTopUpViews(APIView):
         tags=['Payments']
     )
     def post(self, request):
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+        
+
         serializer = AirtimeTopUpSerializer(data = request.data)
         
         if serializer.is_valid(raise_exception=True):
@@ -619,6 +643,18 @@ class MTNDataTopUpViews(APIView):
         tags=['Payments']
     )
     def post(self, request):
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+
+
         serializer = MTNDataTopUpSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
             request_id = generate_reference_id()
@@ -681,6 +717,18 @@ class AirtelDataTopUpViews(APIView):
         tags=['Payments']
     )
     def post(self, request):
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+        
+
         serializer = AirtelDataTopUpSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
             request_id = generate_reference_id()
@@ -743,6 +791,18 @@ class GloDataTopUpViews(APIView):
         tags=['Payments']
     )
     def post(self, request):
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+        
+
         serializer = GloDataTopUpSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
             request_id = generate_reference_id()
@@ -805,6 +865,18 @@ class EtisalatDataTopUpViews(APIView):
         tags=['Payments']
     )
     def post(self, request):
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+        
+
         serializer = EtisalatDataTopUpSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
             request_id = generate_reference_id()
@@ -867,6 +939,18 @@ class DSTVPaymentViews(APIView):
         tags=['Payments']
     )
     def post(self, request):
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+        
+
         serializer = DSTVPaymentSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
             request_id = generate_reference_id()
@@ -931,6 +1015,18 @@ class GOTVPaymentViews(APIView):
         tags=['Payments']
     )
     def post(self, request):
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+
+
         serializer = GOTVPaymentSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
             request_id = generate_reference_id()
@@ -995,6 +1091,18 @@ class StartimesPaymentViews(APIView):
         tags=['Payments']
     )
     def post(self, request):
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+
+
         serializer = StartimesPaymentSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
             request_id = generate_reference_id()
@@ -1057,6 +1165,18 @@ class ShowMaxPaymentViews(APIView):
         tags=['Payments']
     )
     def post(self, request):
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+
+
         serializer = ShowMaxPaymentSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
             request_id = generate_reference_id()
@@ -1118,6 +1238,18 @@ class ElectricityPaymentViews(APIView):
         tags=['Payments']
     )
     def post(self, request):
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+        
+
         serializer = ElectricityPaymentSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
             request_id = generate_reference_id()
@@ -1194,6 +1326,18 @@ class WAECRegitrationViews(APIView):
         tags=['Payments']
     )
     def post(self, request):
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+
+
         serializer = WAECRegitrationSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
             request_id = generate_reference_id()
@@ -1253,6 +1397,18 @@ class WAECResultCheckerViews(APIView):
         tags=['Payments']
     )
     def post(self, request):
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+        
+
         serializer = WAECResultCheckerSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
             request_id = generate_reference_id()
@@ -1313,6 +1469,18 @@ class JAMBRegistrationViews(APIView):
         tags=['Payments']
     )
     def post(self, request):
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+
+
         serializer = JAMBRegistrationSerializer(data = request.data)
         
         if serializer.is_valid(raise_exception=True):
@@ -1359,4 +1527,3 @@ class JAMBRegistrationViews(APIView):
                     except Exception as e:
                         logger.error(f"Error awarding bonus points: {str(e)}")
                 return Response(jamb_registration_response)
-

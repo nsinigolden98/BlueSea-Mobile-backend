@@ -7,18 +7,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def send_notification(user, title, message, notification_type='info', email_subject=None, email_template=None, context=None):
-    """    
-    Args:
-        user: User object
-        title: Notification title
-        message: Notification message
-        notification_type: Type of notification (payment, payment_success, contribution, etc.)
-        email_subject: Optional custom email subject
-        email_template: Optional custom email template name
-        context: Additional context for email template
-    """
-    
+def send_notification(user, title, message, notification_type='info', email_subject=None, email_template=None, context=None):    
     notification = Notification.objects.create(
         user=user,
         title=title,
@@ -127,3 +116,6 @@ def group_payment_failed(member, amount, group_name, payment_type, reason):
         email_template='notifications/group_payment_failed.html',
         context=context
     )
+
+def auto_topup_success():
+    pass

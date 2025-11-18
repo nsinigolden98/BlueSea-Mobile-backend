@@ -562,7 +562,7 @@ class AirtimeTopUp(models.Model):
     amount = models.IntegerField()
     network = models.CharField(max_length = 10, choices= NETWORK_TYPES)
     phone_number = models.CharField()
-    request_id = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
 class MTNDataTopUp(models.Model):

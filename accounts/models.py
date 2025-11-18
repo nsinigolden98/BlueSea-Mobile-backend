@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
+from django.contrib.auth.hashers import make_password, check_password
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -34,6 +35,8 @@ class Profile(AbstractUser):
     is_admin = models.BooleanField(default=False)
     role = models.CharField(max_length=200, default="user")
     email_verified = models.BooleanField(default=False)
+    transaction_pin = models.CharField(max_length=255, null=True, blank=True)
+    pin_is_set = models.BooleanField(default=False)
     created_on = models.DateTimeField(auto_now_add=True)
     
 
@@ -53,6 +56,15 @@ class Profile(AbstractUser):
     
     def get_full_name(self):
         return f"{self.first_name}, {self.last_name}"
+    
+    def set_transaction_pin(self, pin):
+        self.transaction_pin = make_password(str(pin))
+        self.pin_is_set = True
+        self.save()
+
+    def verify_transaction_pin(self, pin):
+        if not self.pin_is_set or self.transaction_pin:
+            return check_password(str(pin), self.transaction_pin)
 
 # @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 # def create_auth_token(sender, instance= None, created=False, **kwargs):

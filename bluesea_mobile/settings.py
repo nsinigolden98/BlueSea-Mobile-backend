@@ -115,29 +115,29 @@ WSGI_APPLICATION = 'bluesea_mobile.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 # 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-        'CONN_MAX_AGE': 600,
-    }
-}
-
 # DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.postgresql",
-#         "NAME": os.environ.get("DATABASE_NAME"),
-#         "USER": os.environ.get("DATABASE_USER"),
-#         "PASSWORD": os.environ.get("DATABASE_PASSWORD"),
-#         "HOST": os.environ.get("DATABASE_HOST"),
-#         "PORT": os.environ.get("DATABASE_PORT"),
-#         "CONN_MAX_AGE": 600,
-#         "OPTIONS": {
-#             "connect_timeout": 10,
-#             "options": "-c statement_timeout=30000"
-#         },
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#         'CONN_MAX_AGE': 600,
 #     }
 # }
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("DATABASE_NAME"),
+        "USER": os.environ.get("DATABASE_USER"),
+        "PASSWORD": os.environ.get("DATABASE_PASSWORD"),
+        "HOST": os.environ.get("DATABASE_HOST"),
+        "PORT": os.environ.get("DATABASE_PORT"),
+        "CONN_MAX_AGE": 600,
+        "OPTIONS": {
+            "connect_timeout": 10,
+            "options": "-c statement_timeout=30000"
+        },
+    }
+}
 
 
 
@@ -194,6 +194,7 @@ EMAIL_PORT = os.environ.get('EMAIL_PORT')
 EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL')
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = os.environ.get('EMAIL_HOST_USER', 'noreply@bluesea.com') 
 FROM_EMAIL = EMAIL_HOST_USER
 #FROM_EMAIL = os.environ.get('EMAIL_HOST_USER')
 

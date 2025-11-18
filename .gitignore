@@ -10,7 +10,7 @@ __pycache__/
 debug.log
 
 # migration files
-**/migrations/*.py
+# **/migrations/*.py
 **/migrations/*.pyc
 **/migrations/__pycache__/*
 *.pyc
