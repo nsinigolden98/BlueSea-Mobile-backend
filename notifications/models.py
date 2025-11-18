@@ -7,7 +7,9 @@ User = get_user_model()
 class Notification(models.Model):
     NOTIFICATION_TYPES = [
         ('info', 'Information'),
+        ('success', 'Success'),
         ('payment', 'Payment'),
+        ('warning', 'Warning'),
         ('payment_success', 'Payment Success'),
         ('payment_failed', 'Payment Failed'),
         ('contribution', 'Contribution'),
