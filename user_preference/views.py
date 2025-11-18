@@ -8,8 +8,6 @@ class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # request.user is automatically set to the authenticated User object
-        # or an AnonymousUser object if not authenticated (which IsAuthenticated prevents)
         serializer = CurrentUserSerializer(request.user)
         return Response(serializer.data)
         

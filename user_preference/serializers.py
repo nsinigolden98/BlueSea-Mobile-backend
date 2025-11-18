@@ -7,6 +7,6 @@ class CurrentUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         # Include the fields you want to return
-        fields = ('id', 'username', 'email', 'first_name', 'last_name')
+        fields = ('id', 'other_names', 'email', 'first_name', 'last_name')
         # You can exclude 'password' and other sensitive fields
         
