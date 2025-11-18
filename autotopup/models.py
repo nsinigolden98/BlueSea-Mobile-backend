@@ -4,6 +4,8 @@ from django.core.validators import MinValueValidator
 from decimal import Decimal
 from django.utils import timezone
 
+from accounts.models import Profile
+
 SERVICE_TYPE_CHOICES = [
     ('airtime', 'Airtime'),
     ('data', 'Data'),

@@ -70,6 +70,8 @@ class AutoTopUpCreateView(APIView):
                 {'error': 'Invalid transaction PIN'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        # user = request.user
+        # if transaction_pin != user.transaction_pin
         
         # Remove PIN from data before serialization
         data = request.data.copy()
