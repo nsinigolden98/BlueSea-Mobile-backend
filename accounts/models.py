@@ -55,7 +55,7 @@ class Profile(AbstractUser):
             return self.image.url
     
     def get_full_name(self):
-        return f"{self.first_name}, {self.last_name}"
+        return f"{self.surname}, {self.other_names}"
     
     def set_transaction_pin(self, pin):
         self.transaction_pin = make_password(str(pin))

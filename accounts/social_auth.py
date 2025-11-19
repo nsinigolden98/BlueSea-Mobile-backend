@@ -6,6 +6,9 @@ import requests
 from jwt.algorithms import RSAAlgorithm
 from typing import Dict, Tuple, Optional
 import logging
+from accounts.models import Profile
+from wallet.models import Wallet
+from django.db import transaction as db_transaction
 
 logger = logging.getLogger(__name__)
 
@@ -14,15 +17,7 @@ class GoogleAuth:
     
     @staticmethod
     def verify_google_token(token: str) -> Tuple[bool, Optional[Dict]]:
-        """
-        Verify Google ID token and extract user information
-        
-        Args:
-            token: Google ID token from the client
-            
-        Returns:
-            Tuple of (success: bool, user_info: dict or error_message: str)
-        """
+
         try:
             # Verify the token
             idinfo = id_token.verify_oauth2_token(
@@ -144,20 +139,6 @@ class AppleAuth:
 
 
 def get_or_create_social_user(provider: str, user_data: Dict, extra_data: Optional[Dict] = None):
-    """
-    Get or create a user from social authentication data
-    
-    Args:
-        provider: 'google' or 'apple'
-        user_data: User data from the provider
-        extra_data: Additional data (e.g., name from Apple's first auth)
-        
-    Returns:
-        Tuple of (user, created: bool)
-    """
-    from accounts.models import Profile
-    from wallet.models import Wallet
-    from django.db import transaction
     
     email = user_data.get('email')
     
@@ -168,11 +149,17 @@ def get_or_create_social_user(provider: str, user_data: Dict, extra_data: Option
         # Try to get existing user
         user = Profile.objects.get(email=email)
         logger.info(f"Existing user found for email: {email}")
+        
+        # Update email verification status if needed
+        if not user.email_verified and user_data.get('email_verified'):
+            user.email_verified = True
+            user.save()
+        
         return user, False
         
     except Profile.DoesNotExist:
         # Create new user
-        with transaction.atomic():
+        with db_transaction.atomic():
             logger.info(f"Creating new user for email: {email}")
             
             # Extract names
@@ -192,17 +179,32 @@ def get_or_create_social_user(provider: str, user_data: Dict, extra_data: Option
                 surname = ''
                 other_names = ''
             
-            # Create user without password (social login only)
+            # If no names provided, use email username
+            if not other_names and not surname:
+                other_names = email.split('@')[0]
+            
+            # Create user
             user = Profile.objects.create(
                 email=email,
                 surname=surname,
                 other_names=other_names,
                 email_verified=user_data.get('email_verified', True),
-                role='user'
+                role='user',
+                is_active=True
             )
             
+            # Set unusable password for social login users
+            user.set_unusable_password()
+            user.save()
+            
             # Create wallet for the new user
-            Wallet.objects.create(user=user)
+            try:
+                Wallet.objects.create(user=user)
+                logger.info(f"Successfully created wallet for: {email}")
+            except Exception as wallet_error:
+                logger.error(f"Failed to create wallet for {email}: {str(wallet_error)}")
+                # Don't fail user creation if wallet creation fails
+                # The wallet can be created later
             
             logger.info(f"Successfully created user and wallet for: {email}")
             return user, True
