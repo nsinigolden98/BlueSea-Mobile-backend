@@ -254,8 +254,6 @@ LOGGING = {
     },
 }
 
-GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
-APPLE_CLIENT_ID = os.environ.get('APPLE_CLIENT_ID')
 
 # Set to True only if you are okay with ANY domain accessing your backend 
 # (not recommended for production).
@@ -296,3 +294,5 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = 'default'
 
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
+APPLE_CLIENT_ID = os.environ.get('APPLE_CLIENT_ID')

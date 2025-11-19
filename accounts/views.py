@@ -334,6 +334,7 @@ class LoginView(TokenObtainPairView):
         return super().post(request, *args, **kwargs)
 
 
+
 class GoogleLoginView(APIView):
 
     authentication_classes = []
@@ -341,12 +342,29 @@ class GoogleLoginView(APIView):
     
     @extend_schema(
         summary="Google OAuth login",
-        description="Authenticate user using Google OAuth token",
+        description="Authenticate user using Google OAuth. Supports both ID token (client-side) and authorization code (server-side) flows.",
         request=GoogleLoginSerializer,
         responses={
             200: OpenApiTypes.OBJECT,
             400: OpenApiTypes.OBJECT
         },
+        examples=[
+            OpenApiExample(
+                'ID Token Flow (Client-side)',
+                value={
+                    "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6..."
+                },
+                request_only=True
+            ),
+            OpenApiExample(
+                'Authorization Code Flow (Server-side)',
+                value={
+                    "authorization_code": "4/0AY0e-g7...",
+                    "redirect_uri": "http://localhost:3000/auth/callback"
+                },
+                request_only=True
+            )
+        ],
         tags=['Authentication']
     )
     def post(self, request):
@@ -362,13 +380,30 @@ class GoogleLoginView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            id_token = serializer.validated_data['id_token']
+            id_token_val = serializer.validated_data.get('id_token')
+            authorization_code = serializer.validated_data.get('authorization_code')
+            redirect_uri = serializer.validated_data.get('redirect_uri')
             
-            # Verify Google token
-            success, result = GoogleAuth.verify_google_token(id_token)
+            # Determine which flow to use
+            if id_token_val:
+                # Client-side ID token flow
+                success, result = GoogleAuth.verify_google_token(id_token_val)
+                flow_type = "ID token"
+            elif authorization_code:
+                # Server-side authorization code flow
+                success, result = GoogleAuth.exchange_code_for_token(authorization_code, redirect_uri)
+                flow_type = "Authorization code"
+            else:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "No authentication credentials provided"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             
             if not success:
-                logger.error(f"Google authentication failed: {result}")
+                logger.error(f"Google authentication failed ({flow_type}): {result}")
                 return Response(
                     {
                         "success": False,
@@ -388,7 +423,7 @@ class GoogleLoginView(APIView):
             # Serialize user data
             user_serializer = ProfileSerializer(user)
             
-            logger.info(f"Google login successful for user: {user.email}, New user: {is_new}")
+            logger.info(f"Google login successful ({flow_type}) for user: {user.email}, New user: {is_new}")
             
             return Response(
                 {
@@ -421,7 +456,7 @@ class GoogleLoginView(APIView):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
+        
 
 class AppleLoginView(APIView):
 

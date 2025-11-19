@@ -17,7 +17,11 @@ class GoogleAuth:
     
     @staticmethod
     def verify_google_token(token: str) -> Tuple[bool, Optional[Dict]]:
-
+        """
+        Verify Google ID token (Client-side flow)
+        Works for both web and mobile apps
+        Only requires GOOGLE_CLIENT_ID
+        """
         try:
             # Verify the token
             idinfo = id_token.verify_oauth2_token(
@@ -50,6 +54,87 @@ class GoogleAuth:
         except Exception as e:
             logger.error(f"Unexpected error during Google authentication: {str(e)}")
             return False, "Authentication failed"
+    
+    @staticmethod
+    def exchange_code_for_token(authorization_code: str, redirect_uri: str) -> Tuple[bool, Optional[Dict]]:
+
+        try:
+            # Token endpoint
+            token_url = "https://oauth2.googleapis.com/token"
+            
+            # Exchange code for tokens
+            token_data = {
+                'code': authorization_code,
+                'client_id': settings.GOOGLE_CLIENT_ID,
+                'client_secret': getattr(settings, 'GOOGLE_CLIENT_SECRET', None),
+                'redirect_uri': redirect_uri,
+                'grant_type': 'authorization_code'
+            }
+            
+            if not token_data['client_secret']:
+                logger.error("GOOGLE_CLIENT_SECRET is not configured")
+                return False, "Server configuration error"
+            
+            # Get access token
+            token_response = requests.post(token_url, data=token_data)
+            
+            if token_response.status_code != 200:
+                logger.error(f"Token exchange failed: {token_response.text}")
+                return False, "Failed to exchange authorization code"
+            
+            tokens = token_response.json()
+            access_token = tokens.get('access_token')
+            id_token_str = tokens.get('id_token')
+            
+            # Option 1: Use the ID token (faster, already contains user info)
+            if id_token_str:
+                try:
+                    idinfo = id_token.verify_oauth2_token(
+                        id_token_str, 
+                        google_requests.Request(), 
+                        settings.GOOGLE_CLIENT_ID
+                    )
+                    
+                    user_data = {
+                        'email': idinfo.get('email'),
+                        'email_verified': idinfo.get('email_verified', False),
+                        'given_name': idinfo.get('given_name', ''),
+                        'family_name': idinfo.get('family_name', ''),
+                        'picture': idinfo.get('picture', ''),
+                        'sub': idinfo.get('sub'),
+                    }
+                    
+                    logger.info(f"Successfully exchanged code for user: {user_data['email']}")
+                    return True, user_data
+                except Exception as e:
+                    logger.warning(f"ID token verification failed, falling back to userinfo endpoint: {str(e)}")
+            
+            # Option 2: Fallback to userinfo endpoint
+            if access_token:
+                userinfo_response = requests.get(
+                    'https://www.googleapis.com/oauth2/v2/userinfo',
+                    headers={'Authorization': f'Bearer {access_token}'}
+                )
+                
+                if userinfo_response.status_code == 200:
+                    user_info = userinfo_response.json()
+                    user_data = {
+                        'email': user_info.get('email'),
+                        'email_verified': user_info.get('verified_email', False),
+                        'given_name': user_info.get('given_name', ''),
+                        'family_name': user_info.get('family_name', ''),
+                        'picture': user_info.get('picture', ''),
+                        'sub': user_info.get('id'),
+                    }
+                    
+                    logger.info(f"Successfully got user info for: {user_data['email']}")
+                    return True, user_data
+            
+            return False, "Failed to get user information"
+                
+        except Exception as e:
+            logger.error(f"Error exchanging authorization code: {str(e)}", exc_info=True)
+            return False, str(e)
 
 
 class AppleAuth:
