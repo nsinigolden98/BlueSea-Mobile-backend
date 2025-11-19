@@ -39,10 +39,16 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+INTERNAL_IPS = [
+    '127.0.0.1',
+    'localhost',
+]
+
 
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -50,6 +56,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
+    'debug_toolbar',
 
     # rest framework
     'rest_framework',
@@ -57,6 +64,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',
     'drf_spectacular_sidecar',
+    'channels',
 
     # local apps
     'accounts',
@@ -70,6 +78,7 @@ INSTALLED_APPS = [
     'bonus',
     'autotopup',
     'loyalty_market',
+    'support',
 ]
 
 MIDDLEWARE = [
@@ -82,6 +91,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 REST_FRAMEWORK = {
@@ -110,6 +120,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'bluesea_mobile.wsgi.application'
+ASGI_APPLICATION = "bluesea_mobile.asgi.application"
 
 
 # Database
@@ -243,8 +254,6 @@ LOGGING = {
     },
 }
 
-GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
-APPLE_CLIENT_ID = os.environ.get('APPLE_CLIENT_ID')
 
 # Set to True only if you are okay with ANY domain accessing your backend 
 # (not recommended for production).
@@ -283,3 +292,7 @@ CACHES = {
 # Session Configuration (optional - use Redis for sessions too)
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = 'default'
+
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
+APPLE_CLIENT_ID = os.environ.get('APPLE_CLIENT_ID')
