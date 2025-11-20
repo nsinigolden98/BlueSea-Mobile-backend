@@ -119,7 +119,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'bluesea_mobile.wsgi.application'
+# WSGI_APPLICATION = 'bluesea_mobile.wsgi.application'
 ASGI_APPLICATION = "bluesea_mobile.asgi.application"
 
 
@@ -280,7 +280,7 @@ CELERY_TIMEZONE = 'UTC'
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://127.0.0.1:6379/1',
+        'LOCATION': os.environ.get('REDIS_LOCATION'),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         },
