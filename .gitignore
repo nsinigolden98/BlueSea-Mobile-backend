@@ -22,3 +22,6 @@ debug.log
 logs/
 *.log.*
 debug.log
+
+
+google_test.html
