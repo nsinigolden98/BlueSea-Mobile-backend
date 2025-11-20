@@ -1,9 +1,13 @@
+from click import confirm
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes
+from autotopup.views import IsAuthenticated
+from transactions.urls import api_view
 from .utils import send_email_verification
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenObtainPairView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -15,9 +19,8 @@ from django.conf import settings
 from django.db import transaction
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.permissions import AllowAny
-from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth import get_user_model
 from .models import Profile, EmailVerification, ResetPassword, ResetPasswordValuationToken
 from .social_auth import GoogleAuth, AppleAuth, get_or_create_social_user
 from .social_serializers import GoogleLoginSerializer, AppleLoginSerializer
@@ -25,7 +28,7 @@ import logging
 from .serializers import *
 import os
 from wallet.models import Wallet
-from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
+from drf_spectacular.utils import extend_schema, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 
 import dotenv
@@ -119,7 +122,18 @@ class RegisterView(APIView):
                                 "state": False
                             },
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                        )   
+                        ) 
+        except serializers.ValidationError as e:
+            logger.error(f"Validation error during registration: {str(e)}")
+            return Response(
+                {
+                    "message": "Registration Failed",
+                    "errors": e.detail,
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         except Exception as e:
             print(str(e))
             logger.error(f"Registration error: {str(e)}")
@@ -320,6 +334,7 @@ class LoginView(TokenObtainPairView):
         return super().post(request, *args, **kwargs)
 
 
+
 class GoogleLoginView(APIView):
 
     authentication_classes = []
@@ -327,12 +342,29 @@ class GoogleLoginView(APIView):
     
     @extend_schema(
         summary="Google OAuth login",
-        description="Authenticate user using Google OAuth token",
+        description="Authenticate user using Google OAuth. Supports both ID token (client-side) and authorization code (server-side) flows.",
         request=GoogleLoginSerializer,
         responses={
             200: OpenApiTypes.OBJECT,
             400: OpenApiTypes.OBJECT
         },
+        examples=[
+            OpenApiExample(
+                'ID Token Flow (Client-side)',
+                value={
+                    "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6..."
+                },
+                request_only=True
+            ),
+            OpenApiExample(
+                'Authorization Code Flow (Server-side)',
+                value={
+                    "authorization_code": "4/0AY0e-g7...",
+                    "redirect_uri": "http://localhost:3000/auth/callback"
+                },
+                request_only=True
+            )
+        ],
         tags=['Authentication']
     )
     def post(self, request):
@@ -348,13 +380,30 @@ class GoogleLoginView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            id_token = serializer.validated_data['id_token']
+            id_token_val = serializer.validated_data.get('id_token')
+            authorization_code = serializer.validated_data.get('authorization_code')
+            redirect_uri = serializer.validated_data.get('redirect_uri')
             
-            # Verify Google token
-            success, result = GoogleAuth.verify_google_token(id_token)
+            # Determine which flow to use
+            if id_token_val:
+                # Client-side ID token flow
+                success, result = GoogleAuth.verify_google_token(id_token_val)
+                flow_type = "ID token"
+            elif authorization_code:
+                # Server-side authorization code flow
+                success, result = GoogleAuth.exchange_code_for_token(authorization_code, redirect_uri)
+                flow_type = "Authorization code"
+            else:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "No authentication credentials provided"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             
             if not success:
-                logger.error(f"Google authentication failed: {result}")
+                logger.error(f"Google authentication failed ({flow_type}): {result}")
                 return Response(
                     {
                         "success": False,
@@ -374,7 +423,7 @@ class GoogleLoginView(APIView):
             # Serialize user data
             user_serializer = ProfileSerializer(user)
             
-            logger.info(f"Google login successful for user: {user.email}, New user: {is_new}")
+            logger.info(f"Google login successful ({flow_type}) for user: {user.email}, New user: {is_new}")
             
             return Response(
                 {
@@ -407,7 +456,7 @@ class GoogleLoginView(APIView):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
+        
 
 class AppleLoginView(APIView):
 
@@ -822,3 +871,212 @@ class ResetUserPassword(APIView):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+@extend_schema(
+    summary="Set transaction pin",
+    description="Set a 4-digit transaction pin for wallet operation",
+    request=OpenApiTypes.OBJECT,
+    responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+    tags=['Authentication']
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def set_transaction_pin(request):
+    try:
+        pin = request.data.get("pin")
+        confirm_pin = request.data.get("confirm_pin")
+
+        if not pin or not confirm_pin:
+            return Response(
+                {
+                    "message": "Both pin and confirm_pin are required",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if len(pin) != 4 or not pin.isdigit():
+            return Response(
+                {
+                    "message": "Pin must be a 4-digit number",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if pin != confirm_pin:
+            return Response(
+                {
+                    "message": "Pin and confirm pin do not match",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if request.user.pin_is_set:
+            return Response(
+                {
+                    "message": "Transaction pin is already set",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        request.user.set_transaction_pin(pin)
+
+        return Response(
+            {
+                "message": "Transaction pin set successfully",
+                "state": True
+            },
+            status=status.HTTP_200_OK
+        )
+    
+    except Exception as e:
+        logger.error(f"Set transaction pin error: {str(e)}")
+        return Response(
+            {
+                "message": "An error occurred",
+                "state": False
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@extend_schema(
+    summary="Change transaction pin",
+    description="Change the existing transaction pin",
+    request=OpenApiTypes.OBJECT,
+    responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+    tags=['Authentication']
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_transaction_pin(request):
+
+    try:
+        old_pin = request.data.get("old_pin")
+        new_pin = request.data.get("new_pin")
+        confirm_pin = request.data.get("confirm_pin")
+
+        if not all([old_pin, new_pin, confirm_pin]):
+            return Response(
+                {
+                    "message": "Old pin, new pin, and confirm pin are required",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not request.user.pin_is_set:
+            return Response(
+                {
+                    "message": "Transaction pin is not set",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not request.user.verify_transaction_pin(old_pin):
+            return Response(
+                {
+                    "message": "Old pin is incorrect",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if len(new_pin) != 4 or not new_pin.isdigit():
+            return Response(
+                {
+                    "message": "New pin must be a 4-digit number",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if new_pin != confirm_pin:
+            return Response({
+                'success': False,
+                'message': "New PINs do not match",
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        request.user.set_transaction_pin(new_pin)
+
+        return Response(
+            {
+                "message": "Transaction pin changed successfully",
+                "state": True
+            }, status=status.HTTP_200_OK
+        )
+    
+    except Exception as e:
+        logger.error(f"Change transaction pin error: {str(e)}")
+        return Response(
+            {
+                "message": "An error occurred",
+                "state": False
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@extend_schema(
+    summary="Verify transaction pin",
+    description="Verify the user's transaction pin",
+    request=OpenApiTypes.OBJECT,
+    responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+    tags=['Authentication']
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def verify_pin(request):
+
+    try:
+        pin = request.data.get("pin")
+
+        if not pin:
+            return Response(
+                {
+                    "message": "Pin is required",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not request.user.pin_is_set:
+            return Response(
+                {
+                    "message": "Transaction pin is not set",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if request.user.verify_transaction_pin(pin):
+            return Response(
+                {
+                    "message": "Transaction pin verified successfully",
+                    "state": True
+                },
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                {
+                    "message": "Invalid transaction pin",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    except Exception as e:
+        logger.error(f"Verify transaction pin error: {str(e)}")
+        return Response(
+            {
+                "message": "An error occurred",
+                "state": False
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

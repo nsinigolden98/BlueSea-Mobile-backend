@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import (
-    AutoTopUpListCreateView,
+    AutoTopUpCreateView,
+    GetUserAutoTopUpsView,
     AutoTopUpDetailView,
     AutoTopUpCancelView,
     AutoTopUpReactivateView,
@@ -8,7 +9,8 @@ from .views import (
 )
 
 urlpatterns = [
-    path('', AutoTopUpListCreateView.as_view(), name='auto-topup-list-create'),
+    path('create/', AutoTopUpCreateView.as_view(), name='auto-topup-create'),
+    path('list/', GetUserAutoTopUpsView.as_view(), name='auto-topup-list'),
     path('<int:pk>/', AutoTopUpDetailView.as_view(), name='auto-topup-detail'),
     path('<int:pk>/cancel/', AutoTopUpCancelView.as_view(), name='auto-topup-cancel'),
     path('<int:pk>/reactivate/', AutoTopUpReactivateView.as_view(), name='auto-topup-reactivate'),

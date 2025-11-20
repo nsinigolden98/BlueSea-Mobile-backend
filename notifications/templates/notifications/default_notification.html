@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 20px auto; 
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header { 
+            padding: 30px 20px; 
+            text-align: center;
+            color: white;
+        }
+        .header.info { background-color: #007bff; }
+        .header.success { background-color: #203ae3; }
+        .header.warning { background-color: #ffc107; color: #333; }
+        .header.payment { background-color: #17a2b8; }
+        .header.payment_success { background-color: #203ae3; }
+        .header.payment_failed { background-color: #dc3545; }
+        .header.wallet { background-color: #6f42c1; }
+        .header.group { background-color: #fd7e14; }
+        
+        .header h1 { 
+            margin: 0; 
+            font-size: 24px; 
+            font-weight: 600;
+        }
+        
+        .content { 
+            padding: 30px 20px; 
+            background-color: #ffffff;
+        }
+        
+        .message-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid #203ae3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .message-box.info { border-left-color: #007bff; }
+        .message-box.success { border-left-color: #203ae3; background-color: #d4edda; }
+        .message-box.warning { border-left-color: #ffc107; background-color: #fff3cd; }
+        .message-box.payment { border-left-color: #203ae3; background-color: #d1ecf1; }
+        .message-box.payment_success { border-left-color: #203ae3; background-color: #d4edda; }
+        .message-box.payment_failed { border-left-color: #dc3545; background-color: #f8d7da; }
+        .message-box.wallet { border-left-color: #203ae3; background-color: #e7e3f5; }
+        .message-box.group { border-left-color: #fd7e14; background-color: #ffe5d0; }
+        
+        .icon {
+            font-size: 48px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .icon.info { color: #007bff; }
+        .icon.success { color: #203ae3; }
+        .icon.warning { color: #ffc107; }
+        .icon.payment { color: #203ae3; }
+        .icon.payment_success { color: #203ae3; }
+        .icon.payment_failed { color: #dc3545; }
+        .icon.wallet { color: #6f42c1; }
+        .icon.group { color: #fd7e14; }
+        
+        .details {
+            margin: 20px 0;
+        }
+        
+        .detail-item {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .detail-label {
+            font-weight: bold;
+            color: #555;
+            display: inline-block;
+            min-width: 120px;
+        }
+        
+        .detail-value {
+            color: #333;
+        }
+        
+        .footer { 
+            text-align: center; 
+            padding: 20px; 
+            background-color: #f8f9fa;
+            font-size: 12px; 
+            color: #666; 
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 20px 0;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        .greeting {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header {{ notification_type }}">
+            <h1>{{ title }}</h1>
+        </div>
+        
+        <div class="content">
+            {% if notification_type == 'success' or notification_type == 'payment_success' %}
+                <div class="icon success">✓</div>
+            {% elif notification_type == 'warning' %}
+                <div class="icon warning">⚠</div>
+            {% elif notification_type == 'payment_failed' %}
+                <div class="icon payment_failed">✗</div>
+            {% elif notification_type == 'info' %}
+                <div class="icon info">ℹ</div>
+            {% elif notification_type == 'payment' %}
+                <div class="icon payment">💳</div>
+            {% elif notification_type == 'wallet' %}
+                <div class="icon wallet">💰</div>
+            {% elif notification_type == 'group' %}
+                <div class="icon group">👥</div>
+            {% endif %}
+            
+            <p class="greeting">Hello {% if user.first_name %}{{ user.first_name }}{% else %}Dearest User{% endif %},</p>
+            
+            <div class="message-box {{ notification_type }}">
+                <p style="margin: 0;">{{ message }}</p>
+            </div>
+            
+            {% if context %}
+                <div class="details">
+                    <h3 style="color: #555; font-size: 16px; margin-bottom: 15px;">Details:</h3>
+                    
+                    {% if context.amount %}
+                    <div class="detail-item">
+                        <span class="detail-label">Amount:</span>
+                        <span class="detail-value">₦{{ context.amount }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if context.service_type %}
+                    <div class="detail-item">
+                        <span class="detail-label">Service Type:</span>
+                        <span class="detail-value">{{ context.service_type|title }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if context.phone_number %}
+                    <div class="detail-item">
+                        <span class="detail-label">Phone Number:</span>
+                        <span class="detail-value">{{ context.phone_number }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if context.network %}
+                    <div class="detail-item">
+                        <span class="detail-label">Network:</span>
+                        <span class="detail-value">{{ context.network|upper }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if context.frequency %}
+                    <div class="detail-item">
+                        <span class="detail-label">Frequency:</span>
+                        <span class="detail-value">{{ context.frequency }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if context.locked_amount %}
+                    <div class="detail-item">
+                        <span class="detail-label">Locked Amount:</span>
+                        <span class="detail-value">₦{{ context.locked_amount }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if context.unlocked_amount %}
+                    <div class="detail-item">
+                        <span class="detail-label">Unlocked Amount:</span>
+                        <span class="detail-value">₦{{ context.unlocked_amount }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if context.start_date %}
+                    <div class="detail-item">
+                        <span class="detail-label">Start Date:</span>
+                        <span class="detail-value">{{ context.start_date }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if context.next_run %}
+                    <div class="detail-item">
+                        <span class="detail-label">Next Run:</span>
+                        <span class="detail-value">{{ context.next_run }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if context.vtu_reference %}
+                    <div class="detail-item">
+                        <span class="detail-label">Reference:</span>
+                        <span class="detail-value">{{ context.vtu_reference }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if context.group_name %}
+                    <div class="detail-item">
+                        <span class="detail-label">Group Name:</span>
+                        <span class="detail-value">{{ context.group_name }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if context.payment_type %}
+                    <div class="detail-item">
+                        <span class="detail-label">Payment Type:</span>
+                        <span class="detail-value">{{ context.payment_type|title }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+            
+            <p style="margin-top: 30px; color: #666; font-size: 14px;">
+                If you have any questions or concerns, please don't hesitate to contact our support team.
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p style="margin: 5px 0;">© 2025 BlueSea Mobile. All rights reserved.</p>
+            <p style="margin: 5px 0; color: #999;">This is an automated message, please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html>

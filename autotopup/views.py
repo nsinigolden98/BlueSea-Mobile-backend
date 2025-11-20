@@ -15,13 +15,14 @@ from .serializers import (
     AutoTopUpHistorySerializer
 )
 from rest_framework import serializers
+from notifications.utils import send_notification
 
 class AutoTopUpCreateView(APIView):
     permission_classes = [IsAuthenticated]
     
     @extend_schema(
         summary="Create a new auto top-up",
-        description="Schedule a new auto top-up. Funds will be locked from wallet.",
+        description="Schedule a new auto top-up. Funds will be locked from wallet. Requires transaction PIN.",
         request=AutoTopUpCreateSerializer,
         responses={
             201: AutoTopUpSerializer,
@@ -35,32 +36,48 @@ class AutoTopUpCreateView(APIView):
                     "amount": "100.00",
                     "phone_number": "08012345678",
                     "network": "mtn",
-                    "start_date": "2025-10-22T10:00:00Z",
+                    "start_date": "2025-11-02T10:00:00Z",
                     "repeat_days": 7,
-                    "is_active": True
+                    "is_active": True,
+                    "transaction_pin": "1234"
                 },
                 request_only=True
             ),
-            OpenApiExample(
-                'Data Auto Top-Up',
-                value={
-                    "service_type": "data",
-                    "amount": "500.00",
-                    "phone_number": "08012345678",
-                    "network": "mtn",
-                    "plan": "mtn-1gb-30days",
-                    "start_date": "2025-10-22T10:00:00Z",
-                    "repeat_days": 30,
-                    "is_active": True
-                },
-                request_only=True
-            )
         ],
         tags=['Auto Top-Up']
     )
     @transaction.atomic
     def post(self, request):
-        serializer = AutoTopUpCreateSerializer(data=request.data, context={'request': request})
+        # Get and validate PIN first
+        transaction_pin = request.data.get('transaction_pin')
+        
+        if not transaction_pin:
+            return Response(
+                {'error': 'Transaction PIN is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if user has set PIN
+        if not request.user.pin_is_set:
+            return Response(
+                {'error': 'Please set your transaction PIN first'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Verify PIN
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response(
+                {'error': 'Invalid transaction PIN'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # user = request.user
+        # if transaction_pin != user.transaction_pin
+        
+        # Remove PIN from data before serialization
+        data = request.data.copy()
+        data.pop('transaction_pin', None)
+        
+        serializer = AutoTopUpCreateSerializer(data=data, context={'request': request})
         
         if serializer.is_valid(raise_exception=True):
             auto_topup = serializer.save()
@@ -72,6 +89,31 @@ class AutoTopUpCreateView(APIView):
                     {'error': 'Failed to lock funds. Please try again.'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
+            
+            # Send success notification
+            try:
+                service_label = "Airtime" if auto_topup.service_type == "airtime" else "Data"
+                frequency = "one-time" if auto_topup.repeat_days == 0 else f"every {auto_topup.repeat_days} days"
+                
+                send_notification(
+                    user=request.user,
+                    title="Auto Top-Up Created",
+                    message=f"{service_label} auto top-up of ₦{auto_topup.amount} scheduled {frequency}. ₦{auto_topup.locked_amount} has been locked from your wallet.",
+                    notification_type='success',
+                    email_subject="BlueSea Mobile - Auto Top-Up Scheduled",
+                    context={
+                        'service_type': service_label,
+                        'amount': auto_topup.amount,
+                        'phone_number': auto_topup.phone_number,
+                        'network': auto_topup.network.upper() if auto_topup.network else 'N/A',
+                        'start_date': auto_topup.start_date,
+                        'frequency': frequency,
+                        'locked_amount': auto_topup.locked_amount,
+                    }
+                )
+            except Exception as e:
+                # Don't fail the request if notification fails
+                pass
             
             response_serializer = AutoTopUpSerializer(auto_topup)
             return Response(response_serializer.data, status=status.HTTP_201_CREATED)
@@ -146,7 +188,19 @@ class AutoTopUpDetailView(APIView):
         
         serializer = AutoTopUpSerializer(auto_topup, data=request.data, partial=False)
         if serializer.is_valid(raise_exception=True):
-            serializer.save()
+            updated_topup = serializer.save()
+            
+            # Send notification
+            try:
+                send_notification(
+                    user=request.user,
+                    title="Auto Top-Up Updated",
+                    message=f"Your {updated_topup.service_type} auto top-up schedule has been updated.",
+                    notification_type='info'
+                )
+            except Exception:
+                pass
+            
             return Response(serializer.data, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -172,7 +226,19 @@ class AutoTopUpDetailView(APIView):
         
         serializer = AutoTopUpSerializer(auto_topup, data=request.data, partial=True)
         if serializer.is_valid(raise_exception=True):
-            serializer.save()
+            updated_topup = serializer.save()
+            
+            # Send notification
+            try:
+                send_notification(
+                    user=request.user,
+                    title="Auto Top-Up Updated",
+                    message=f"Your {updated_topup.service_type} auto top-up schedule has been updated.",
+                    notification_type='info'
+                )
+            except Exception:
+                pass
+            
             return Response(serializer.data, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -195,8 +261,27 @@ class AutoTopUpDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         
+        unlocked_amount = auto_topup.locked_amount
+        service_type = auto_topup.service_type
+        
         auto_topup.unlock_funds()
         auto_topup.delete()
+        
+        # Send notification
+        try:
+            send_notification(
+                user=request.user,
+                title="Auto Top-Up Deleted",
+                message=f"Your {service_type} auto top-up has been deleted. ₦{unlocked_amount} has been returned to your wallet.",
+                notification_type='info',
+                context={
+                    'unlocked_amount': unlocked_amount,
+                    'service_type': service_type
+                }
+            )
+        except Exception:
+            pass
+        
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -240,10 +325,27 @@ class AutoTopUpCancelView(APIView):
             )
         
         unlocked_amount = auto_topup.locked_amount
+        service_type = auto_topup.service_type
         auto_topup.is_active = False
         auto_topup.save()
         
         if auto_topup.unlock_funds():
+            # Send notification
+            try:
+                send_notification(
+                    user=request.user,
+                    title="Auto Top-Up Cancelled",
+                    message=f"Your {service_type} auto top-up has been cancelled. ₦{unlocked_amount} has been returned to your wallet.",
+                    notification_type='warning',
+                    email_subject="BlueSea Mobile - Auto Top-Up Cancelled",
+                    context={
+                        'service_type': service_type,
+                        'unlocked_amount': unlocked_amount,
+                    }
+                )
+            except Exception:
+                pass
+            
             return Response({
                 'message': 'Auto top-up cancelled successfully',
                 'unlocked_amount': str(unlocked_amount)
@@ -270,6 +372,33 @@ class AutoTopUpReactivateView(APIView):
     )
     @transaction.atomic
     def patch(self, request, pk):
+        # Get and validate PIN first
+        transaction_pin = request.data.get('transaction_pin')
+        
+        if not transaction_pin:
+            return Response(
+                {'error': 'Transaction PIN is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if user has set PIN
+        if not request.user.pin_is_set:
+            return Response(
+                {'error': 'Please set your transaction PIN first'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Verify PIN
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response(
+                {'error': 'Invalid transaction PIN'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Remove PIN from data before serialization
+        data = request.data.copy()
+        data.pop('transaction_pin', None)
+        
         try:
             auto_topup = AutoTopUp.objects.get(pk=pk, user=request.user)
         except AutoTopUp.DoesNotExist:
@@ -295,6 +424,23 @@ class AutoTopUpReactivateView(APIView):
         auto_topup.save()
         
         if auto_topup.lock_funds():
+            # Send notification
+            try:
+                send_notification(
+                    user=request.user,
+                    title="Auto Top-Up Reactivated",
+                    message=f"Your {auto_topup.service_type} auto top-up has been reactivated. ₦{auto_topup.locked_amount} has been locked from your wallet.",
+                    notification_type='success',
+                    email_subject="BlueSea Mobile - Auto Top-Up Reactivated",
+                    context={
+                        'service_type': auto_topup.service_type,
+                        'locked_amount': auto_topup.locked_amount,
+                        'next_run': auto_topup.next_run,
+                    }
+                )
+            except Exception:
+                pass
+            
             return Response({
                 'message': 'Auto top-up reactivated successfully',
                 'locked_amount': str(auto_topup.locked_amount)

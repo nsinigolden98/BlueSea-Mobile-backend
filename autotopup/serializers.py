@@ -15,7 +15,7 @@ class AutoTopUpSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at', 'available_balance'
         ]
         read_only_fields = [
-            'id', 'is_locked', 'locked_amount', 'last_run', 'total_runs',
+            'id', 'next_run', 'is_locked', 'locked_amount', 'last_run', 'total_runs',
             'failed_runs', 'created_at', 'updated_at', 'available_balance'
         ]
     
@@ -46,7 +46,7 @@ class AutoTopUpSerializer(serializers.ModelSerializer):
                     'plan': 'Plan is required for data top-up'
                 })
         
-        #TODO: Validate amount
+        # Validate amount
         amount = data.get('amount')
         if amount and amount < 50:
             raise serializers.ValidationError({
@@ -81,6 +81,7 @@ class AutoTopUpCreateSerializer(AutoTopUpSerializer):
         user = self.context['request'].user
         validated_data['user'] = user
         
+        # Automatically set next_run to start_date if not provided
         if 'next_run' not in validated_data:
             validated_data['next_run'] = validated_data['start_date']
         
