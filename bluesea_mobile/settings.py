@@ -34,10 +34,10 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-#DEBUG = os.environ.get('DEBUG')
-DEBUG = True
+DEBUG = os.environ.get('DEBUG')
 
-ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 INTERNAL_IPS = [
     '127.0.0.1',
@@ -193,6 +193,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -257,12 +258,14 @@ LOGGING = {
 
 # Set to True only if you are okay with ANY domain accessing your backend 
 # (not recommended for production).
-CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOW_ALL_ORIGINS = False
 
 # Use the specific URL/port of your frontend development server
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5168",
     "http://127.0.0.1:8000",
+    "https://blueseamobile-v1-0.onrender.com",
     # Add other local ports if needed, like Vue (8080) or Angular (4200)
 ]
 
