@@ -559,13 +559,13 @@ class AirtimeTopUpViews(APIView):
         transaction_pin = request.data.get('transaction_pin')
 
         if not transaction_pin:
-            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Transaction PIN is required', "state" :False}, status=status.HTTP_400_BAD_REQUEST)
 
         if not request.user.pin_is_set:
-            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Please set your transaction PIN first', "state": False}, status=status.HTTP_400_BAD_REQUEST)
 
         if not request.user.verify_transaction_pin(transaction_pin):
-            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Invalid transaction PIN', "state": False}, status=status.HTTP_400_BAD_REQUEST)
         
 
         serializer = AirtimeTopUpSerializer(data = request.data)
@@ -585,7 +585,7 @@ class AirtimeTopUpViews(APIView):
                 user_wallet = request.user.wallet 
                 buy_airtime_response = top_up(data)
                 if buy_airtime_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, reference=request_id)
+                    user_wallet.debit(amount=amount, description="Airtime Purchase", reference=request_id)
 
                     return Response(buy_airtime_response)
                 else :
