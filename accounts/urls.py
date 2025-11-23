@@ -15,6 +15,7 @@ urlpatterns = [
     path('password/reset/verify-otp/', views.VerifyResetOTPView.as_view(), name='password-reset-verify'),
     path('password/reset/confirm/', views.ResetUserPassword.as_view(), name='password-reset-confirm'),
     
+    path('logout/', views.LogoutView.as_view(), name='logout'),
     path('pin/set/', views.set_transaction_pin, name='set-transaction-pin'),
     path('pin/verify/', views.verify_pin, name='verify-transaction-pin'),
     path('pin/reset/', views.change_transaction_pin, name='reset-transaction-pin'),
