@@ -19,6 +19,7 @@ import logging
 from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from drf_spectacular.types import OpenApiTypes
+from .pagination import WalletTransactionPagination 
 
 
 logger = logging.getLogger(__name__)
@@ -26,24 +27,38 @@ logger = logging.getLogger(__name__)
 
 class GetWalletTransaction(APIView):
     permission_classes = [IsAuthenticated]
+    
+    # Instantiate the paginator class for use in the get method
+    paginator = WalletTransactionPagination() 
 
     @extend_schema(
         summary="Get wallet transactions",
-        description="Retrieve all wallet transactions for the authenticated user",
+        description="Retrieve all wallet transactions for the authenticated user, paginated.",
         responses={200: WalletTransactionSerializer(many=True), 404: OpenApiTypes.OBJECT},
         tags=['Wallet & Transactions']
     )
-
     def get(self, request):
         user = request.user
+        
         try:
             wallet = Wallet.objects.get(user=user)
-            transactions = WalletTransaction.objects.filter(wallet=wallet)
-            serializer = WalletTransactionSerializer(transactions, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+            # 1. Get the full queryset, ordering is important!
+            transactions = WalletTransaction.objects.filter(wallet=wallet).order_by('-created_at') 
+            
+            # 2. Apply pagination to the queryset
+            page = self.paginator.paginate_queryset(transactions, request, view=self)
+            
+            # 3. Serialize the paginated result (the 'page' object)
+            serializer = WalletTransactionSerializer(page, many=True)
+            
+            # 4. Return the paginated response
+            return self.paginator.get_paginated_response(serializer.data)
+            
         except Wallet.DoesNotExist: 
             return Response({"error": "Wallet not found"}, status=status.HTTP_404_NOT_FOUND)
-        
+
+
         
 class InitializeFunding(APIView):
     permission_classes = [IsAuthenticated]
