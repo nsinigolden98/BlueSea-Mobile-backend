@@ -70,8 +70,6 @@ class AutoTopUpCreateView(APIView):
                 {'error': 'Invalid transaction PIN'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        # user = request.user
-        # if transaction_pin != user.transaction_pin
         
         # Remove PIN from data before serialization
         data = request.data.copy()
@@ -90,11 +88,12 @@ class AutoTopUpCreateView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Send success notification
+            # Send success notification asynchronously (non-blocking)
             try:
                 service_label = "Airtime" if auto_topup.service_type == "airtime" else "Data"
                 frequency = "one-time" if auto_topup.repeat_days == 0 else f"every {auto_topup.repeat_days} days"
                 
+                # This now returns immediately as email is queued
                 send_notification(
                     user=request.user,
                     title="Auto Top-Up Created",
@@ -133,7 +132,10 @@ class GetUserAutoTopUpsView(APIView):
         tags=['Auto Top-Up']
     )
     def get(self, request):
-        auto_topups = AutoTopUp.objects.filter(user=request.user).select_related('user__wallet')
+        auto_topups = AutoTopUp.objects.filter(
+            user=request.user
+        ).select_related('user__wallet').order_by('-created_at')
+        
         serializer = AutoTopUpSerializer(auto_topups, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -143,7 +145,9 @@ class AutoTopUpDetailView(APIView):
     
     def get_object(self, pk, user):
         try:
-            return AutoTopUp.objects.select_related('user__wallet').get(pk=pk, user=user)
+            return AutoTopUp.objects.select_related(
+                'user__wallet'
+            ).prefetch_related('history').get(pk=pk, user=user)
         except AutoTopUp.DoesNotExist:
             return None
     
@@ -190,7 +194,7 @@ class AutoTopUpDetailView(APIView):
         if serializer.is_valid(raise_exception=True):
             updated_topup = serializer.save()
             
-            # Send notification
+            # Send notification asynchronously
             try:
                 send_notification(
                     user=request.user,
@@ -228,7 +232,7 @@ class AutoTopUpDetailView(APIView):
         if serializer.is_valid(raise_exception=True):
             updated_topup = serializer.save()
             
-            # Send notification
+            # Send notification asynchronously
             try:
                 send_notification(
                     user=request.user,
@@ -267,7 +271,7 @@ class AutoTopUpDetailView(APIView):
         auto_topup.unlock_funds()
         auto_topup.delete()
         
-        # Send notification
+        # Send notification asynchronously
         try:
             send_notification(
                 user=request.user,
@@ -311,7 +315,7 @@ class AutoTopUpCancelView(APIView):
     @transaction.atomic
     def patch(self, request, pk):
         try:
-            auto_topup = AutoTopUp.objects.get(pk=pk, user=request.user)
+            auto_topup = AutoTopUp.objects.select_related('user__wallet').get(pk=pk, user=request.user)
         except AutoTopUp.DoesNotExist:
             return Response(
                 {'error': 'Auto top-up not found'},
@@ -330,7 +334,7 @@ class AutoTopUpCancelView(APIView):
         auto_topup.save()
         
         if auto_topup.unlock_funds():
-            # Send notification
+            # Send notification asynchronously
             try:
                 send_notification(
                     user=request.user,
@@ -400,7 +404,7 @@ class AutoTopUpReactivateView(APIView):
         data.pop('transaction_pin', None)
         
         try:
-            auto_topup = AutoTopUp.objects.get(pk=pk, user=request.user)
+            auto_topup = AutoTopUp.objects.select_related('user__wallet').get(pk=pk, user=request.user)
         except AutoTopUp.DoesNotExist:
             return Response(
                 {'error': 'Auto top-up not found'},
@@ -424,7 +428,7 @@ class AutoTopUpReactivateView(APIView):
         auto_topup.save()
         
         if auto_topup.lock_funds():
-            # Send notification
+            # Send notification asynchronously
             try:
                 send_notification(
                     user=request.user,
@@ -473,6 +477,7 @@ class AutoTopUpHistoryView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         
-        history = auto_topup.history.all()
+        # Optimized query
+        history = auto_topup.history.all().order_by('-executed_at')
         serializer = AutoTopUpHistorySerializer(history, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

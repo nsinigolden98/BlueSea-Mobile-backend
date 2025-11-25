@@ -1,13 +1,15 @@
-from django.core.mail import send_mail
 from django.conf import settings
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
 from .models import Notification
 import logging
 
 logger = logging.getLogger(__name__)
 
+
 def send_notification(user, title, message, notification_type='info', email_subject=None, email_template=None, context=None):    
+    """
+    Create notification and queue email sending asynchronously
+    """
+    # Create in-app notification (fast, synchronous)
     notification = Notification.objects.create(
         user=user,
         title=title,
@@ -17,6 +19,8 @@ def send_notification(user, title, message, notification_type='info', email_subj
     )
     
     try:
+        from .tasks import send_email_notification
+        
         if email_subject is None:
             email_subject = title
         
@@ -33,19 +37,14 @@ def send_notification(user, title, message, notification_type='info', email_subj
         if context:
             email_context.update(context)
         
-        html_message = render_to_string(email_template, email_context)
-        plain_message = strip_tags(html_message)
-        
-        send_mail(
-            subject=email_subject,
-            message=plain_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            html_message=html_message,
-            fail_silently=False,
+        send_email_notification.delay(
+            user_email=user.email,
+            email_subject=email_subject,
+            email_template=email_template,
+            email_context=email_context
         )
         
-        logger.info(f"Email notification sent to {user.email}: {title}")
+        logger.info(f"Email notification queued for {user.email}: {title}")
         
     except Exception as e:
         logger.error(f"Failed to send email to {user.email}: {str(e)}")
@@ -116,6 +115,7 @@ def group_payment_failed(member, amount, group_name, payment_type, reason):
         email_template='notifications/group_payment_failed.html',
         context=context
     )
+
 
 def auto_topup_success():
     pass
