@@ -1,16 +1,13 @@
-from rest_framework import generics, permissions
-from .models import UserPreference
-from .serializers import UserPreferenceSerializer
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .serializers import CurrentUserSerializer
 
-class UserPreferenceView(generics.RetrieveUpdateAPIView):
+class CurrentUserView(APIView):
+    # Ensure only authenticated users can access this view
+    permission_classes = [IsAuthenticated]
 
-    serializer_class = UserPreferenceSerializer
-    # Requires the user to be logged in to access
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_object(self):
-
-        user = self.request.user
-        preference, created = UserPreference.objects.get_or_create(user=user)
+    def get(self, request):
+        serializer = CurrentUserSerializer(request.user)
+        return Response(serializer.data)
         
-        return preference

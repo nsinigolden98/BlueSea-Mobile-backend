@@ -1,11 +1,12 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from .models import UserPreference, THEME_CHOICES
 
-class UserPreferenceSerializer(serializers.ModelSerializer):
-    theme_color = serializers.ChoiceField(
-        choices=THEME_CHOICES
-    )
+User = get_user_model()
 
+class CurrentUserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = UserPreference
-        fields = ['theme_color']
+        model = User
+        # Include the fields you want to return
+        fields = ('id', 'other_names', 'email', 'phone', 'surname', 'pin_is_set')
+        # You can exclude 'password' and other sensitive fields
+        

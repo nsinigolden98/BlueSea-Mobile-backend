@@ -34,10 +34,10 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-#DEBUG = os.environ.get('DEBUG')
-DEBUG = True
+DEBUG = os.environ.get('DEBUG')
 
-ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 INTERNAL_IPS = [
     '127.0.0.1',
@@ -126,30 +126,30 @@ ASGI_APPLICATION = "bluesea_mobile.asgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 # 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#         'CONN_MAX_AGE': 600,
-#     }
-# }
-
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("DATABASE_NAME"),
-        "USER": os.environ.get("DATABASE_USER"),
-        "PASSWORD": os.environ.get("DATABASE_PASSWORD"),
-        "HOST": os.environ.get("DATABASE_HOST"),
-        "PORT": os.environ.get("DATABASE_PORT"),
-        "CONN_MAX_AGE": 600,
-        "OPTIONS": {
-            "connect_timeout": 10,
-            "options": "-c statement_timeout=30000"
-        },
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+        'CONN_MAX_AGE': 600,
     }
 }
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": os.environ.get("DATABASE_NAME"),
+#         "USER": os.environ.get("DATABASE_USER"),
+#         "PASSWORD": os.environ.get("DATABASE_PASSWORD"),
+#         "HOST": os.environ.get("DATABASE_HOST"),
+#         "PORT": os.environ.get("DATABASE_PORT"),
+#         "CONN_MAX_AGE": 600,
+#         "OPTIONS": {
+#             "connect_timeout": 10,
+#             "options": "-c statement_timeout=30000"
+#         },
+#     }
+# }
+# 
 
 
 # Password validation
@@ -193,6 +193,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -257,12 +258,14 @@ LOGGING = {
 
 # Set to True only if you are okay with ANY domain accessing your backend 
 # (not recommended for production).
-CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOW_ALL_ORIGINS = False
 
 # Use the specific URL/port of your frontend development server
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5168",
     "http://127.0.0.1:8000",
+    "https://blueseamobile-v1-0.onrender.com",
     # Add other local ports if needed, like Vue (8080) or Angular (4200)
 ]
 
@@ -296,3 +299,4 @@ SESSION_CACHE_ALIAS = 'default'
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
 APPLE_CLIENT_ID = os.environ.get('APPLE_CLIENT_ID')
+

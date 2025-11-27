@@ -355,7 +355,7 @@ class GroupPaymentViews(APIView):
                     details = {
                         "request_id": request_id,
                         "serviceID": "mtn-data",
-                        "billerCode": service_details.get('billerCode'),
+                        "billersCode": service_details.get('billersCode'),
                         "variation_code": variation_code,
                         "amount": amount,
                         "phone": service_details.get('phone_number'),
@@ -370,7 +370,7 @@ class GroupPaymentViews(APIView):
                     details = {
                         "request_id": request_id,
                         "serviceID": "airtel-data",
-                        "billerCode": service_details.get('billerCode'),
+                        "billersCode": service_details.get('billersCode'),
                         "variation_code": variation_code,
                         "amount": amount,
                         "phone": service_details.get('phone_number'),
@@ -386,7 +386,7 @@ class GroupPaymentViews(APIView):
                     details = {
                         "request_id": request_id,
                         "serviceID": "glo-data",
-                        "billerCode": service_details.get('billerCode'),
+                        "billersCode": service_details.get('billersCode'),
                         "variation_code": variation_code,
                         "amount": amount,
                         "phone": service_details.get('phone_number'),
@@ -402,7 +402,7 @@ class GroupPaymentViews(APIView):
                     details = {
                         "request_id": request_id,
                         "serviceID": "etisalat-data",
-                        "billerCode": service_details.get('billerCode'),
+                        "billersCode": service_details.get('billersCode'),
                         "variation_code": variation_code,
                         "amount": amount,
                         "phone": service_details.get('phone_number'),
@@ -421,7 +421,7 @@ class GroupPaymentViews(APIView):
                 details = {
                     "request_id": request_id,
                     "serviceID": service_details.get('disco'),
-                    "billerCode": service_details.get('billerCode'),
+                    "billersCode": service_details.get('billersCode'),
                     "variation_code": service_details.get('meter_type'),
                     "amount": electricity_amount,
                     "phone": service_details.get('phone_number')
@@ -443,7 +443,7 @@ class GroupPaymentViews(APIView):
                 details = {
                     "request_id": request_id,
                     "serviceID": payment_type,
-                    "billerCode": service_details.get('billerCode'),
+                    "billersCode": service_details.get('billersCode'),
                     "variation_code": variation_code,
                     "amount": amount,
                     "phone": service_details.get('phone_number'),
@@ -458,7 +458,7 @@ class GroupPaymentViews(APIView):
                     "request_id": request_id,
                     "serviceID": "jamb",
                     "variation_code": service_details.get('exam_type'),
-                    "billerCode" : service_details.get('billerCode'),
+                    "billersCode" : service_details.get('billersCode'),
                     "phone": service_details.get('phone_number')
                 }
             registration_response = top_up(details)
@@ -559,13 +559,13 @@ class AirtimeTopUpViews(APIView):
         transaction_pin = request.data.get('transaction_pin')
 
         if not transaction_pin:
-            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Transaction PIN is required', "state" :False}, status=status.HTTP_400_BAD_REQUEST)
 
         if not request.user.pin_is_set:
-            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Please set your transaction PIN first', "state": False}, status=status.HTTP_400_BAD_REQUEST)
 
         if not request.user.verify_transaction_pin(transaction_pin):
-            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Invalid transaction PIN', "state": False}, status=status.HTTP_400_BAD_REQUEST)
         
 
         serializer = AirtimeTopUpSerializer(data = request.data)
@@ -585,7 +585,7 @@ class AirtimeTopUpViews(APIView):
                 user_wallet = request.user.wallet 
                 buy_airtime_response = top_up(data)
                 if buy_airtime_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, reference=request_id)
+                    user_wallet.debit(amount=amount, description="Airtime Purchase", reference=request_id)
 
                     return Response(buy_airtime_response)
                 else :
@@ -646,13 +646,13 @@ class MTNDataTopUpViews(APIView):
         transaction_pin = request.data.get('transaction_pin')
 
         if not transaction_pin:
-            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Transaction PIN is required', "state": False}, status=status.HTTP_400_BAD_REQUEST)
 
         if not request.user.pin_is_set:
-            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Please set your transaction PIN first', "state": False}, status=status.HTTP_400_BAD_REQUEST)
 
         if not request.user.verify_transaction_pin(transaction_pin):
-            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Invalid transaction PIN', "state": False}, status=status.HTTP_400_BAD_REQUEST)
 
 
         serializer = MTNDataTopUpSerializer(data = request.data)
@@ -665,7 +665,7 @@ class MTNDataTopUpViews(APIView):
                 data = {
                         "request_id": request_id,
                         "serviceID": "mtn-data",
-                        "billerCode": serializer.data["billerCode"],
+                        "billersCode": serializer.data["billersCode"],
                         "variation_code": variation_code,
                         "amount": amount,
                         "phone": serializer.data["phone_number"],
@@ -675,7 +675,7 @@ class MTNDataTopUpViews(APIView):
 
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, reference=request_id)
+                    user_wallet.debit(amount=amount, description= "MTN Data Subscription",reference=request_id)
 
                     # Award bonus points
                     try:
@@ -720,13 +720,13 @@ class AirtelDataTopUpViews(APIView):
         transaction_pin = request.data.get('transaction_pin')
 
         if not transaction_pin:
-            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Transaction PIN is required', "state": False}, status=status.HTTP_400_BAD_REQUEST)
 
         if not request.user.pin_is_set:
-            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Please set your transaction PIN first', "state": False}, status=status.HTTP_400_BAD_REQUEST)
 
         if not request.user.verify_transaction_pin(transaction_pin):
-            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Invalid transaction PIN', "state": False}, status=status.HTTP_400_BAD_REQUEST)
         
 
         serializer = AirtelDataTopUpSerializer(data = request.data)
@@ -739,7 +739,7 @@ class AirtelDataTopUpViews(APIView):
                 data = {
                         "request_id": request_id,
                         "serviceID": "airtel-data",
-                        "billerCode": serializer.data["billerCode"],
+                        "billersCode": serializer.data["billersCode"],
                         "variation_code": variation_code,
                         "amount": amount,
                         "phone": serializer.data["phone_number"],
@@ -749,7 +749,7 @@ class AirtelDataTopUpViews(APIView):
 
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, reference=request_id)
+                    user_wallet.debit(amount=amount, description= "Airtel Data Subscription",reference=request_id)
 
                     # Award bonus points
                     try:
@@ -794,13 +794,13 @@ class GloDataTopUpViews(APIView):
         transaction_pin = request.data.get('transaction_pin')
 
         if not transaction_pin:
-            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Transaction PIN is required', "state": False}, status=status.HTTP_400_BAD_REQUEST)
 
         if not request.user.pin_is_set:
-            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Please set your transaction PIN first', "state": False}, status=status.HTTP_400_BAD_REQUEST)
 
         if not request.user.verify_transaction_pin(transaction_pin):
-            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Invalid transaction PIN', "state": False}, status=status.HTTP_400_BAD_REQUEST)
         
 
         serializer = GloDataTopUpSerializer(data = request.data)
@@ -813,7 +813,7 @@ class GloDataTopUpViews(APIView):
                 data = {
                         "request_id": request_id,
                         "serviceID": "glo-data",
-                        "billerCode": serializer.data["billerCode"],
+                        "billersCode": serializer.data["billersCode"],
                         "variation_code": variation_code,
                         "amount": amount,
                         "phone": serializer.data["phone_number"],
@@ -823,7 +823,7 @@ class GloDataTopUpViews(APIView):
 
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, reference=request_id)
+                    user_wallet.debit(amount=amount, description= " Glo Data Subscription",reference=request_id)
 
                     # Award bonus points
                     try:
@@ -868,13 +868,13 @@ class EtisalatDataTopUpViews(APIView):
         transaction_pin = request.data.get('transaction_pin')
 
         if not transaction_pin:
-            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Transaction PIN is required', "state": False}, status=status.HTTP_400_BAD_REQUEST)
 
         if not request.user.pin_is_set:
-            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Please set your transaction PIN first', "state": False}, status=status.HTTP_400_BAD_REQUEST)
 
         if not request.user.verify_transaction_pin(transaction_pin):
-            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Invalid transaction PIN', "state": False}, status=status.HTTP_400_BAD_REQUEST)
         
 
         serializer = EtisalatDataTopUpSerializer(data = request.data)
@@ -887,7 +887,7 @@ class EtisalatDataTopUpViews(APIView):
                 data = {
                         "request_id": request_id,
                         "serviceID": "etisalat-data",
-                        "billerCode": serializer.data["billerCode"],
+                        "billersCode": serializer.data["billersCode"],
                         "variation_code": variation_code,
                         "amount": amount,
                         "phone": serializer.data["phone_number"],
@@ -897,7 +897,7 @@ class EtisalatDataTopUpViews(APIView):
 
                 subscription_response = top_up(data)
                 if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, reference=request_id)
+                    user_wallet.debit(amount=amount, description= " 9mobile Data Subscription",reference=request_id)
 
                     # Award bonus points
                     try:
@@ -961,7 +961,7 @@ class DSTVPaymentViews(APIView):
                 data = {
                         "request_id": request_id,
                         "serviceID": "dstv",
-                        "billerCode": serializer.data["billerCode"],
+                        "billersCode": serializer.data["billersCode"],
                         "variation_code": variation_code,
                         "amount": amount,
                         "phone": serializer.data["phone_number"],
@@ -1037,7 +1037,7 @@ class GOTVPaymentViews(APIView):
                 data = {
                         "request_id": request_id,
                         "serviceID": "gotv",
-                        "billerCode": serializer.data["billerCode"],
+                        "billersCode": serializer.data["billersCode"],
                         "variation_code": variation_code,
                         "amount": amount,
                         "phone": serializer.data["phone_number"],
@@ -1113,7 +1113,7 @@ class StartimesPaymentViews(APIView):
                 data = {
                         "request_id": request_id,
                         "serviceID": "startimes",
-                        "billerCode": serializer.data["billerCode"],
+                        "billersCode": serializer.data["billersCode"],
                         "variation_code": variation_code,
                         "amount": amount,
                         "phone": serializer.data["phone_number"],
@@ -1187,7 +1187,7 @@ class ShowMaxPaymentViews(APIView):
                 data = {
                         "request_id": request_id,
                         "serviceID": "showmax",
-                        "billerCode": serializer.data["phone_number"],
+                        "billersCode": serializer.data["phone_number"],
                         "variation_code": variation_code,
                         "amount": amount,
                     }
@@ -1259,7 +1259,7 @@ class ElectricityPaymentViews(APIView):
                 data = {
                         "request_id": request_id,
                         "serviceID": serializer.data["biller_name"],
-                        "billerCode": serializer.data["billerCode"],
+                        "billersCode": serializer.data["billersCode"],
                         "variation_code": serializer.data["meter_type"],
                         "amount": amount,
                         "phone": serializer.data["phone_number"]
@@ -1274,7 +1274,7 @@ class ElectricityPaymentViews(APIView):
                     data = {
                         "apikey": VTU_AFRICA_APIKEY,
                         "service": serializer.data["biller_name"],
-                        "meterNo": serializer.data["billerCode"],
+                        "meterNo": serializer.data["billersCode"],
                         "metertype": serializer.data["meter_type"],
                         "amount": amount,
                         "ref": request_id,
@@ -1493,7 +1493,7 @@ class JAMBRegistrationViews(APIView):
                     "request_id": request_id,
                     "serviceID": "jamb",
                     "variation_code": serializer.data["exam_type"],
-                    "billerCode" : serializer.data["billerCode"],
+                    "billersCode" : serializer.data["billersCode"],
                     "phone": serializer.data["phone_number"]
                 }
                 
