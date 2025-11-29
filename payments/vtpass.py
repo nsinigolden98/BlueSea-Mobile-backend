@@ -2,13 +2,14 @@ import requests
 import json
 import uuid
 from datetime import datetime
+from django.conf import settings
 
-BASE_URL = "https://sandbox.vtpass.com/api/pay"
+BASE_URL = settings.VTPASS_BASE_URL
 
 headers = {
-    "api-key": "9f44fd266a39628487cc752191c29ec4",
-    "public-key" : "PK_524de00d4c278ff8509968b01dc0fd355ff8d7dd7a6",
-    "secret-key": "SK_2440fa66473d148a04135f09de475323037a97d37e4",
+    "api-key": settings.VTPASS_API_KEY,
+    "public-key" : settings.VTPASS_PUBLIC_KEY ,
+    "secret-key": settings.VTPASS_SECRET_KEY,
     "Content-Type": "application/json"
 }
 
@@ -359,5 +360,3 @@ if __name__ == "__main__":
     print(get_variations()) # Added .json() to print the response body
 
 
-#PK_539615071cdf1deca97d8443d5424b78c51450365ae
-#SK_740ed33540d764195239ff4f65927c5a991c19f8da0
