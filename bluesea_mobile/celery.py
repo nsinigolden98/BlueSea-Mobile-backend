@@ -13,6 +13,11 @@ app.conf.beat_schedule = {
         'task': 'autotopup.tasks.process_auto_topups',
         'schedule': 60.0,
     },
+
+    'cleanup-expired-fundings-daily': {
+        'task': 'transactions.tasks.clean_pending_fundings',
+        'schedule': crontab(hour=2, minute=0),
+    },
 }
 
 @app.task(bind=True)
