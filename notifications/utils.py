@@ -1,6 +1,8 @@
 from django.conf import settings
 from .models import Notification
 import logging
+from .tasks import send_email_notification
+
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +20,7 @@ def send_notification(user, title, message, notification_type='info', email_subj
         is_read=False
     )
     
-    try:
-        from .tasks import send_email_notification
-        
+    try:        
         if email_subject is None:
             email_subject = title
         
