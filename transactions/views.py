@@ -6,11 +6,11 @@ import json
 from decimal import Decimal
 from rest_framework.views import APIView
 from .models import WalletTransaction, FundWallet
-from .serializers import WalletTransactionSerializer, WalletFundingSerializer
+from .serializers import WalletTransactionSerializer, WalletFundingSerializer, AccountNameSerializer, WithdrawSerializer
 from wallet.models import Wallet
 from wallet.serializers import WalletSerializer
 import uuid
-from .paystack import checkout
+from .paystack import checkout, get_account_name
 from django.utils import timezone
 from django.conf import settings
 import hmac
@@ -406,4 +406,27 @@ class PaymentWebhook(APIView):
                 "success": False, 
                 "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class AccountName(APIView):
+    permission_classes = []
+    def post(self, request):
+        serializer = AccountNameSerializer(data = request.data)
+        if serializer.is_valid(raise_exception = True):
+            with transaction.atomic():
+                account_number = serializer.data['account_name']
+                bank_code = serializer.data['bank_code']
+                
+                account_name = get_account_name(account_number, bank_code)
+
+                if account_name.success:
+                    return Response(account_name, status =status.HTTP_200_OK)
+
+                else:
+                    return Response(account_name, status= status.HTTP_404_NOT_FOUND)
+
+        else:
+            return Response(account_name, status= status.HTTP_400_BAD_REQUEST)
+
+
+
 
