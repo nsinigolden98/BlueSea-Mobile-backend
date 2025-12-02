@@ -413,7 +413,7 @@ class AccountName(APIView):
         serializer = AccountNameSerializer(data = request.data)
         if serializer.is_valid(raise_exception = True):
             with transaction.atomic():
-                account_number = serializer.data['account_name']
+                account_number = serializer.data['account_number']
                 bank_code = serializer.data['bank_code']
                 
                 account_name = get_account_name(account_number, bank_code)
