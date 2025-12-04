@@ -106,17 +106,17 @@ def get_nigerian_banks():
 
 
 def get_account_name(account_number: str, bank_code: str):
-    url = "https://api.nubapi.com/v1/resolve"
+    url = f"{BASE_URL}/bank/resolve"
     params = {
         "account_number": account_number,
         "bank_code": bank_code
     }
-
-    response = requests.get(url, params=params)
-
+    
+    response = requests.get(url, params=params , headers=HEADERS)
+    
     if response.status_code == 200:
         data = response.json()
-        if data.get("status") == "success":
+        if data.get("status"):
             account_name = data["data"]["account_name"]
             return {"success": True, "account_name": account_name}
         else:

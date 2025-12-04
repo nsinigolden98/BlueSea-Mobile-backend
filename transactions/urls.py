@@ -5,5 +5,5 @@ urlpatterns = [
     path('history/', GetWalletTransaction.as_view(), name='wallet-transactions'),
     path('fund-wallet/', InitializeFunding.as_view(), name='initialize-funding'),
     path('webhook/paystack/', PaymentWebhook.as_view(), name='paystack-webhook'),
-    path('account-name/', AccountName.as_view(), name='account-name')
+    path('account-name/', AccountNameView.as_view(), name='account-name')
 ]

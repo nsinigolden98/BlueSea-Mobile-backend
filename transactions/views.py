@@ -407,7 +407,7 @@ class PaymentWebhook(APIView):
                 "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class AccountName(APIView):
+class AccountNameView(APIView):
     permission_classes = []
     def post(self, request):
         serializer = AccountNameSerializer(data = request.data)
@@ -418,7 +418,7 @@ class AccountName(APIView):
                 
                 account_name = get_account_name(account_number, bank_code)
 
-                if account_name.success:
+                if account_name["success"]:
                     return Response(account_name, status =status.HTTP_200_OK)
 
                 else:
@@ -428,5 +428,24 @@ class AccountName(APIView):
             return Response(account_name, status= status.HTTP_400_BAD_REQUEST)
 
 
+class WithdrawView(APIView):
+    permission_classes =[]
+    def post(self, request):
+        try:
+            serializer = WithdrawSerializer(data = request.data)
+            if serializer.is_valid(raise_exception =True):
+                with transaction.atomic():
+                    account_number = serializer.data['account_number']
+                    bank_code = serializer.data['bank_code']
+                    amount = serializer.data['amount']
+                    payment_reference  = serializer.data['payment_reference']
 
 
+        except Exception as e:
+            return Response({
+                "success": False, 
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        
+                
