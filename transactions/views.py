@@ -425,6 +425,7 @@ class AccountNameView(APIView):
                     return Response(account_name, status= status.HTTP_404_NOT_FOUND)
 
         else:
+
             return Response(account_name, status= status.HTTP_400_BAD_REQUEST)
 
 
