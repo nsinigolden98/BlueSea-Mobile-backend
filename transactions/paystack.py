@@ -18,7 +18,7 @@ def checkout(payload):
     try:
         response = requests.post(url, json=payload, headers=HEADERS)
         data = response.json()
-        print("Paystack response:", data)
+        #print("Paystack response:", data)
 
         response_data = response.json()
         # return response_data
@@ -33,7 +33,7 @@ def checkout(payload):
         
 
 
-def create_recipient(account_number: str, bank_code: str, account_name: str = None):
+def initiate_transfer(account_number: str, bank_code: str,amount_ngn: float, reference: str, account_name: str = None, reason: str = "Withdrawal By Customet"):
     url = f"{BASE_URL}/transferrecipient"
     
     payload = {
@@ -49,52 +49,48 @@ def create_recipient(account_number: str, bank_code: str, account_name: str = No
     if response.status_code == 201:
         data = response.json()
         recipient_code = data['data']['recipient_code']
-        print("Recipient created successfully!")
-        print(f"Recipient Code: {recipient_code}")
-        return recipient_code
-    else:
-        print("Failed to create recipient:")
-        return None
 
-
-def initiate_transfer(amount_ngn: float, recipient_code: str, reference: str, reason: str = "Payout from your app", ):
-    url = f"{BASE_URL}/transfer"
+        url = f"{BASE_URL}/transfer"
     
-    payload = {
-        "source": "balance",              # From your Paystack balance (or 'dedicated' for subaccounts)
-        "amount": int(amount_ngn * 100),  # In kobo (e.g., 15000 NGN = 1,500,000 kobo)
-        "recipient": recipient_code,      # From create_recipient()
-        "reason": reason,                 # Descriptive note (shows on recipient's bank statement)
+        payload = {
+        "source": "balance",        
+        "amount": int(amount_ngn * 100),  
+        "recipient": recipient_code,     
+        "reason": reason,          
         "reference": reference,
         "currency": "NGN"               
-    }
+        }
     
-    response = requests.post(url, headers=HEADERS, json=payload)
+        response = requests.post(url, headers=HEADERS, json=payload)
     
-    if response.status_code in (200, 201):
-        result = response.json()
-        return result
+        if response.status_code in (200, 201):
+
+            url = f"{BASE_URL}/transfer/resolve"
+
+            payload = {
+                "reference": reference,
+                "pin": settings.PAYSTACK_PIN
+                    }
+
+            response = requests.post(url, headers = HEADERS, json = payload)
+
+            if response.status_code == 200:
+                result = response.json()
+                return result
+
+            else:
+                return False
+
+        else:
+            return False     
     else:
-        print("Transfer failed:")
-        return None
+        
+        return False
 
-def resolve_transfer_otp(reference: str, pin = settings.PAYSTACK_PIN):
+   
 
-    url = f"{BASE_URL}/transfer/resolve"
 
-    payload = {
-        "reference": reference,
-        "pin": pin
-    }
-
-    response = requests.post(url, headers = HEADERS, json = payload)
-
-    if response.status_code == 200:
-        result = response.json()
-        return result
-
-    else:
-        return None
+    
 
 def get_nigerian_banks():
     response = requests.get(

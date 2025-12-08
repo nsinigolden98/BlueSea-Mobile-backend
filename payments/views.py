@@ -573,7 +573,7 @@ class AirtimeTopUpViews(APIView):
         if serializer.is_valid(raise_exception=True):
             request_id = generate_reference_id()
             serializer.save(request_id = request_id)
-            
+        
             with transaction.atomic():
                 amount = int(serializer.data['amount'])
                 data = {

@@ -5,12 +5,12 @@ from rest_framework.response import Response
 import json
 from decimal import Decimal
 from rest_framework.views import APIView
-from .models import WalletTransaction, FundWallet
+from .models import WalletTransaction, FundWallet, Withdraw
 from .serializers import WalletTransactionSerializer, WalletFundingSerializer, AccountNameSerializer, WithdrawSerializer
 from wallet.models import Wallet
 from wallet.serializers import WalletSerializer
 import uuid
-from .paystack import checkout, get_account_name
+from .paystack import checkout, get_account_name, initiate_transfer
 from django.utils import timezone
 from django.conf import settings
 import hmac
@@ -432,14 +432,54 @@ class AccountNameView(APIView):
 class WithdrawView(APIView):
     permission_classes =[]
     def post(self, request):
+
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required', "state" :False}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first', "state": False}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN', "state": False}, status=status.HTTP_400_BAD_REQUEST)
+        
         try:
             serializer = WithdrawSerializer(data = request.data)
             if serializer.is_valid(raise_exception =True):
+                payment_reference = f"BS-{uuid.uuid4()}"
+
                 with transaction.atomic():
                     account_number = serializer.data['account_number']
                     bank_code = serializer.data['bank_code']
                     amount = serializer.data['amount']
-                    payment_reference  = serializer.data['payment_reference']
+                    account_name = serializer.data['account_name']
+
+                    withdraw_request = Withdraw.objects.select_for_update().get(
+                            payment_reference=payment_reference,
+                            status='PENDING'
+                        )
+                    
+                    create_withdrawal = initiate_transfer(
+                        account_number,
+                        bank_code,
+                        amount,
+                        payment_reference,
+                         account_name,
+                         )
+                    
+                    if create_withdrawal:
+                        withdraw_request.status = "COMPLETED"
+                        withdraw_request.completed_at = timezone.now()
+                        withdraw_request.save()
+
+                        request.user.wallet.debit(amount= amount, description= f"Transfer ₦{amount} to {account_name}", reference= payment_reference)
+
+                        return Response(create_withdrawal, status = status.HTTP_200_OK)
+
+
+                    else:
+                        return Response({'error': 'An error during the transaction', "state": False}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
         except Exception as e:

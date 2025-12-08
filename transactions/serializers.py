@@ -38,7 +38,7 @@ class WithdrawSerializer(serializers.ModelSerializer):
     class Meta:
         model = Withdraw
         fields =[
-            "id", "amount", "account_number", 'bank_code', 'payment_reference', 'status', 'created_at', 'completed_at'
+            "id", "amount", "account_number", 'bank_code', 'payment_reference', 'status', 'created_at',
         ]
         read_only_fields = ['id', 'created_at']
 
