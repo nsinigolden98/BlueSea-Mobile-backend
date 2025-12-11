@@ -408,7 +408,7 @@ class PaymentWebhook(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class AccountNameView(APIView):
-    permission_classes = []
+    permission_classes = [IsAuthenticated]
     def post(self, request):
         serializer = AccountNameSerializer(data = request.data)
         if serializer.is_valid(raise_exception = True):
@@ -430,7 +430,7 @@ class AccountNameView(APIView):
 
 
 class WithdrawView(APIView):
-    permission_classes =[]
+    permission_classes =[IsAuthenticated]
     def post(self, request):
 
         transaction_pin = request.data.get('transaction_pin')
