@@ -281,17 +281,17 @@ CELERY_TIMEZONE = 'UTC'
 
 
 # Cache Configuration
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': os.environ.get('REDIS_LOCATION'),
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        },
-        'KEY_PREFIX': 'bluesea',
-        'TIMEOUT': 300,
-    }
-}
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django_redis.cache.RedisCache',
+#         'LOCATION': os.environ.get('REDIS_LOCATION'),
+#         'OPTIONS': {
+#             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+#         },
+#         'KEY_PREFIX': 'bluesea',
+#         'TIMEOUT': 300,
+#     }
+# }
 
 # Session Configuration (optional - use Redis for sessions too)
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'

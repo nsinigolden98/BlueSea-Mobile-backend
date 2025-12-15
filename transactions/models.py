@@ -46,10 +46,12 @@ class FundWallet(models.Model):
 
 
 class Withdraw(models.Model):
+    #user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     account_name = models.CharField(max_length=100)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     account_number = models.CharField(max_length=10)
     bank_code = models.CharField( max_length=10)
+    bank_name = models.CharField(max_length=50,default='')
     payment_reference = models.CharField(max_length=100, unique=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
     created_at = models.DateTimeField(auto_now_add=True)

@@ -446,32 +446,44 @@ class WithdrawView(APIView):
         
         try:
             serializer = WithdrawSerializer(data = request.data)
+            payment_reference = f"BS-{uuid.uuid4()}"
+            
+            
             if serializer.is_valid(raise_exception =True):
-                payment_reference = f"BS-{uuid.uuid4()}"
+                
+                withdraw_request = serializer.save(payment_reference = payment_reference)
+                    
+                
+                account_number = serializer.data['account_number']
+                bank_code = serializer.data['bank_code']
+                amount = serializer.data['amount']
+                account_name = serializer.data['account_name']
+                bank_name = serializer.data['bank_name']             
 
                 with transaction.atomic():
-                    account_number = serializer.data['account_number']
-                    bank_code = serializer.data['bank_code']
-                    amount = serializer.data['amount']
-                    account_name = serializer.data['account_name']
-
-                    withdraw_request = Withdraw.objects.select_for_update().get(
-                            payment_reference=payment_reference,
-                            status='PENDING'
-                        )
-                    
+                                   
                     create_withdrawal = initiate_transfer(
-                        account_number,
-                        bank_code,
-                        amount,
-                        payment_reference,
-                         account_name,
+                        account_number = account_number,
+                        bank_code= bank_code,
+                        amount_ngn = float(amount),
+                        reference = payment_reference,
+                         account_name= account_name,
                          )
                     
                     if create_withdrawal:
                         withdraw_request.status = "COMPLETED"
                         withdraw_request.completed_at = timezone.now()
                         withdraw_request.save()
+                        Withdraw.objects.create(
+                            account_number= account_number,
+                            account_name= account_name,
+                            bank_name= bank_name,
+                            bank_code= bank_code,
+                            payment_reference= payment_reference,
+                            completed_at= withdraw_request.completed_at,
+                            created_at= withdraw_request.created_at
+                        )
+                        
 
                         request.user.wallet.debit(amount= amount, description= f"Transfer ₦{amount} to {account_name}", reference= payment_reference)
 
@@ -486,7 +498,7 @@ class WithdrawView(APIView):
             return Response({
                 "success": False, 
                 "error": str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         
                 

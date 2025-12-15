@@ -35,12 +35,13 @@ class WalletFundingSerializer(serializers.ModelSerializer):
         
 
 class WithdrawSerializer(serializers.ModelSerializer):
+     
     class Meta:
         model = Withdraw
         fields =[
-            "id", "amount", "account_number", 'bank_code', 'payment_reference', 'status', 'created_at',
+            "id", "amount", "account_name", "account_number","bank_name", 'bank_code', 'payment_reference','status', 'created_at', 
         ]
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ['id', 'payment_reference','created_at' ]
 
 class AccountNameSerializer(serializers.ModelSerializer):
     class Meta: 

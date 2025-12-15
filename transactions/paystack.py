@@ -10,7 +10,7 @@ HEADERS = {
     "Content-Type": "application/json"
 }
 
-
+1
 
 def checkout(payload):
     url = f"{BASE_URL}/transaction/initialize"
@@ -32,7 +32,7 @@ def checkout(payload):
         
 
 
-def initiate_transfer(account_number: str, bank_code: str,amount_ngn: float, reference: str, account_name: str = None, reason: str = "Withdrawal By Customet"):
+def initiate_transfer(account_number: str, bank_code: str,amount_ngn: float, reference: str, account_name: str = None, reason: str = "Withdrawal By Customer"):
     url = f"{BASE_URL}/transferrecipient"
     
     payload = {
@@ -62,23 +62,23 @@ def initiate_transfer(account_number: str, bank_code: str,amount_ngn: float, ref
     
         response = requests.post(url, headers=HEADERS, json=payload)
     
-        if response.status_code in (200, 201):
+        # if response.status_code in (200, 201):
 
-            url = f"{BASE_URL}/transfer/resolve"
+        #     url = f"{BASE_URL}/transfer/resolve"
 
-            payload = {
-                "reference": reference,
-                "pin": settings.PAYSTACK_PIN
-                    }
+        #     payload = {
+        #         "reference": reference,
+        #         "pin": settings.PAYSTACK_PIN
+        #             }
 
-            response = requests.post(url, headers = HEADERS, json = payload)
+        #     response = requests.post(url, headers = HEADERS, json = payload)
 
-            if response.status_code == 200:
-                result = response.json()
-                return result
+        if response.status_code == 200:
+            result = response.json()
+            return result
 
-            else:
-                return False
+            # else:
+            #     return False
 
         else:
             return False     
