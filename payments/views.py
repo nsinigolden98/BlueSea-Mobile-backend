@@ -1,3 +1,4 @@
+
 from django.db import transaction
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -573,7 +574,7 @@ class AirtimeTopUpViews(APIView):
         if serializer.is_valid(raise_exception=True):
             request_id = generate_reference_id()
             serializer.save(request_id = request_id)
-            
+        
             with transaction.atomic():
                 amount = int(serializer.data['amount'])
                 data = {

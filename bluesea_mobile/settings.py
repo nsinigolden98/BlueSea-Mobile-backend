@@ -132,9 +132,9 @@ TEMPLATES = [
 ASGI_APPLICATION = "bluesea_mobile.asgi.application"
 
 
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-# 
+#Database
+#https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -224,6 +224,7 @@ PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY')
 PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY')
 
 
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -268,10 +269,11 @@ CORS_ALLOW_ALL_ORIGINS = False
 
 # Use the specific URL/port of your frontend development server
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5168",
     "http://127.0.0.1:8000",
-    "https://blueseamobile-v1-0.onrender.com",
+    "http://127.0.0.1:5500",
+    "http://localhost:5168",
     "https://www.blueseamobile.com.ng",
+
     # Add other local ports if needed, like Vue (8080) or Angular (4200)
 ]
 
@@ -326,3 +328,4 @@ VTPASS_PUBLIC_KEY = os.environ.get('VTPASS_PUBLIC_KEY')
 ANYMAIL = {
     "BREVO_API_KEY": os.environ.get("BREVO_API_KEY"),
 }
+PAYSTACK_PIN = os.environ.get('PAYSTACK_PIN')
