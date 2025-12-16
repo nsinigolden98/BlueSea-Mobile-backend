@@ -213,9 +213,9 @@ FROM_EMAIL = EMAIL_HOST_USER
 PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY')
 PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY')
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://unexhausted-semiorganic-genevie.ngrok-free.dev/transactions'
-]
+# CSRF_TRUSTED_ORIGINS = [
+#     'https://unexhausted-semiorganic-genevie.ngrok-free.dev/transactions'
+# ]
 
 
 LOGGING = {
@@ -265,7 +265,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8000",
     "http://127.0.0.1:5500",
     "http://localhost:5168",
-    "https://blueseamobile-v1-0.onrender.com",
+    "https://www.blueseamobile.com.ng",
 
     # Add other local ports if needed, like Vue (8080) or Angular (4200)
 ]
