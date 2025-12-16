@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import WalletTransaction, FundWallet
+from .models import WalletTransaction, FundWallet, AccountName, Withdraw
 
 
 class WalletTransactionSerializer(serializers.ModelSerializer):
@@ -33,3 +33,18 @@ class WalletFundingSerializer(serializers.ModelSerializer):
     def get_formatted_amount(self, obj):
         return f"₦{obj.amount:,.2f}"
         
+
+class WithdrawSerializer(serializers.ModelSerializer):
+     
+    class Meta:
+        model = Withdraw
+        fields =[
+            "id", "amount", "account_name", "account_number","bank_name", 'bank_code', 'payment_reference','status', 'created_at', 
+        ]
+        read_only_fields = ['id', 'payment_reference','created_at' ]
+
+class AccountNameSerializer(serializers.ModelSerializer):
+    class Meta: 
+        model = AccountName
+        fields = ['id', 'account_number', 'bank_code']
+        read_only_fields =['id']
