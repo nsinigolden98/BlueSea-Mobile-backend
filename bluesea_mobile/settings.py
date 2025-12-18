@@ -142,7 +142,7 @@ DATABASES = {
     }
 }
 
-<<<<<<< HEAD
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -159,23 +159,6 @@ DATABASES = {
     }
 }
 
-=======
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.postgresql",
-#         "NAME": os.environ.get("DATABASE_NAME"),
-#         "USER": os.environ.get("DATABASE_USER"),
-#         "PASSWORD": os.environ.get("DATABASE_PASSWORD"),
-#         "HOST": os.environ.get("DATABASE_HOST"),
-#         "PORT": os.environ.get("DATABASE_PORT"),
-#         "CONN_MAX_AGE": 600,
-#         "OPTIONS": {
-#             "connect_timeout": 10,
-#             "options": "-c statement_timeout=30000"
-#         },
-#     }
-# }
->>>>>>> Righteousness-branch
 
 
 # Password validation
@@ -304,18 +287,18 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
 
-# Cache Configuration
-# CACHES = {
-#     'default': {
-#         'BACKEND': 'django_redis.cache.RedisCache',
-#         'LOCATION': os.environ.get('REDIS_LOCATION'),
-#         'OPTIONS': {
-#             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-#         },
-#         'KEY_PREFIX': 'bluesea',
-#         'TIMEOUT': 300,
-#     }
-# }
+Cache Configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.environ.get('REDIS_LOCATION'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+        'KEY_PREFIX': 'bluesea',
+        'TIMEOUT': 300,
+    }
+}
 
 # Session Configuration (optional - use Redis for sessions too)
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
