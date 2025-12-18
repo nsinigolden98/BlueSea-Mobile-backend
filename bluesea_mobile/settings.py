@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'drf_spectacular_sidecar',
     'channels',
+    'anymail',
 
     # local apps
     'accounts',
@@ -141,7 +142,6 @@ DATABASES = {
         'CONN_MAX_AGE': 600,
     }
 }
-
 
 DATABASES = {
     "default": {
@@ -287,20 +287,32 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
 
-# Cache Configuration
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': os.environ.get('REDIS_LOCATION'),
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        },
-        'KEY_PREFIX': 'bluesea',
-        'TIMEOUT': 300,
-    }
-}
+# Cache Configuration with fallback
+REDIS_LOCATION = os.environ.get('REDIS_LOCATION')
 
-# Session Configuration (optional - use Redis for sessions too)
+
+if REDIS_LOCATION:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_LOCATION,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            },
+            'KEY_PREFIX': 'bluesea',
+            'TIMEOUT': 300,
+        }
+    }
+else:
+    # Fallback to local memory cache if Redis not configured
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+        }
+    }
+
+# Session Configuration
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = 'default'
 
@@ -312,4 +324,9 @@ VTPASS_BASE_URL =os.environ.get('VTPASS_BASE_URL')
 VTPASS_API_KEY = os.environ.get('VTPASS_API_KEY')
 VTPASS_SECRET_KEY = os.environ.get('VTPASS_SECRET_KEY')
 VTPASS_PUBLIC_KEY = os.environ.get('VTPASS_PUBLIC_KEY')
+
+
+ANYMAIL = {
+    "BREVO_API_KEY": os.environ.get("BREVO_API_KEY"),
+}
 PAYSTACK_PIN = os.environ.get('PAYSTACK_PIN')
