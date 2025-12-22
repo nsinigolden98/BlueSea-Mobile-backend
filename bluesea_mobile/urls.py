@@ -25,7 +25,5 @@ urlpatterns = [
     path('market/', include('loyalty_market.urls')),
     path('user_preference/', include('user_preference.urls')),
     path('autotopup/', include('autotopup.urls')),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
