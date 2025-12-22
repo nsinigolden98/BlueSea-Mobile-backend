@@ -290,6 +290,7 @@ CELERY_TIMEZONE = 'UTC'
 # Cache Configuration with fallback
 REDIS_LOCATION = os.environ.get('REDIS_LOCATION')
 
+
 if REDIS_LOCATION:
     CACHES = {
         'default': {

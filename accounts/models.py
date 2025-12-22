@@ -28,7 +28,7 @@ class Profile(AbstractUser):
     surname = models.CharField(max_length=100, blank=True)
     other_names = models.CharField(max_length=100,blank=True)
     phone = models.CharField(max_length=200, null=True, blank=True)
-    image = models.ImageField(null=True, blank=True)
+    image = models.ImageField(upload_to='profiles/', null=True, blank=True)
     verification_code = models.CharField(null=True,max_length=100)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)

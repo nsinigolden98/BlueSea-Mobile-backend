@@ -1,8 +1,8 @@
-# from django.db import models
-# from django.contrib.auth import get_user_model
-# 
+from django.db import models
+from django.contrib.auth import get_user_model
+
 #Use get_user_model() to handle custom User models
-# User = get_user_model()
+User = get_user_model()
 # 
 #Define the acceptable theme choices
 # THEME_CHOICES = [
@@ -30,3 +30,7 @@
 # 
 #     def __str__(self):
 #         return f"Preferences for {self.user.username} (Theme: {self.theme_color})"
+
+class UpdateUserModel(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, )
+    image = models.ImageField(upload_to='profiles/', blank=True, null=True)
