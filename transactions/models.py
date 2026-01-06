@@ -46,9 +46,9 @@ class FundWallet(models.Model):
 
 
 class Withdraw(models.Model):
-    #user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+   # user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     account_name = models.CharField(max_length=100)
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, null=False, blank=False )
     account_number = models.CharField(max_length=10)
     bank_code = models.CharField( max_length=10)
     bank_name = models.CharField(max_length=50,default='')
