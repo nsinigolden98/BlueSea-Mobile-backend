@@ -1,3 +1,6 @@
+from linecache import cache
+import random
+import uuid
 from click import confirm
 from django.shortcuts import render
 from rest_framework import status
@@ -1073,6 +1076,219 @@ def verify_pin(request):
     
     except Exception as e:
         logger.error(f"Verify transaction pin error: {str(e)}")
+        return Response(
+            {
+                "message": "An error occurred",
+                "state": False
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@extend_schema(
+    summary="Request transaction PIN reset",
+    description="Request OTP to reset forgotten transaction PIN",
+    request=OpenApiTypes.OBJECT,
+    responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+    tags=['Authentication']
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def request_pin_reset(request):
+    try:
+        if not request.user.pin_is_set:
+            return Response(
+                {
+                    "message": "Transaction PIN is not set",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        otp = random.randint(100000, 999999)
+        
+        cache_key = f'pin_reset_otp_{request.user.email}'
+        cache.set(cache_key, otp, timeout=600)
+        
+        send_mail = send_email_verification(
+                    subject="Transaction Pin Reset Verification Code",
+                    template="accounts/pin_reset.html",
+                    email=request.user.email,
+                    context={"token": otp, "email": request.user.email}
+                )
+
+        if send_mail:
+            return Response(
+                {
+                    "message": "Transaction Pin reset OTP sent to your email",
+                    "state": True
+                },
+                status=status.HTTP_200_OK
+            )
+        return Response(
+            {
+                "message": "Failed to send transaction pin reset OTP, try again",
+                "state": False
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    except Exception as e:
+        logger.error(f"Request PIN reset error: {str(e)}")
+        return Response(
+            {
+                "message": "An error occurred",
+                "state": False
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@extend_schema(
+    summary="Verify PIN reset OTP",
+    description="Verify OTP sent for transaction PIN reset",
+    request=OpenApiTypes.OBJECT,
+    responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+    tags=['Authentication']
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def verify_pin_reset_otp(request):
+    try:
+        otp = request.data.get("otp")
+        
+        if not otp:
+            return Response(
+                {
+                    "message": "OTP is required",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        cache_key = f'pin_reset_otp_{request.user.email}'
+        cached_otp = cache.get(cache_key)
+        
+        if not cached_otp:
+            return Response(
+                {
+                    "message": "OTP has expired or is invalid",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if str(cached_otp) != str(otp):
+            return Response(
+                {
+                    "message": "Invalid OTP",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Generate verification token (valid for 5 minutes)
+        verification_token = f"{uuid.uuid4()}"
+        token_cache_key = f'pin_reset_token_{request.user.email}'
+        cache.set(token_cache_key, verification_token, timeout=300)
+        
+        # Delete used OTP
+        cache.delete(cache_key)
+        
+        logger.info(f"PIN reset OTP verified for {request.user.email}")
+        
+        return Response(
+            {
+                "message": "OTP verified successfully",
+                "state": True,
+                "verification_token": verification_token
+            },
+            status=status.HTTP_200_OK
+        )
+    
+    except Exception as e:
+        logger.error(f"Verify PIN reset OTP error: {str(e)}")
+        return Response(
+            {
+                "message": "An error occurred",
+                "state": False
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+
+@extend_schema(
+    summary="Reset transaction PIN",
+    description="Reset transaction PIN with verified token",
+    request=OpenApiTypes.OBJECT,
+    responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+    tags=['Authentication']
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def reset_transaction_pin(request):
+    try:
+        verification_token = request.data.get("verification_token")
+        new_pin = request.data.get("new_pin")
+        confirm_pin = request.data.get("confirm_pin")
+        
+        if not all([verification_token, new_pin, confirm_pin]):
+            return Response(
+                {
+                    "message": "Verification token, new PIN, and confirm PIN are required",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        token_cache_key = f'pin_reset_token_{request.user.email}'
+        cached_token = cache.get(token_cache_key)
+        
+        if not cached_token or cached_token != verification_token:
+            return Response(
+                {
+                    "message": "Invalid or expired verification token",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if len(new_pin) != 4 or not new_pin.isdigit():
+            return Response(
+                {
+                    "message": "PIN must be a 4-digit number",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if new_pin != confirm_pin:
+            return Response(
+                {
+                    "message": "PINs do not match",
+                    "state": False
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Set new PIN
+        request.user.set_transaction_pin(new_pin)
+        
+        cache.delete(token_cache_key)
+        
+        logger.info(f"Transaction PIN reset successfully for {request.user.email}")
+        
+        return Response(
+            {
+                "message": "Transaction PIN reset successfully",
+                "state": True
+            },
+            status=status.HTTP_200_OK
+        )
+    
+    except Exception as e:
+        logger.error(f"Reset transaction PIN error: {str(e)}")
         return Response(
             {
                 "message": "An error occurred",
