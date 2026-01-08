@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pin Reset Request</title>
+  <link href="https://fonts.googleapis.com/css2?family=Exo:wght@400&family=Ubuntu:wght@500&display=swap" rel="stylesheet">
+</head>
+
+<body style="background-color: rgb(240, 244, 255); font-family: 'Exo', sans-serif; margin: 0; padding: 0;">
+
+  <!-- Preheader Text (Inbox preview) -->
+  <span style="display: none; visibility: hidden; opacity: 0; color: transparent; height: 0; width: 0; overflow: hidden;">
+    Reset your BlueSea Transaction Pin securely. Use this OTP to reset your Transaction Pin — valid for 10 minutes only.
+  </span>
+
+  <section class="content">
+    <div class="container" style="max-width: 960px; margin: 0 auto; padding: 20px;">
+
+      <!-- Logo and Branding -->
+      <div style="display: flex; justify-content: center; align-items: center;">
+        <img src="http://test.bluesea.com/static/logo.png" width="50" alt="BlueSea Logo" style="margin-right: 10px;">
+        <h1 class="logo-word" style="font-weight: 700; color: #190C01; font-size: 35.36px; text-align: center; margin: 20px 0;">
+          BlueSea
+        </h1>
+      </div>
+
+      <!-- Main Content -->
+      <div class="row content-row" style="background: #fff; margin: 20px 0; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div>
+          <h2 class="small-heading" style="color: #190C01; font-weight: 600; font-size: 24px; margin-bottom: 20px;">
+            Pin Reset Request
+          </h2>
+
+          <p style="font-size: 16px; line-height: 24px; color: #190C01; margin-bottom: 20px;">
+            Hi there,
+          </p>
+
+          <p style="font-size: 16px; line-height: 24px; color: #190C01; margin-bottom: 20px;">
+            We received a request to reset the Transaction Pin for your BlueSea account associated with <strong>{{ email }}</strong>.
+          </p>
+
+          <p style="font-size: 16px; line-height: 24px; color: #190C01; margin-bottom: 20px;">
+            Please use the One-Time Pin (OTP) below to proceed with your Transaction Pin reset. 
+            This OTP is valid for <strong>10 minutes</strong> from the time you received it.
+          </p>
+
+          <!-- OTP Display -->
+          <div class="otp-bg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 8px; margin: 30px 0;">
+            <p style="color: #fff; font-size: 14px; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">Your OTP Code</p>
+            <span class="otp" style="color: #fff; font-weight: 700; font-size: 32px; letter-spacing: 8px; display: block;">{{ token }}</span>
+          </div>
+
+          <!-- Security Notice -->
+          <div style="background: #FFF6EE; padding: 15px; border-left: 4px solid #FF9800; margin: 20px 0; border-radius: 4px;">
+            <p style="font-size: 14px; line-height: 20px; color: #190C01; margin: 0;">
+              <strong>⚠️ Security Notice:</strong> If you didn't request a Pin reset, please ignore this email and ensure your account is secure. 
+              Your Pin will remain unchanged.
+            </p>
+          </div>
+
+          <p style="font-size: 16px; line-height: 24px; color: #190C01; margin-top: 20px;">
+            Need assistance? Our support team is here to help!
+          </p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="mailto:support@bluesea.com" style="background: #267bfb; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: 600;">
+              Contact Support
+            </a>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
+
+          <p style="font-size: 14px; line-height: 20px; color: #666; text-align: center;">
+            This is an automated message, please do not reply to this email.
+          </p>
+        </div>
+      </div>
+
+      <!-- Social Icons -->
+      <div class="socials" style="display: flex; justify-content: center; margin-top: 40px; gap: 15px;">
+        <a href="#" style="text-decoration: none;">
+          <img src="http://test.bluesea.com/static/tiktok.png" width="24" alt="TikTok">
+        </a>
+        <a href="#" style="text-decoration: none;">
+          <img src="http://test.bluesea.com/static/insta.png" width="24" alt="Instagram">
+        </a>
+        <a href="#" style="text-decoration: none;">
+          <img src="http://test.bluesea.com/static/fb.png" width="24" alt="Facebook">
+        </a>
+        <a href="#" style="text-decoration: none;">
+          <img src="http://test.bluesea.com/static/twt.png" width="24" alt="Twitter">
+        </a>
+        <a href="#" style="text-decoration: none;">
+          <img src="http://test.bluesea.com/static/in.png" width="24" alt="LinkedIn">
+        </a>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer" style="margin-top: 40px; text-align: center; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+        <p style="font-size: 14px; color: #888; line-height: 20px; margin: 5px 0;">
+          <strong>BlueSea Technology</strong>
+        </p>
+        <p style="font-size: 12px; color: #999; line-height: 18px; margin: 5px 0;">
+          Covenant, Uyo, Akwa Ibom State, Nigeria
+        </p>
+        <p style="font-size: 12px; color: #999; margin: 10px 0;">
+          &copy; {{ current_year|default:"2025" }} BlueSea Technology. All rights reserved.
+        </p>
+      </div>
+
+    </div>
+  </section>
+</body>
+
+</html>

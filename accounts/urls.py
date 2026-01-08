@@ -19,4 +19,8 @@ urlpatterns = [
     path('pin/set/', views.set_transaction_pin, name='set-transaction-pin'),
     path('pin/verify/', views.verify_pin, name='verify-transaction-pin'),
     path('pin/reset/', views.change_transaction_pin, name='reset-transaction-pin'),
+
+    path('transaction/pin/request/', views.request_pin_reset, name='request-transaction-pin-reset'),
+    path('transaction/pin/verify-otp/', views.verify_pin_reset_otp, name='verify-transaction-pin-reset-otp'),
+    path('transaction/pin/new/', views.reset_transaction_pin, name='set-new-transaction-pin'),
 ]
