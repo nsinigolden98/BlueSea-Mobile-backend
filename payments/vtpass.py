@@ -347,7 +347,7 @@ def generate_reference_id():
     return reference_id
 
 def top_up(user_data):
-    response = requests.post(BASE_URL, headers=headers, json=user_data) 
+    response = requests.post(f"{BASE_URL}/pay", headers=headers, json=user_data) 
     return response.json()
 
 def get_variations():

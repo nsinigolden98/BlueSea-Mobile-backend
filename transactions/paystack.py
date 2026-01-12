@@ -81,10 +81,10 @@ def initiate_transfer(account_number: str, bank_code: str,amount_ngn: float, ref
             #     return False
 
         else:
-            return False     
+            return response
     else:
         
-        return False
+        return {"error" :"fail stsge 1", "state": True}
 
    
 

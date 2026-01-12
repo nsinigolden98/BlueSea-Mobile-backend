@@ -449,6 +449,7 @@ class WithdrawView(APIView):
             payment_reference = f"BS-{uuid.uuid4()}"
             
             
+            
             if serializer.is_valid(raise_exception =True):
                 
                 withdraw_request = serializer.save(payment_reference = payment_reference)
@@ -474,31 +475,30 @@ class WithdrawView(APIView):
                         withdraw_request.status = "COMPLETED"
                         withdraw_request.completed_at = timezone.now()
                         withdraw_request.save()
-                        Withdraw.objects.create(
-                            account_number= account_number,
-                            account_name= account_name,
-                            bank_name= bank_name,
-                            bank_code= bank_code,
-                            payment_reference= payment_reference,
-                            completed_at= withdraw_request.completed_at,
-                            created_at= withdraw_request.created_at
-                        )
+                        # Withdraw.objects.create(
+#                             account_number= account_number,
+#                             account_name= account_name,
+#                             bank_name= bank_name,
+#                             bank_code= bank_code,
+#                             payment_reference= payment_reference,
+#                             completed_at= withdraw_request.completed_at,
+#                             created_at= withdraw_request.created_at
+#                         )
                         
 
-                        request.user.wallet.debit(amount= amount, description= f"Transfer ₦{amount} to {account_name}", reference= payment_reference)
-
+                        # request.user.wallet.debit(amount= amount, description= f"Transfer ₦{amount} to {account_name}", reference= payment_reference)
+# 
                         return Response(create_withdrawal, status = status.HTTP_200_OK)
 
 
                     else:
-                        return Response({'error': 'An error during the transaction', "state": False}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                        return Response({'error': 'An error during the transaction', "state": False,"message":create_withdrawal}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
         except Exception as e:
             return Response({
-                "success": False, 
+                "state": False, 
                 "error": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
         
-                
