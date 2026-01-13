@@ -617,7 +617,7 @@ class AirtimeTopUpViews(APIView):
                         except Exception as e:
                             logger.error(f"Error awarding bonus points: {str(e)}")
                     
-                    return Response(buy_airtime_response)
+                    return Response(buy_airtime_response.update({'success': True}))
                     
         except Exception as e:
             return Response({
@@ -703,7 +703,7 @@ class MTNDataTopUpViews(APIView):
                                 
                         except Exception as e:
                             logger.error(f"Error awarding bonus points: {str(e)}")
-                    return Response(subscription_response)
+                    return Response(subscription_response.update({'success': True}))
                     
         except Exception as e:
             return Response({
@@ -729,67 +729,76 @@ class AirtelDataTopUpViews(APIView):
     def post(self, request):
         transaction_pin = request.data.get('transaction_pin')
 
-        if not transaction_pin:
-            return Response({'error': 'Transaction PIN is required', "success": False}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            if not transaction_pin:
+                return Response({'error': 'Transaction PIN is required', "success": False}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not request.user.pin_is_set:
-            return Response({'error': 'Please set your transaction PIN first', "success": False}, status=status.HTTP_400_BAD_REQUEST)
+            if not request.user.pin_is_set:
+                return Response({'error': 'Please set your transaction PIN first', "success": False}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not request.user.verify_transaction_pin(transaction_pin):
-            return Response({'error': 'Invalid transaction PIN', "success": False}, status=status.HTTP_400_BAD_REQUEST)
-        
+            if not request.user.verify_transaction_pin(transaction_pin):
+                return Response({'error': 'Invalid transaction PIN', "success": False}, status=status.HTTP_400_BAD_REQUEST)
+            
 
-        serializer = AirtelDataTopUpSerializer(data = request.data)
-        if serializer.is_valid(raise_exception=True):
-            request_id = generate_reference_id()
-            serializer.save(request_id = request_id)
-            with transaction.atomic():
-                amount = airtel_dict[serializer.data["plan"]][1]
-                variation_code = airtel_dict[serializer.data["plan"]][0]
-                data = {
-                        "request_id": request_id,
-                        "serviceID": "airtel-data",
-                        "billersCode": serializer.data["billersCode"],
-                        "variation_code": variation_code,
-                        "amount": amount,
-                        "phone": serializer.data["phone_number"],
-                    }
-                # Wallet.debit(amount) 
-                user_wallet = request.user.wallet
-                
-                if user_wallet.balance < amount:
-                        return Response({'error': 'Insufficient Funds', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
-                        
-                subscription_response = top_up(data)
-                if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, description= "Airtel Data Subscription",reference=request_id)
+            serializer = AirtelDataTopUpSerializer(data = request.data)
+            if serializer.is_valid(raise_exception=True):
+                request_id = generate_reference_id()
+                serializer.save(request_id = request_id)
+                with transaction.atomic():
+                    amount = airtel_dict[serializer.data["plan"]][1]
+                    variation_code = airtel_dict[serializer.data["plan"]][0]
+                    data = {
+                            "request_id": request_id,
+                            "serviceID": "airtel-data",
+                            "billersCode": serializer.data["billersCode"],
+                            "variation_code": variation_code,
+                            "amount": amount,
+                            "phone": serializer.data["phone_number"],
+                        }
+                    # Wallet.debit(amount) 
+                    user_wallet = request.user.wallet
+                    
+                    if user_wallet.balance < amount:
+                            return Response({'error': 'Insufficient Funds', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
+                            
+                    subscription_response = top_up(data)
+                    if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
+                        user_wallet.debit(amount=amount, description= "Airtel Data Subscription",reference=request_id)
 
-                    # Award bonus points
-                    try:
-                        award_vtu_purchase_points(
-                            user=request.user,
-                            purchase_amount=amount,
-                            reference=request_id
-                        )
-                        
-                        # Check for referral bonus (first transaction)
+                        # Award bonus points
                         try:
-                            referral = Referral.objects.get(
-                                referred_user=request.user,
-                                status='pending',
-                                first_transaction_completed=False
+                            award_vtu_purchase_points(
+                                user=request.user,
+                                purchase_amount=amount,
+                                reference=request_id
                             )
-                            referral.first_transaction_completed = True
-                            referral.save()
                             
-                            award_referral_bonus(referral.referrer, request.user)
-                        except Referral.DoesNotExist:
-                            pass
-                            
-                    except Exception as e:
-                        logger.error(f"Error awarding bonus points: {str(e)}")
-                return Response(subscription_response)
+                            # Check for referral bonus (first transaction)
+                            try:
+                                referral = Referral.objects.get(
+                                    referred_user=request.user,
+                                    status='pending',
+                                    first_transaction_completed=False
+                                )
+                                referral.first_transaction_completed = True
+                                referral.save()
+                                
+                                award_referral_bonus(referral.referrer, request.user)
+                            except Referral.DoesNotExist:
+                                pass
+                                
+                        except Exception as e:
+                            logger.error(f"Error awarding bonus points: {str(e)}")
+                    return Response(subscription_response.update({'success': True}))
                 
+        except Exception as e:
+            return Response({
+                    'success': False,
+                    'error': f'Payment failed: {str(e)}.'
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+                    
 class GloDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -805,65 +814,76 @@ class GloDataTopUpViews(APIView):
     )
     def post(self, request):
         transaction_pin = request.data.get('transaction_pin')
-
-        if not transaction_pin:
-            return Response({'error': 'Transaction PIN is required', "state": False}, status=status.HTTP_400_BAD_REQUEST)
-
-        if not request.user.pin_is_set:
-            return Response({'error': 'Please set your transaction PIN first', "state": False}, status=status.HTTP_400_BAD_REQUEST)
-
-        if not request.user.verify_transaction_pin(transaction_pin):
-            return Response({'error': 'Invalid transaction PIN', "state": False}, status=status.HTTP_400_BAD_REQUEST)
         
+        try:
+            
+            if not transaction_pin:
+                return Response({'error': 'Transaction PIN is required', "success": False}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = GloDataTopUpSerializer(data = request.data)
-        if serializer.is_valid(raise_exception=True):
-            request_id = generate_reference_id()
-            serializer.save(request_id = request_id)
-            with transaction.atomic():
-                amount = glo_dict[serializer.data["plan"]][1]
-                variation_code = glo_dict[serializer.data["plan"]][0]
-                data = {
-                        "request_id": request_id,
-                        "serviceID": "glo-data",
-                        "billersCode": serializer.data["billersCode"],
-                        "variation_code": variation_code,
-                        "amount": amount,
-                        "phone": serializer.data["phone_number"],
-                    }
-                # Wallet.debit(amount) 
-                user_wallet = request.user.wallet
+            if not request.user.pin_is_set:
+                return Response({'error': 'Please set your transaction PIN first', "success": False}, status=status.HTTP_400_BAD_REQUEST)
 
-                subscription_response = top_up(data)
-                if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, description= " Glo Data Subscription",reference=request_id)
+            if not request.user.verify_transaction_pin(transaction_pin):
+                return Response({'error': 'Invalid transaction PIN', "success": False}, status=status.HTTP_400_BAD_REQUEST)
+            
 
-                    # Award bonus points
-                    try:
-                        award_vtu_purchase_points(
-                            user=request.user,
-                            purchase_amount=amount,
-                            reference=request_id
-                        )
-                        
-                        # Check for referral bonus (first transaction)
+            serializer = GloDataTopUpSerializer(data = request.data)
+            if serializer.is_valid(raise_exception=True):
+                request_id = generate_reference_id()
+                serializer.save(request_id = request_id)
+                with transaction.atomic():
+                    amount = glo_dict[serializer.data["plan"]][1]
+                    variation_code = glo_dict[serializer.data["plan"]][0]
+                    data = {
+                            "request_id": request_id,
+                            "serviceID": "glo-data",
+                            "billersCode": serializer.data["billersCode"],
+                            "variation_code": variation_code,
+                            "amount": amount,
+                            "phone": serializer.data["phone_number"],
+                        }
+                    # Wallet.debit(amount) 
+                    user_wallet = request.user.wallet
+                    
+                    if user_wallet.balance < amount:
+                                return Response({'error': 'Insufficient Funds', 'success': False}, status=status.HTTP_400_BAD_REQUEST)               
+
+                    subscription_response = top_up(data)
+                    if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
+                        user_wallet.debit(amount=amount, description= " Glo Data Subscription",reference=request_id)
+
+                        # Award bonus points
                         try:
-                            referral = Referral.objects.get(
-                                referred_user=request.user,
-                                status='pending',
-                                first_transaction_completed=False
+                            award_vtu_purchase_points(
+                                user=request.user,
+                                purchase_amount=amount,
+                                reference=request_id
                             )
-                            referral.first_transaction_completed = True
-                            referral.save()
                             
-                            award_referral_bonus(referral.referrer, request.user)
-                        except Referral.DoesNotExist:
-                            pass
-                            
-                    except Exception as e:
-                        logger.error(f"Error awarding bonus points: {str(e)}")
-                return Response(subscription_response)
-                
+                            # Check for referral bonus (first transaction)
+                            try:
+                                referral = Referral.objects.get(
+                                    referred_user=request.user,
+                                    status='pending',
+                                    first_transaction_completed=False
+                                )
+                                referral.first_transaction_completed = True
+                                referral.save()
+                                
+                                award_referral_bonus(referral.referrer, request.user)
+                            except Referral.DoesNotExist:
+                                pass
+                                
+                        except Exception as e:
+                            logger.error(f"Error awarding bonus points: {str(e)}")
+                    return Response(subscription_response.update({'success': True}))
+        except Exception as e:
+            return Response({
+                    'success': False,
+                    'error': f'Payment failed: {str(e)}.'
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )    
 class EtisalatDataTopUpViews(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -880,64 +900,77 @@ class EtisalatDataTopUpViews(APIView):
     def post(self, request):
         transaction_pin = request.data.get('transaction_pin')
 
-        if not transaction_pin:
-            return Response({'error': 'Transaction PIN is required', "state": False}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            
+            if not transaction_pin:
+                return Response({'error': 'Transaction PIN is required', "success": False}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not request.user.pin_is_set:
-            return Response({'error': 'Please set your transaction PIN first', "state": False}, status=status.HTTP_400_BAD_REQUEST)
+            if not request.user.pin_is_set:
+                return Response({'error': 'Please set your transaction PIN first', "success": False}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not request.user.verify_transaction_pin(transaction_pin):
-            return Response({'error': 'Invalid transaction PIN', "state": False}, status=status.HTTP_400_BAD_REQUEST)
-        
+            if not request.user.verify_transaction_pin(transaction_pin):
+                return Response({'error': 'Invalid transaction PIN', "success": False}, status=status.HTTP_400_BAD_REQUEST)
+            
 
-        serializer = EtisalatDataTopUpSerializer(data = request.data)
-        if serializer.is_valid(raise_exception=True):
-            request_id = generate_reference_id()
-            serializer.save(request_id = request_id)
-            with transaction.atomic():
-                amount = etisalat_dict[serializer.data["plan"]][1]
-                variation_code = etisalat_dict[serializer.data["plan"]][0]
-                data = {
-                        "request_id": request_id,
-                        "serviceID": "etisalat-data",
-                        "billersCode": serializer.data["billersCode"],
-                        "variation_code": variation_code,
-                        "amount": amount,
-                        "phone": serializer.data["phone_number"],
-                    }
-                # Wallet.debit(amount) 
-                user_wallet = request.user.wallet
+            serializer = EtisalatDataTopUpSerializer(data = request.data)
+            if serializer.is_valid(raise_exception=True):
+                request_id = generate_reference_id()
+                serializer.save(request_id = request_id)
+                with transaction.atomic():
+                    amount = etisalat_dict[serializer.data["plan"]][1]
+                    variation_code = etisalat_dict[serializer.data["plan"]][0]
+                    data = {
+                            "request_id": request_id,
+                            "serviceID": "etisalat-data",
+                            "billersCode": serializer.data["billersCode"],
+                            "variation_code": variation_code,
+                            "amount": amount,
+                            "phone": serializer.data["phone_number"],
+                        }
+                    # Wallet.debit(amount) 
+                    user_wallet = request.user.wallet
+                    
+                    if user_wallet.balance < amount:
+                            return Response({'error': 'Insufficient Funds', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
+                            
 
-                subscription_response = top_up(data)
-                if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, description= " 9mobile Data Subscription",reference=request_id)
+                    subscription_response = top_up(data)
+                    if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
+                        user_wallet.debit(amount=amount, description= " 9mobile Data Subscription",reference=request_id)
 
-                    # Award bonus points
-                    try:
-                        award_vtu_purchase_points(
-                            user=request.user,
-                            purchase_amount=amount,
-                            reference=request_id
-                        )
-                        
-                        # Check for referral bonus (first transaction)
+                        # Award bonus points
                         try:
-                            referral = Referral.objects.get(
-                                referred_user=request.user,
-                                status='pending',
-                                first_transaction_completed=False
+                            award_vtu_purchase_points(
+                                user=request.user,
+                                purchase_amount=amount,
+                                reference=request_id
                             )
-                            referral.first_transaction_completed = True
-                            referral.save()
                             
-                            award_referral_bonus(referral.referrer, request.user)
-                        except Referral.DoesNotExist:
-                            pass
-                            
-                    except Exception as e:
-                        logger.error(f"Error awarding bonus points: {str(e)}")
-                return Response(subscription_response)
+                            # Check for referral bonus (first transaction)
+                            try:
+                                referral = Referral.objects.get(
+                                    referred_user=request.user,
+                                    status='pending',
+                                    first_transaction_completed=False
+                                )
+                                referral.first_transaction_completed = True
+                                referral.save()
+                                
+                                award_referral_bonus(referral.referrer, request.user)
+                            except Referral.DoesNotExist:
+                                pass
+                                
+                        except Exception as e:
+                            logger.error(f"Error awarding bonus points: {str(e)}")
+                    return Response(subscription_response.update({'success': True}))
                 
+        except Exception as e:
+            return Response({
+                    'success': False,
+                    'error': f'Payment failed: {str(e)}.'
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )            
 class DSTVPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -953,67 +986,79 @@ class DSTVPaymentViews(APIView):
     )
     def post(self, request):
         transaction_pin = request.data.get('transaction_pin')
-
-        if not transaction_pin:
-            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if not request.user.pin_is_set:
-            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if not request.user.verify_transaction_pin(transaction_pin):
-            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
         
+        try:
+            
+            if not transaction_pin:
+                return Response({'error': 'Transaction PIN is required', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = DSTVPaymentSerializer(data = request.data)
-        if serializer.is_valid(raise_exception=True):
-            request_id = generate_reference_id()
-            serializer.save(request_id = request_id)
-            with transaction.atomic():
-                amount = dstv_dict[serializer.data["dstv_plan"]][1]
-                variation_code = dstv_dict[serializer.data["dstv_plan"]][0]
-                data = {
-                        "request_id": request_id,
-                        "serviceID": "dstv",
-                        "billersCode": serializer.data["billersCode"],
-                        "variation_code": variation_code,
-                        "amount": amount,
-                        "phone": serializer.data["phone_number"],
-                        "subscription_type": serializer.data["subscription_type"],
-                        "quanity" : 1
-                    }
-                # Wallet.debit(amount) 
-                user_wallet = request.user.wallet
+            if not request.user.pin_is_set:
+                return Response({'error': 'Please set your transaction PIN first', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
 
-                subscription_response = top_up(data)
-                if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, reference=request_id)
+            if not request.user.verify_transaction_pin(transaction_pin):
+                return Response({'error': 'Invalid transaction PIN', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
+            
 
-                    # Award bonus points
-                    try:
-                        award_vtu_purchase_points(
-                            user=request.user,
-                            purchase_amount=amount,
-                            reference=request_id
-                        )
-                        
-                        # Check for referral bonus (first transaction)
+            serializer = DSTVPaymentSerializer(data = request.data)
+            if serializer.is_valid(raise_exception=True):
+                request_id = generate_reference_id()
+                serializer.save(request_id = request_id)
+                with transaction.atomic():
+                    amount = dstv_dict[serializer.data["dstv_plan"]][1]
+                    variation_code = dstv_dict[serializer.data["dstv_plan"]][0]
+                    data = {
+                            "request_id": request_id,
+                            "serviceID": "dstv",
+                            "billersCode": serializer.data["billersCode"],
+                            "variation_code": variation_code,
+                            "amount": amount,
+                            "phone": serializer.data["phone_number"],
+                            "subscription_type": serializer.data["subscription_type"],
+                            "quanity" : 1
+                        }
+                    # Wallet.debit(amount) 
+                    user_wallet = request.user.wallet
+                    if user_wallet.balance < amount:
+                            return Response({'error': 'Insufficient Funds', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
+                            
+                    subscription_response = top_up(data)
+                    if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
+                        user_wallet.debit(amount=amount, reference=request_id)
+
+                        # Award bonus points
                         try:
-                            referral = Referral.objects.get(
-                                referred_user=request.user,
-                                status='pending',
-                                first_transaction_completed=False
+                            award_vtu_purchase_points(
+                                user=request.user,
+                                purchase_amount=amount,
+                                reference=request_id
                             )
-                            referral.first_transaction_completed = True
-                            referral.save()
                             
-                            award_referral_bonus(referral.referrer, request.user)
-                        except Referral.DoesNotExist:
-                            pass
-                            
-                    except Exception as e:
-                        logger.error(f"Error awarding bonus points: {str(e)}")
-                return Response(subscription_response)
+                            # Check for referral bonus (first transaction)
+                            try:
+                                referral = Referral.objects.get(
+                                    referred_user=request.user,
+                                    status='pending',
+                                    first_transaction_completed=False
+                                )
+                                referral.first_transaction_completed = True
+                                referral.save()
+                                
+                                award_referral_bonus(referral.referrer, request.user)
+                            except Referral.DoesNotExist:
+                                pass
+                                
+                        except Exception as e:
+                            logger.error(f"Error awarding bonus points: {str(e)}")
+                    return Response(subscription_response.update({'success': True}))
                 
+        except Exception as e:
+            return Response({
+                    'success': False,
+                    'error': f'Payment failed: {str(e)}.'
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+                    
 class GOTVPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -1029,67 +1074,80 @@ class GOTVPaymentViews(APIView):
     )
     def post(self, request):
         transaction_pin = request.data.get('transaction_pin')
+        
+        try:
 
-        if not transaction_pin:
-            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+            if not transaction_pin:
+                return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not request.user.pin_is_set:
-            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+            if not request.user.pin_is_set:
+                return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not request.user.verify_transaction_pin(transaction_pin):
-            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+            if not request.user.verify_transaction_pin(transaction_pin):
+                return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-        serializer = GOTVPaymentSerializer(data = request.data)
-        if serializer.is_valid(raise_exception=True):
-            request_id = generate_reference_id()
-            serializer.save(request_id = request_id)
-            with transaction.atomic():
-                amount = gotv_dict[serializer.data["gotv_plan"]][1]
-                variation_code = gotv_dict[serializer.data["gotv_plan"]][0]
-                data = {
-                        "request_id": request_id,
-                        "serviceID": "gotv",
-                        "billersCode": serializer.data["billersCode"],
-                        "variation_code": variation_code,
-                        "amount": amount,
-                        "phone": serializer.data["phone_number"],
-                        "subscription_type": serializer.data["subscription_type"],
-                        "quanity" : 1
-                    }
-                # Wallet.debit(amount) 
-                user_wallet = request.user.wallet
+            serializer = GOTVPaymentSerializer(data = request.data)
+            if serializer.is_valid(raise_exception=True):
+                request_id = generate_reference_id()
+                serializer.save(request_id = request_id)
+                with transaction.atomic():
+                    amount = gotv_dict[serializer.data["gotv_plan"]][1]
+                    variation_code = gotv_dict[serializer.data["gotv_plan"]][0]
+                    data = {
+                            "request_id": request_id,
+                            "serviceID": "gotv",
+                            "billersCode": serializer.data["billersCode"],
+                            "variation_code": variation_code,
+                            "amount": amount,
+                            "phone": serializer.data["phone_number"],
+                            "subscription_type": serializer.data["subscription_type"],
+                            "quanity" : 1
+                        }
+                    # Wallet.debit(amount) 
+                    user_wallet = request.user.wallet
+                    
+                    if user_wallet.balance < amount:
+                            return Response({'error': 'Insufficient Funds', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
+                            
 
-                subscription_response = top_up(data)
-                if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, reference=request_id)
+                    subscription_response = top_up(data)
+                    if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
+                        user_wallet.debit(amount=amount, reference=request_id)
 
-                    # Award bonus points
-                    try:
-                        award_vtu_purchase_points(
-                            user=request.user,
-                            purchase_amount=amount,
-                            reference=request_id
-                        )
-                        
-                        # Check for referral bonus (first transaction)
+                        # Award bonus points
                         try:
-                            referral = Referral.objects.get(
-                                referred_user=request.user,
-                                status='pending',
-                                first_transaction_completed=False
+                            award_vtu_purchase_points(
+                                user=request.user,
+                                purchase_amount=amount,
+                                reference=request_id
                             )
-                            referral.first_transaction_completed = True
-                            referral.save()
                             
-                            award_referral_bonus(referral.referrer, request.user)
-                        except Referral.DoesNotExist:
-                            pass
-                            
-                    except Exception as e:
-                        logger.error(f"Error awarding bonus points: {str(e)}")
-                return Response(subscription_response)
-                
+                            # Check for referral bonus (first transaction)
+                            try:
+                                referral = Referral.objects.get(
+                                    referred_user=request.user,
+                                    status='pending',
+                                    first_transaction_completed=False
+                                )
+                                referral.first_transaction_completed = True
+                                referral.save()
+                                
+                                award_referral_bonus(referral.referrer, request.user)
+                            except Referral.DoesNotExist:
+                                pass
+                                
+                        except Exception as e:
+                            logger.error(f"Error awarding bonus points: {str(e)}")
+                    return Response(subscription_response.update({'success': True}))
+        except Exception as e:
+            return Response({
+                    'success': False,
+                    'error': f'Payment failed: {str(e)}.'
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+                    
 class StartimesPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -1105,64 +1163,78 @@ class StartimesPaymentViews(APIView):
     )
     def post(self, request):
         transaction_pin = request.data.get('transaction_pin')
+        
+        try:
 
-        if not transaction_pin:
-            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+            if not transaction_pin:
+                return Response({'error': 'Transaction PIN is required', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not request.user.pin_is_set:
-            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+            if not request.user.pin_is_set:
+                return Response({'error': 'Please set your transaction PIN first', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not request.user.verify_transaction_pin(transaction_pin):
-            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+            if not request.user.verify_transaction_pin(transaction_pin):
+                return Response({'error': 'Invalid transaction PIN', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
 
 
-        serializer = StartimesPaymentSerializer(data = request.data)
-        if serializer.is_valid(raise_exception=True):
-            request_id = generate_reference_id()
-            serializer.save(request_id = request_id)
-            with transaction.atomic():
-                amount = startimes_dict[serializer.data["startimes_plan"]][1]
-                variation_code = startimes_dict[serializer.data["startimes_plan"]][0]
-                data = {
-                        "request_id": request_id,
-                        "serviceID": "startimes",
-                        "billersCode": serializer.data["billersCode"],
-                        "variation_code": variation_code,
-                        "amount": amount,
-                        "phone": serializer.data["phone_number"],
-                    }
-                
-                user_wallet = request.user.wallet
+            serializer = StartimesPaymentSerializer(data = request.data)
+            if serializer.is_valid(raise_exception=True):
+                request_id = generate_reference_id()
+                serializer.save(request_id = request_id)
+                with transaction.atomic():
+                    amount = startimes_dict[serializer.data["startimes_plan"]][1]
+                    variation_code = startimes_dict[serializer.data["startimes_plan"]][0]
+                    data = {
+                            "request_id": request_id,
+                            "serviceID": "startimes",
+                            "billersCode": serializer.data["billersCode"],
+                            "variation_code": variation_code,
+                            "amount": amount,
+                            "phone": serializer.data["phone_number"],
+                        }
+                    
+                    user_wallet = request.user.wallet
+                    
+                    if user_wallet.balance < amount:
+                                return Response({'error': 'Insufficient Funds', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
+                                
 
-                subscription_response = top_up(data)
-                if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, reference=request_id)
+                    subscription_response = top_up(data)
+                    if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
+                        user_wallet.debit(amount=amount, reference=request_id)
 
-                    # Award bonus points
-                    try:
-                        award_vtu_purchase_points(
-                            user=request.user,
-                            purchase_amount=amount,
-                            reference=request_id
-                        )
-                        
-                        # Check for referral bonus (first transaction)
+                        # Award bonus points
                         try:
-                            referral = Referral.objects.get(
-                                referred_user=request.user,
-                                status='pending',
-                                first_transaction_completed=False
+                            award_vtu_purchase_points(
+                                user=request.user,
+                                purchase_amount=amount,
+                                reference=request_id
                             )
-                            referral.first_transaction_completed = True
-                            referral.save()
                             
-                            award_referral_bonus(referral.referrer, request.user)
-                        except Referral.DoesNotExist:
-                            pass
-                            
-                    except Exception as e:
-                        logger.error(f"Error awarding bonus points: {str(e)}")
-                return Response(subscription_response)
+                            # Check for referral bonus (first transaction)
+                            try:
+                                referral = Referral.objects.get(
+                                    referred_user=request.user,
+                                    status='pending',
+                                    first_transaction_completed=False
+                                )
+                                referral.first_transaction_completed = True
+                                referral.save()
+                                
+                                award_referral_bonus(referral.referrer, request.user)
+                            except Referral.DoesNotExist:
+                                pass
+                                
+                        except Exception as e:
+                            logger.error(f"Error awarding bonus points: {str(e)}")
+                    return Response(subscription_response.update({'success': True}))
+                
+        except Exception as e:
+            return Response({
+                    'success': False,
+                    'error': f'Payment failed: {str(e)}.'
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
                 
 class ShowMaxPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
@@ -1179,64 +1251,76 @@ class ShowMaxPaymentViews(APIView):
     )
     def post(self, request):
         transaction_pin = request.data.get('transaction_pin')
+        
+        try:
 
-        if not transaction_pin:
-            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+            if not transaction_pin:
+                return Response({'error': 'Transaction PIN is required', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not request.user.pin_is_set:
-            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+            if not request.user.pin_is_set:
+                return Response({'error': 'Please set your transaction PIN first', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not request.user.verify_transaction_pin(transaction_pin):
-            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+            if not request.user.verify_transaction_pin(transaction_pin):
+                return Response({'error': 'Invalid transaction PIN', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
 
 
-        serializer = ShowMaxPaymentSerializer(data = request.data)
-        if serializer.is_valid(raise_exception=True):
-            request_id = generate_reference_id()
-            serializer.save(request_id = request_id)
-            with transaction.atomic():
-                amount = showmax_dict[serializer.data["showmax_plan"]][1]
-                variation_code = showmax_dict[serializer.data["showmax_plan"]][0]
-                data = {
-                        "request_id": request_id,
-                        "serviceID": "showmax",
-                        "billersCode": serializer.data["phone_number"],
-                        "variation_code": variation_code,
-                        "amount": amount,
-                    }
-                
-                user_wallet = request.user.wallet
+            serializer = ShowMaxPaymentSerializer(data = request.data)
+            if serializer.is_valid(raise_exception=True):
+                request_id = generate_reference_id()
+                serializer.save(request_id = request_id)
+                with transaction.atomic():
+                    amount = showmax_dict[serializer.data["showmax_plan"]][1]
+                    variation_code = showmax_dict[serializer.data["showmax_plan"]][0]
+                    data = {
+                            "request_id": request_id,
+                            "serviceID": "showmax",
+                            "billersCode": serializer.data["phone_number"],
+                            "variation_code": variation_code,
+                            "amount": amount,
+                        }
+                    
+                    user_wallet = request.user.wallet
+                    
+                    if user_wallet.balance < amount:
+                            return Response({'error': 'Insufficient Funds', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
+                            
 
-                subscription_response = top_up(data)
-                if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                    user_wallet.debit(amount=amount, reference=request_id)
+                    subscription_response = top_up(data)
+                    if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
+                        user_wallet.debit(amount=amount, reference=request_id)
 
-                    # Award bonus points
-                    try:
-                        award_vtu_purchase_points(
-                            user=request.user,
-                            purchase_amount=amount,
-                            reference=request_id
-                        )
-                        
-                        # Check for referral bonus (first transaction)
+                        # Award bonus points
                         try:
-                            referral = Referral.objects.get(
-                                referred_user=request.user,
-                                status='pending',
-                                first_transaction_completed=False
+                            award_vtu_purchase_points(
+                                user=request.user,
+                                purchase_amount=amount,
+                                reference=request_id
                             )
-                            referral.first_transaction_completed = True
-                            referral.save()
                             
-                            award_referral_bonus(referral.referrer, request.user)
-                        except Referral.DoesNotExist:
-                            pass
-                            
-                    except Exception as e:
-                        logger.error(f"Error awarding bonus points: {str(e)}")
-                return Response(subscription_response)
-                
+                            # Check for referral bonus (first transaction)
+                            try:
+                                referral = Referral.objects.get(
+                                    referred_user=request.user,
+                                    status='pending',
+                                    first_transaction_completed=False
+                                )
+                                referral.first_transaction_completed = True
+                                referral.save()
+                                
+                                award_referral_bonus(referral.referrer, request.user)
+                            except Referral.DoesNotExist:
+                                pass
+                                
+                        except Exception as e:
+                            logger.error(f"Error awarding bonus points: {str(e)}")
+                    return Response(subscription_response.update({'success': True}))
+        except Exception as e:
+            return Response({
+                    'success': False,
+                    'error': f'Payment failed: {str(e)}.'
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )       
 class ElectricityPaymentViews(APIView):
     permission_classes = [IsAuthenticated]
     
