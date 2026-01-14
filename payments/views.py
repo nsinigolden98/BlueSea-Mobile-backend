@@ -1368,7 +1368,7 @@ class ElectricityPaymentViews(APIView):
                         return Response({'error': 'Insufficient Funds', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
     
                     electricity_response = top_up(data)
-                    print("hello")
+
                     if electricity_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                         user_wallet.debit(amount=amount, reference=request_id)
                         return Response(electricity_response)
@@ -1397,7 +1397,7 @@ class ElectricityPaymentViews(APIView):
                                 
                         except Exception as e:
                             logger.error(f"Error awarding bonus points: {str(e)}")
-                    return Response(electricity_response)
+                    return Response(electricity_response.update({'success': True}))
 
         except Exception as e:
             return Response({
