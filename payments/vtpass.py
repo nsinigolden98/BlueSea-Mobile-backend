@@ -353,7 +353,15 @@ def top_up(user_data):
 def get_variations():
     response = requests.get("https://sandbox.vtpass.com/api/service-variations?serviceID=startimes", headers = headers)
     return response.json()
-    
+
+def get_customer(user_data):
+    response = requests.post(f"{BASE_URL}/marchant-verify", headers=headers, json=user_data) 
+    return response.json()
+
+def get_receipt(request_id):
+    response = requests.post(f"{BASE_URL}/requery", headers=headers, json=request_id) 
+    return response.json()
+
 
 if __name__ == "__main__":
     

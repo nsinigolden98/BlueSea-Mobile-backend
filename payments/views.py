@@ -26,6 +26,7 @@ from .serializers import (
     EtisalatDataTopUpSerializer,
     GroupPaymentSerializer,
     Airtime2CashSerializer,
+    ElectricityPaymentCustomerSerializer
     )
 from .vtpass import (
     generate_reference_id, 
@@ -38,6 +39,8 @@ from .vtpass import (
     airtel_dict,
     glo_dict,
     etisalat_dict,
+    get_customer,
+    get_receipt,
     )
 from .vtuafrica import (
     top_up2,
@@ -1024,6 +1027,7 @@ class DSTVPaymentViews(APIView):
                     subscription_response = top_up(data)
                     if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                         user_wallet.debit(amount=amount, reference=request_id)
+                        transaction_status = get_receipte(request_id)
 
                         # Award bonus points
                         try:
@@ -1049,7 +1053,7 @@ class DSTVPaymentViews(APIView):
                                 
                         except Exception as e:
                             logger.error(f"Error awarding bonus points: {str(e)}")
-                    return Response(subscription_response.update({'success': True}))
+                    return Response(transaction_status.update({'success': True}))
                 
         except Exception as e:
             return Response({
@@ -1371,7 +1375,7 @@ class ElectricityPaymentViews(APIView):
 
                     if electricity_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                         user_wallet.debit(amount=amount, reference=request_id)
-                        return Response(electricity_response)
+                        
                     
                         # Award bonus points
                         try:
@@ -1621,4 +1625,37 @@ class JAMBRegistrationViews(APIView):
                             
                     except Exception as e:
                         logger.error(f"Error awarding bonus points: {str(e)}")
-                return Response(jamb_registration_response)
+                return Response                 (jamb_registration_response)
+
+
+class ElectricityPaymentCustomerViews(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self,request):
+        try:
+            serializer =  ElectricityPaymentCustomerSerializer(data= request.data)
+            if serializer.is_valid(raise_exception=True):
+                data = {
+                    'billersCode':serializer.data['meter_number'],
+                    'serviceID' : serializer.data['biller'],
+                    'type': serializer.data['meter_type'], 
+                }
+                response = get_customer(data)
+                if response['code'] == 000:
+                    return Response({
+                        'success': True,
+                        'response': response['content']
+                    })
+                else:
+                    return Response({
+                        'success': False,
+                        'error': "Network Error"
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                    'success': False,
+                    'error': f'Request failed: {str(e)}.'
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

@@ -623,7 +623,7 @@ class ShowMaxPayment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
 class ElectricityPayment(models.Model):
-    billerCode = models.CharField()
+    billerCode = models.CharField(max_length= 20)
     amount = models.IntegerField()
     biller_name = models.CharField(max_length = 30, choices= BILLER_NAME)
     meter_type = models.CharField(max_length = 20, choices= METER_TYPES)
@@ -709,3 +709,8 @@ class Airtime2Cash(models.Model):
     phone_number = models.CharField()
     request_id = models.CharField(max_length=20, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+class ElectricityPaymentCustomer(models.Model):
+    biller=  models.CharField(max_length = 30, choices= BILLER_NAME)
+    meter_number= models.CharField(max_length = 20)
+    meter_type =  models.CharField(max_length = 20, choices= METER_TYPES)  

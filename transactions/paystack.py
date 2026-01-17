@@ -18,7 +18,7 @@ def checkout(payload):
     try:
         response = requests.post(url, json=payload, headers=HEADERS)
         data = response.json()
-        print("Paystack response:", data)
+        # print("Paystack response:", data)
 
         response_data = response.json()
 

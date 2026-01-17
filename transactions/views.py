@@ -129,7 +129,7 @@ class InitializeFunding(APIView):
             return Response({"success": True, "authorization_url": authorization_url, "payment_reference": payment_reference, "amount": str(amount)}, status=status.HTTP_200_OK)
         
         except Exception as e:
-            print("InitializeFunding error:", str(e))
+            # print("InitializeFunding error:", str(e))
             return Response({"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
