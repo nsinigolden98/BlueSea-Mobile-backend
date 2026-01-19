@@ -16,7 +16,7 @@ from .models import (
     GroupPayment,
     GroupPaymentContribution,
     Airtime2Cash,
-    ElectricityPaymentCustomer,
+    ElectricityPaymentCustomers,
 )
 
 class AirtimeTopUpSerializer(serializers.ModelSerializer):
@@ -128,6 +128,6 @@ class Airtime2CashSerializer(serializers.ModelSerializer):
         
 class ElectricityPaymentCustomerSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ElectricityPaymentCustomer
+        model = ElectricityPaymentCustomers
         fields = ['meter_type', 'meter_number', 'biller']
         read_only_fields = ['id']

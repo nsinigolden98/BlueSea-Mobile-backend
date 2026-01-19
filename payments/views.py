@@ -620,7 +620,7 @@ class AirtimeTopUpViews(APIView):
                         except Exception as e:
                             logger.error(f"Error awarding bonus points: {str(e)}")
                     
-                    return Response(buy_airtime_response.update({'success': True}))
+                    return Response(buy_airtime_response)
                     
         except Exception as e:
             return Response({
@@ -706,7 +706,7 @@ class MTNDataTopUpViews(APIView):
                                 
                         except Exception as e:
                             logger.error(f"Error awarding bonus points: {str(e)}")
-                    return Response(subscription_response.update({'success': True}))
+                    return Response(subscription_response)
                     
         except Exception as e:
             return Response({
@@ -792,7 +792,7 @@ class AirtelDataTopUpViews(APIView):
                                 
                         except Exception as e:
                             logger.error(f"Error awarding bonus points: {str(e)}")
-                    return Response(subscription_response.update({'success': True}))
+                    return Response(subscription_response)
                 
         except Exception as e:
             return Response({
@@ -879,7 +879,7 @@ class GloDataTopUpViews(APIView):
                                 
                         except Exception as e:
                             logger.error(f"Error awarding bonus points: {str(e)}")
-                    return Response(subscription_response.update({'success': True}))
+                    return Response(subscription_response)
         except Exception as e:
             return Response({
                     'success': False,
@@ -965,7 +965,7 @@ class EtisalatDataTopUpViews(APIView):
                                 
                         except Exception as e:
                             logger.error(f"Error awarding bonus points: {str(e)}")
-                    return Response(subscription_response.update({'success': True}))
+                    return Response(subscription_response)
                 
         except Exception as e:
             return Response({
@@ -1027,7 +1027,6 @@ class DSTVPaymentViews(APIView):
                     subscription_response = top_up(data)
                     if subscription_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                         user_wallet.debit(amount=amount, reference=request_id)
-                        transaction_status = get_receipte(request_id)
 
                         # Award bonus points
                         try:
@@ -1053,7 +1052,7 @@ class DSTVPaymentViews(APIView):
                                 
                         except Exception as e:
                             logger.error(f"Error awarding bonus points: {str(e)}")
-                    return Response(transaction_status.update({'success': True}))
+                    return Response(subscription_response)
                 
         except Exception as e:
             return Response({
@@ -1143,7 +1142,7 @@ class GOTVPaymentViews(APIView):
                                 
                         except Exception as e:
                             logger.error(f"Error awarding bonus points: {str(e)}")
-                    return Response(subscription_response.update({'success': True}))
+                    return Response(subscription_response)
         except Exception as e:
             return Response({
                     'success': False,
@@ -1230,7 +1229,7 @@ class StartimesPaymentViews(APIView):
                                 
                         except Exception as e:
                             logger.error(f"Error awarding bonus points: {str(e)}")
-                    return Response(subscription_response.update({'success': True}))
+                    return Response(subscription_response)
                 
         except Exception as e:
             return Response({
@@ -1317,7 +1316,7 @@ class ShowMaxPaymentViews(APIView):
                                 
                         except Exception as e:
                             logger.error(f"Error awarding bonus points: {str(e)}")
-                    return Response(subscription_response.update({'success': True}))
+                    return Response(subscription_response)
         except Exception as e:
             return Response({
                     'success': False,
@@ -1401,7 +1400,7 @@ class ElectricityPaymentViews(APIView):
                                 
                         except Exception as e:
                             logger.error(f"Error awarding bonus points: {str(e)}")
-                    return Response(electricity_response.update({'success': True}))
+                    return Response(electricity_response)
 
         except Exception as e:
             return Response({
@@ -1635,8 +1634,10 @@ class ElectricityPaymentCustomerViews(APIView):
         try:
             serializer =  ElectricityPaymentCustomerSerializer(data= request.data)
             if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                
                 data = {
-                    'billersCode':serializer.data['meter_number'],
+                    'billersCode': serializer.data['meter_number'],
                     'serviceID' : serializer.data['biller'],
                     'type': serializer.data['meter_type'], 
                 }
@@ -1644,7 +1645,7 @@ class ElectricityPaymentCustomerViews(APIView):
                 if response['code'] == 000:
                     return Response({
                         'success': True,
-                        'response': response['content']
+                        'response': response
                     })
                 else:
                     return Response({
