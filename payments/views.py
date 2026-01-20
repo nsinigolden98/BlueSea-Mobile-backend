@@ -1364,7 +1364,7 @@ class ElectricityPaymentViews(APIView):
                             "billersCode": serializer.data["billerCode"],
                             "variation_code": serializer.data["meter_type"],
                             "amount": amount,
-                            "phone": serializer.data["phone_number"]
+                            "phone": request.user.profile.phone_number
                         } 
                     user_wallet = request.user.wallet
                     
@@ -1374,7 +1374,7 @@ class ElectricityPaymentViews(APIView):
                     electricity_response = top_up(data)
 
                     if electricity_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                        user_wallet.debit(amount=amount, reference=request_id)
+                        user_wallet.debit(amount=amount, reference=request_id, description=f"Electricity - {serializer.data['biller_name']}.capitalize()")
                         
                     
                         # Award bonus points
@@ -1636,12 +1636,13 @@ class ElectricityPaymentCustomerViews(APIView):
             serializer =  ElectricityPaymentCustomerSerializer(data= request.data)
             if serializer.is_valid(raise_exception=True):
                 data = {
-                    'billersCode':serializer.data['meter_number'],
+                    'billersCode': str(serializer.data['meter_number']),
                     'serviceID' : serializer.data['biller'],
                     'type': serializer.data['meter_type'], 
                 }
+                print(request.user.phone)
                 response = get_customer(data)
-                if response['code'] == 000:
+                if response['code'] == '000':
                     return Response({
                         'success': True,
                         'response': response['content']
@@ -1651,7 +1652,11 @@ class ElectricityPaymentCustomerViews(APIView):
                         'success': False,
                         'error': "Network Error"
                     }, status=status.HTTP_400_BAD_REQUEST)
-
+            else:
+                    return Response({
+                        'success': False,
+                        'error': "Invalid User Input"
+                    }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({
                     'success': False,

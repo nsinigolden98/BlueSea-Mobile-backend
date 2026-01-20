@@ -355,7 +355,7 @@ def get_variations():
     return response.json()
 
 def get_customer(user_data):
-    response = requests.post(f"{BASE_URL}/marchant-verify", headers=headers, json=user_data) 
+    response = requests.post(f"{BASE_URL}/merchant-verify", headers=headers, json=user_data) 
     return response.json()
 
 def get_receipt(request_id):

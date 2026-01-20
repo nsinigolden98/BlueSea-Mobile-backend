@@ -76,7 +76,7 @@ class ShowMaxPaymentSerializer(serializers.ModelSerializer):
 class ElectricityPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ElectricityPayment
-        fields= ["billerCode","amount","biller_name","meter_type","phone_number"]
+        fields= ["billerCode","amount","biller_name","meter_type"]
         read_only_fields= ["id","request_id","created_at"]
         
 class WAECRegitrationSerializer(serializers.ModelSerializer):
