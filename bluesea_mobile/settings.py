@@ -265,13 +265,12 @@ LOGGING = {
 # Set to True only if you are okay with ANY domain accessing your backend 
 # (not recommended for production).
 
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = False  
 
 # Use the specific URL/port of your frontend development server
 CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8000",
     "http://127.0.0.1:5500",
-    "http://localhost:5168",
     "http://localhost:8080",
     "https://www.blueseamobile.com.ng",
     "https://attemptable-chelsea-preadvisable.ngrok-free.dev"

@@ -17,8 +17,8 @@ def checkout(payload):
     
     try:
         response = requests.post(url, json=payload, headers=HEADERS)
-        data = response.json()
-        print("Paystack response:", data)
+        # data = response.json()
+        # print("Paystack response:", data)
 
         response_data = response.json()
 
@@ -27,7 +27,7 @@ def checkout(payload):
         else:
             return False, "Failed to initiate payment! Please try again later"
     except Exception as e:
-        print("Paystack error:", str(e))
+        # print("Paystack error:", str(e))
         return False, "An error occurred while processing the payment. Please try again later."
         
 
