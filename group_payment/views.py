@@ -29,9 +29,26 @@ class CreateGroupView(APIView):
         tags=['Group Payments']
     )
     def post(self, request):
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             name = request.data.get('name')
             description = request.data.get('description', '')
+            service_type =request.data.get('service_type')
+            sub_number =request.data.get('sub_number')
+            target_amount =request.data.get('target_amount')
+            invite_members =request.data.get('invite_members')
+            plan =request.data.get('plan')
+            plan_type =request.data.get('plan_type','')
+            join_code =request.data.get('join_code')
 
             if not name:
                 return Response(
@@ -42,6 +59,13 @@ class CreateGroupView(APIView):
             group = Group.objects.create(
                 name=name,
                 description=description,
+                service_type=service_type,
+                sub_number= sub_number,
+                target_amount= target_amount,
+                invite_members= invite_members,
+                plan= plan,
+                plan_type= plan_type,
+                join_code = join_code,
                 created_by=request.user
             )
 
@@ -64,7 +88,7 @@ class CreateGroupView(APIView):
             }, status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            print(str(e))
+           # print(str(e))
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -245,3 +269,76 @@ class GroupDetailsView(APIView):
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+            
+class JoinGroupView(APIView):
+    permission_class =[IsAuthenticated]
+    
+    def post(self, request):
+        
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            user_email = request.user.email
+            join_code = request.data.get('join_code')
+            
+            check_membership = Group.filter(join_code=join_code, invite_memebers__iexact = user_email, status= 'active').exists()
+            
+            if check_membership:
+                
+                group_id = request.data.get('group_id')
+                
+                role = request.data.get('role', 'member')
+    
+                group = get_object_or_404(Group, id=group_id)
+    
+                # Get user to add
+                from accounts.models import Profile
+                user_to_add = get_object_or_404(Profile, email=user_email)
+    
+                # Check if already a member
+                if GroupMember.objects.filter(group=group, user=user_to_add).exists():
+                    return Response(
+                        {'error': 'User is already a member of this group'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+    
+                # Add member
+                member = GroupMember.objects.create(
+                    group=group,
+                    user=user_to_add,
+                    role=role
+                )
+    
+                return Response({
+                    'success': True,
+                    'message': f'{user_to_add.email} added to group',
+                    'member': {
+                        'id': member.id,
+                        'email': user_to_add.email,
+                        'role': member.role,
+                        'joined_at': member.joined_at
+                    }
+                }, status=status.HTTP_200_OK)
+
+                
+            else:
+                return Response({'success':False,
+                    'message': 'Invalid Code Or Not Added To Group Payment'})
+                    
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        
+        
