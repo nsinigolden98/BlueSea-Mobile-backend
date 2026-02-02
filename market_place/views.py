@@ -111,14 +111,19 @@ class CreateTicketVendor(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        logger.info(f"Vendor creation request initiated by user {request.user.id}")
+        logger.debug(f"Request data keys: {list(request.data.keys())}")
+        logger.debug(f"Request files: {list(request.FILES.keys())}")
         
         try:
             if not request.user.pin_is_set:
+                logger.warning(f"Vendor creation failed for user {request.user.id}: PIN not set")
                 return Response(
                     {"error": "Please set your transaction PIN before creating a vendor account."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             if TicketVendor.objects.filter(user=request.user).exists():
+                logger.warning(f"Vendor creation failed for user {request.user.id}: Vendor already exists")
                 return Response(
                     {"error": "You already have a ticket vendor account."},
                     status=status.HTTP_400_BAD_REQUEST
@@ -132,6 +137,9 @@ class CreateTicketVendor(APIView):
             monthly_volume = request.data.get('monthly_volume')
             business_description = request.data.get('business_description')
 
+            logger.debug(f"Extracted fields - business_type: {business_type}, brand_name: {brand_name}, "
+                        f"state_city: {state_city}, id_type: {id_type}")
+
             required_fields = {
                 "business_type": business_type,
                 "brand_name": brand_name,
@@ -144,6 +152,8 @@ class CreateTicketVendor(APIView):
 
             missing_fields = [field for field, value in required_fields.items() if not value]
             if missing_fields:
+                logger.warning(f"Vendor creation validation failed for user {request.user.id}: "
+                             f"Missing fields: {', '.join(missing_fields)}")
                 return Response(
                     {"error": f"Missing required fields: {', '.join(missing_fields)}"},
                     status=status.HTTP_400_BAD_REQUEST
@@ -154,12 +164,18 @@ class CreateTicketVendor(APIView):
             proof_of_address = request.FILES.get('proof_of_address')
             event_authorization = request.FILES.get('event_authorization')
 
+            logger.debug(f"File validation - id_document: {bool(id_document)}, "
+                        f"proof_of_address: {bool(proof_of_address)}, "
+                        f"event_authorization: {bool(event_authorization)}")
+
             if not id_document:
+                logger.warning(f"Vendor creation validation failed for user {request.user.id}: ID document missing")
                 return Response(
                     {"error": "ID document upload is required."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             if not proof_of_address:
+                logger.warning(f"Vendor creation validation failed for user {request.user.id}: Proof of address missing")
                 return Response(
                     {'error': 'Proof of address not uploaded'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -168,14 +184,18 @@ class CreateTicketVendor(APIView):
             allowed_types = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png']
 
             if id_document.content_type not in allowed_types:
+                logger.warning(f"Vendor creation validation failed for user {request.user.id}: "
+                             f"Invalid ID document type: {id_document.content_type}")
                 return Response(
-                    {'error': 'Proof of address is required', 'success': False},
+                    {'error': 'Invalid ID document format. Allowed: PDF, JPEG, PNG', 'success': False},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
             if proof_of_address.content_type not in allowed_types:
+                logger.warning(f"Vendor creation validation failed for user {request.user.id}: "
+                             f"Invalid proof of address type: {proof_of_address.content_type}")
                 return Response(
-                    {'error': 'Proof of address is required', 'success': False},
+                    {'error': 'Invalid proof of address format. Allowed: PDF, JPEG, PNG', 'success': False},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             categories = request.data.get('categories', '')
@@ -193,14 +213,21 @@ class CreateTicketVendor(APIView):
                 state = state_city
                 city = ''
 
+            logger.debug(f"Parsed location - state: {state}, city: {city}")
+            logger.debug(f"Categories parsed: {categories}")
+            
+            legal_full_name = request.user.get_full_name() or request.user.username
+            logger.info(f"Creating vendor for user {request.user.id} - brand_name: {brand_name}, "
+                       f"legal_full_name: {legal_full_name}, business_type: {business_type}")
+
             # Create vendor profile with atomic transaction
             with transaction.atomic():
                 vendor = TicketVendor.objects.create(
                     user=request.user,
                     business_type=business_type,
                     brand_name=brand_name,
-                    legal_name=request.user.get_full_name() or request.user.username,
-                    phone_number=request.user.phone_number,
+                    legal_full_name=legal_full_name,
+                    phone_number=request.user.phone,
                     email=request.user.email,
                     residential_address=residential_address,
                     state=state,
@@ -217,8 +244,9 @@ class CreateTicketVendor(APIView):
                 )
 
                 logger.info(
-                    f"Vendor profile created for user {request.user.id}. "
-                    f"Brand: {brand_name}, Type: {business_type}, Status: pending"
+                    f"Vendor profile successfully created for user {request.user.id}. "
+                    f"Vendor ID: {vendor.id}, Brand: {brand_name}, Type: {business_type}, "
+                    f"Status: {vendor.verification_status}, Email: {vendor.email}"
                 )
 
                 return Response(
@@ -236,11 +264,13 @@ class CreateTicketVendor(APIView):
                 )
 
         except Exception as e:
-            logger.error(f"Vendor creation failed for user {request.user.id}: {str(e)}")
+            logger.error(f"Vendor creation failed for user {request.user.id}: {type(e).__name__}: {str(e)}", 
+                        exc_info=True)
             return Response(
                 {
                     'error': 'Failed to submit verification request. Please try again.',
-                    'success': False
+                    'success': False,
+                    'details': str(e) if request.user.is_staff else None
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
