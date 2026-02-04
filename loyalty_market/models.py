@@ -1,7 +1,9 @@
+from venv import create
 from django.db import models
 from django.contrib.auth import get_user_model
 from bonus.models import BonusPoint
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, FileExtensionValidator
+from django.conf import settings
 
 import uuid
 
@@ -19,7 +21,7 @@ class Reward(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     image_url = models.URLField(null=True, blank=True)
-    points_cost = models.IntegerField(default=0, validators=[MinValueValidator])
+    points_cost = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     category = models.CharField(max_length=255, null=True, blank=True)
     inventory = models.IntegerField(default=0, null=True, blank=True)
     availability_start = models.DateTimeField(auto_now=True)
