@@ -290,11 +290,13 @@ class JoinGroupView(APIView):
             user_email = request.user.email
             join_code = request.data.get('join_code')
             
-            check_membership = Group.filter(join_code=join_code, invite_memebers__iexact = user_email, status= 'active').exists()
+            check_membership = Group.objects.filter(join_code=join_code, invite_memebers__iexact = user_email, active= True).exists()
             
             if check_membership:
                 
-                group_id = request.data.get('group_id')
+                group_obj = Group.objects.get(join_code=join_code, invite_members__iexact= user_email, active=True )
+                
+                group_id= group_obj.id
                 
                 role = request.data.get('role', 'member')
     
@@ -339,6 +341,12 @@ class JoinGroupView(APIView):
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-        
+# this is the view for only the group admin to delete a group payment        
+class DeleteGroupView(APIView):
+    pass
+ 
+ # This is the view for  group members to leave a group if they are not interested again
+class LeaveGroupView(APIView):
+    pass
         
         
