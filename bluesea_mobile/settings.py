@@ -1,3 +1,4 @@
+from celery.schedules import crontab
 """
 Django settings for bluesea_mobile project.
 
@@ -108,6 +109,11 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '1000/day',
+        'anon': '100/day',
+        'scanner': '20/min',  # For ticket scanning
+    }
 }
 
 
@@ -332,3 +338,19 @@ ANYMAIL = {
     "BREVO_API_KEY": os.environ.get("BREVO_API_KEY"),
 }
 PAYSTACK_PIN = os.environ.get('PAYSTACK_PIN')
+
+# Celery Configuration
+CELERY_TIMEZONE = 'Africa/Lagos'
+
+# Celery Beat Schedule
+
+CELERY_BEAT_SCHEDULE = {
+    'expire-past-event-tickets': {
+        'task': 'market_place.tasks.expire_past_event_tickets',
+        'schedule': crontab(hour=0, minute=0),  # Run daily at midnight
+    },
+    'send-event-reminders': {
+        'task': 'market_place.tasks.send_event_reminder_notifications',
+        'schedule': crontab(hour=9, minute=0),  # Run daily at 9 AM
+    },
+}

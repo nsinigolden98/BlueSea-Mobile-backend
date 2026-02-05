@@ -3,6 +3,8 @@ from .models import EventInfo, TicketType, IssuedTicket, TicketVendor, VendorKYC
 
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+import base64
+from django.core.files.base import ContentFile
 
 User = get_user_model()
 
@@ -197,3 +199,85 @@ class AttendeeExportSerializer(serializers.Serializer):
     ticket_status = serializers.CharField()
     qr_code = serializers.CharField()
     purchase_date = serializers.DateTimeField()
+
+
+class TicketListSerializer(serializers.ModelSerializer):
+    event_title = serializers.CharField(source='event.event_title', read_only=True)
+    event_date = serializers.DateTimeField(source='event.event_date', read_only=True)
+    event_location = serializers.CharField(source='event.event_location', read_only=True)
+    event_banner = serializers.ImageField(source='event.event_banner', read_only=True)
+    ticket_type_name = serializers.CharField(source='ticket_type.name', read_only=True)
+    ticket_price = serializers.DecimalField(source='ticket_type.price', max_digits=10, decimal_places=2, read_only=True)
+    vendor_name = serializers.CharField(source='event.vendor.brand_name', read_only=True)
+    
+    class Meta:
+        model = IssuedTicket
+        fields = [
+            'id', 'event_title', 'event_date', 'event_location', 'event_banner',
+            'ticket_type_name', 'ticket_price', 'owner_name', 'owner_email',
+            'status', 'vendor_name', 'created_at', 'transferred_at', 'canceled_at'
+        ]
+
+
+class TicketDetailSerializer(serializers.ModelSerializer):
+    event = EventInfoSerializer(read_only=True)
+    ticket_type = TicketTypeSerializer(read_only=True)
+    qr_code_base64 = serializers.SerializerMethodField()
+    qr_code_url = serializers.SerializerMethodField()
+    can_transfer = serializers.SerializerMethodField()
+    can_cancel = serializers.SerializerMethodField()
+    refund_info = serializers.SerializerMethodField()
+    scanned_by_email = serializers.EmailField(source='scanned_by.email', read_only=True)
+    purchased_by_email = serializers.EmailField(source='purchased_by.email', read_only=True)
+    
+    class Meta:
+        model = IssuedTicket
+        fields = [
+            'id', 'event', 'ticket_type', 'owner_name', 'owner_email',
+            'qr_code', 'qr_code_base64', 'qr_code_url', 'status',
+            'purchased_by_email', 'transferred_to', 'transferred_at', 'transfer_count',
+            'canceled_at', 'refund_amount', 'cancellation_reason',
+            'scanned_at', 'scanned_by_email', 'created_at', 'updated_at',
+            'can_transfer', 'can_cancel', 'refund_info'
+        ]
+    
+    def get_qr_code_base64(self, obj):
+        if obj.qr_code_image:
+            try:
+                with obj.qr_code_image.open('rb') as image_file:
+                    encoded = base64.b64encode(image_file.read()).decode('utf-8')
+                    return f"data:image/png;base64,{encoded}"
+            except Exception:
+                return None
+        return None
+    
+    def get_qr_code_url(self, obj):
+        if obj.qr_code_image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.qr_code_image.url)
+            return obj.qr_code_image.url
+        return None
+    
+    def get_can_transfer(self, obj):
+        can_transfer, message = obj.can_transfer()
+        return {
+            'allowed': can_transfer,
+            'message': message
+        }
+    
+    def get_can_cancel(self, obj):
+        can_cancel, refund_amount, message = obj.can_cancel()
+        return {
+            'allowed': can_cancel,
+            'message': message
+        }
+    
+    def get_refund_info(self, obj):
+        if obj.status == 'canceled' and obj.refund_amount:
+            return {
+                'refund_amount': float(obj.refund_amount),
+                'canceled_at': obj.canceled_at,
+                'reason': obj.cancellation_reason
+            }
+        return None
