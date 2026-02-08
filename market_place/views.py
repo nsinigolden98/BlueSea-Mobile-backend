@@ -6,7 +6,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from .serializers import (
     EventInfoSerializer,
     CreateEventSerializer, PurchaseTicketSerializer, IssuedTicketSerializer,
-    ScanTicketSerializer, AttendeeExportSerializer
+    ScanTicketSerializer, AttendeeExportSerializer, TicketListSerializer, TicketDetailSerializer, TransferTicketSerializer, CancelTicketSerializer
 )
 from .models import (
     EventInfo, TicketType, 
@@ -29,6 +29,7 @@ import uuid
 import base64
 from django.core.files.base import ContentFile
 from rest_framework.throttling import UserRateThrottle
+from accounts.models import Profile
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,7 @@ logger = logging.getLogger(__name__)
 
 class CreateEventView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     @extend_schema(
         summary="Create a new event",
@@ -55,31 +57,89 @@ class CreateEventView(APIView):
         is_admin = user.is_staff or user.is_superuser
         
         if not is_admin:
-            # For non-admin users, vendor_id is required
-            vendor_id = request.data.get('vendor_id')
-            
-            if not vendor_id:
-                return Response(
-                    {"error": "vendor_id is required for non-admin users"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            vendor = TicketVendor.objects.filter(user=user).first()
+            vendor_id = vendor.id if vendor else None
             
             # Check if vendor exists and is verified
             try:
-                vendor = TicketVendor.objects.get(id=vendor_id)
                 if not vendor.is_verified:
                     return Response(
                         {"error": "Only verified vendors can create events. Please complete KYC verification."},
                         status=status.HTTP_403_FORBIDDEN
                     )
             except TicketVendor.DoesNotExist:
-                return Response(
-                    {"error": "Vendor not found"},
-                    status=status.HTTP_404_NOT_FOUND
-                )
+                return Response({
+                    'error': 'Vendor not found',
+                    'state': False
+                }, status=status.HTTP_404_NOT_FOUND)
         
-        # Proceed with event creation
-        serializer = CreateEventSerializer(data=request.data)
+        # Check if is_free
+        is_free = request.data.get('is_free', 'false')
+        if isinstance(is_free, str):
+            is_free = is_free.lower() in ['true', '1', 'yes']
+
+        ticket_types_data = request.data.get('ticket_types', '[]')
+        if isinstance(ticket_types_data, str):
+            # It's a JSON string from form-data
+            ticket_types_data = ticket_types_data.strip()
+            
+            if ticket_types_data in ['[]', '', 'null', 'None']:
+                # Empty or null values
+                ticket_types_data = []
+            else:
+                # Parse JSON string
+                try:
+                    import json
+                    ticket_types_data = json.loads(ticket_types_data)
+                    
+                    # Ensure it's a list
+                    if not isinstance(ticket_types_data, list):
+                        return Response({
+                            'error': 'ticket_types must be an array',
+                            'state': False
+                        }, status=status.HTTP_400_BAD_REQUEST)
+                    
+                except json.JSONDecodeError as e:
+                    return Response({
+                        'error': f'Invalid ticket_types JSON format: {str(e)}',
+                        'state': False
+                    }, status=status.HTTP_400_BAD_REQUEST)
+        
+        elif isinstance(ticket_types_data, list):
+            # Already a list (from JSON request body)
+            pass
+        
+        else:
+            # Unknown type
+            ticket_types_data = []
+        
+        # For free events, ensure ticket_types is empty
+        if is_free:
+            ticket_types_data = []
+        
+        # Log for debugging
+        logger.debug(f"Parsed ticket_types: {ticket_types_data}")
+        logger.debug(f"ticket_types type: {type(ticket_types_data)}")
+        if ticket_types_data:
+            logger.debug(f"First item type: {type(ticket_types_data[0])}")
+        
+        # Prepare data for serializer
+        event_data = {
+            'vendor': vendor.id,
+            'event_title': request.data.get('event_title'),
+            'event_description': request.data.get('event_description'),
+            'event_date': request.data.get('event_date'),
+            'event_location': request.data.get('event_location'),
+            'hosted_by': request.data.get('hosted_by'),
+            'category': request.data.get('category'),
+            'is_free': is_free,
+            'event_banner': request.data.get('event_banner'),
+            'ticket_image': request.data.get('ticket_image'),
+            'ticket_types': ticket_types_data  # Already parsed as list of dicts
+        }
+        
+        # Create event
+        serializer = CreateEventSerializer(data=event_data)
         
         if serializer.is_valid():
             try:
@@ -88,25 +148,23 @@ class CreateEventView(APIView):
                     logger.info(
                         f"Event '{event.event_title}' created by user {request.user.id}. "
                         f"Hosted by: {event.hosted_by}, Category: {event.category}, "
-                        f"Vendor: {event.vendor.brand_name}"
+                        f"Vendor: {event.vendor.brand_name}, Free: {event.is_free}"
                     )
                 
                 # Return complete event details with ticket types
-                response_serializer = EventInfoSerializer(event)
-                return Response(
-                    {
-                        "message": "Event created successfully. Awaiting admin approval." if not is_admin else "Event created successfully.",
-                        "event": response_serializer.data
-                    },
-                    status=status.HTTP_201_CREATED
-                )
+                response_serializer = EventInfoSerializer(event, context={'request': request})
+                return Response({
+                    'success': True,
+                    'message': 'Event created successfully and pending approval',
+                    'event': response_serializer.data
+                }, status=status.HTTP_201_CREATED)
             
             except Exception as e:
                 logger.error(f"Event creation failed: {str(e)}")
-                return Response(
-                    {"error": f"Failed to create event: {str(e)}"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
+                return Response({
+                    'error': f"Failed to create event: {str(e)}",
+                    'state': False
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         logger.error(f"Event creation validation failed: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -375,129 +433,225 @@ class EventDetailView(APIView):
 
 class PurchaseTicketView(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     @extend_schema(
         summary="Purchase event tickets",
-        description="Purchase one or more tickets for an event",
+        description="Purchase tickets for an event. Provide ticket type name (e.g., 'Regular', 'VIP'). Leave empty for free events.",
+        parameters=[
+            OpenApiParameter(name='event_id', type=OpenApiTypes.UUID, location=OpenApiParameter.PATH, description='Event ID')
+        ],
         request=PurchaseTicketSerializer,
         responses={
-            201: OpenApiTypes.OBJECT,
-            400: OpenApiTypes.OBJECT
+            201: IssuedTicketSerializer(many=True),
+            400: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT
         },
-        tags=['Marketplace']
+        tags=['Ticketing']
     )
-    def post(self, request):
-        transaction_pin = request.data.get('transaction_pin')
-
-        if not transaction_pin:
-            return Response({'error': 'Transaction PIN is required', "state": False}, 
-                          status=status.HTTP_400_BAD_REQUEST)
-
-        if not request.user.pin_is_set:
-            return Response({'error': 'Please set your transaction PIN first', "state": False}, 
-                          status=status.HTTP_400_BAD_REQUEST)
-
-        if not request.user.verify_transaction_pin(transaction_pin):
-            return Response({'error': 'Invalid transaction PIN', "state": False}, 
-                          status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = PurchaseTicketSerializer(data=request.data)
+    def post(self, request, event_id):
+        """Purchase tickets for a specific event"""
+        # Pass event_id to serializer context
+        serializer = PurchaseTicketSerializer(
+            data=request.data, 
+            context={'request': request, 'event_id': event_id}
+        )
         
-        if serializer.is_valid(raise_exception=True):
-            with transaction.atomic():
-                event = serializer.validated_data['event']
-                ticket_type = serializer.validated_data['ticket_type']
-                quantity = serializer.validated_data['quantity']
-                attendees = serializer.validated_data.get('attendees', [])
-                
-                # Calculate total amount
-                total_amount = ticket_type.price * quantity
-                
-                # Check wallet balance
-                user_wallet = request.user.wallet
-                if user_wallet.balance < total_amount:
-                    return Response({
-                        'error': 'Insufficient wallet balance',
-                        'state': False
-                    }, status=status.HTTP_400_BAD_REQUEST)
-                
-                # Check ticket availability
-                if ticket_type.quantity_available < quantity:
-                    return Response({
-                        'error': f'Only {ticket_type.quantity_available} tickets available',
-                        'state': False
-                    }, status=status.HTTP_400_BAD_REQUEST)
-                
-                # Create tickets
-                tickets = []
-                payment_reference = f"TKT-{uuid.uuid4()}"
-                
-                for i in range(quantity):
-                    # Get attendee info or use purchaser info
-                    if i < len(attendees):
-                        owner_name = attendees[i].get('name', request.user.get_full_name())
-                        owner_email = attendees[i].get('email', request.user.email)
-                    else:
-                        owner_name = request.user.get_full_name()
-                        owner_email = request.user.email
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get validated data
+        event = serializer.validated_data['event_obj']
+        ticket_type_obj = serializer.validated_data.get('ticket_type_obj')
+        quantity = serializer.validated_data['quantity']
+        attendees = serializer.validated_data['attendees']
+        transaction_pin = serializer.validated_data.get('transaction_pin')
+
+        # Check if event is approved
+        if not event.is_approved:
+            return Response({
+                'error': 'This event is not yet approved for ticket sales',
+                'state': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if event date has passed
+        if event.event_date < timezone.now():
+            return Response({
+                'error': 'This event has already passed',
+                'state': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Handle FREE events
+        if event.is_free:
+            if ticket_type_obj:
+                return Response({
+                    'error': 'Free events do not have ticket types',
+                    'state': False
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                with transaction.atomic():
+                    issued_tickets = []
                     
-                    # Create ticket
+                    for attendee in attendees:
+                        ticket = IssuedTicket.objects.create(
+                            event=event,
+                            ticket_type=None,
+                            purchased_by=request.user,
+                            owner_name=attendee['name'],
+                            owner_email=attendee['email'],
+                            qr_code='',
+                            status='upcoming'
+                        )
+                        
+                        # Generate QR code
+                        qr_data = f"{str(ticket.id)}:free-ticket:{attendee['email']}"
+                        ticket.qr_code = qr_data
+                        ticket.save()
+                        
+                        # Generate QR image
+                        try:
+                            qr_code_image = generate_ticket_qr_code(ticket)
+                        except Exception as qr_error:
+                            logger.warning(f"QR code image generation failed: {str(qr_error)}")
+                        
+                        issued_tickets.append(ticket)
+                    
+                    logger.info(
+                        f"User {request.user.email} registered {quantity} free ticket(s) for '{event.event_title}'"
+                    )
+                    
+                    return Response({
+                        'success': True,
+                        'message': f'{quantity} free ticket(s) registered successfully for {event.event_title}',
+                        'tickets': IssuedTicketSerializer(issued_tickets, many=True, context={'request': request}).data,
+                        'total_cost': '0.00'
+                    }, status=status.HTTP_201_CREATED)
+            
+            except Exception as e:
+                logger.error(f"Free ticket creation failed: {str(e)}", exc_info=True)
+                return Response({
+                    'error': f"Failed to register free tickets: {str(e)}",
+                    'state': False
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Handle PAID events
+        ticket_type = ticket_type_obj
+        
+        if not transaction_pin:
+            return Response({
+                'error': 'Transaction PIN is required for paid events',
+                'state': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check ticket availability
+        if ticket_type.quantity_available < quantity:
+            return Response({
+                'error': f'Only {ticket_type.quantity_available} tickets available for {ticket_type.name}',
+                'state': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Calculate total cost
+        total_cost = ticket_type.price * quantity
+
+        # Get user wallet
+        try:
+            wallet = Wallet.objects.get(user=request.user)
+        except Wallet.DoesNotExist:
+            return Response({
+                'error': 'Wallet not found. Please contact support.',
+                'state': False
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # try:
+        #     user_profile = Profile.objects.get(user=request.user)
+        # except Profile.DoesNotExist:
+        #     return Response({
+        #         'error': 'User profile not found. Please contact support.',
+        #         'state': False
+        #     }, status=status.HTTP_404_NOT_FOUND)
+
+        # Verify transaction PIN
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({
+                'error': 'Invalid transaction PIN',
+                'state': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check sufficient balance
+        if wallet.balance < total_cost:
+            return Response({
+                'error': f'Insufficient balance. Required: ₦{total_cost:,.2f}, Available: ₦{wallet.balance:,.2f}',
+                'state': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Process payment and issue tickets
+        try:
+            with transaction.atomic():
+                # Deduct from wallet
+                wallet.balance -= total_cost
+                wallet.save()
+
+                # Reduce ticket quantity
+                ticket_type.quantity_available -= quantity
+                ticket_type.save()
+
+                # Create tickets
+                issued_tickets = []
+                for attendee in attendees:
                     ticket = IssuedTicket.objects.create(
-                        ticket_type=ticket_type,
                         event=event,
-                        owner_name=owner_name,
-                        owner_email=owner_email,
+                        ticket_type=ticket_type,
                         purchased_by=request.user,
+                        owner_name=attendee['name'],
+                        owner_email=attendee['email'],
+                        qr_code='',
                         status='upcoming'
                     )
                     
                     # Generate QR code
-                    try:
-                        generate_ticket_qr_code(ticket)
-                    except Exception as e:
-                        return Response({
-                            'error': f'Failed to generate QR code: {str(e)}',
-                            'state': False
-                        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    qr_data = f"{str(ticket.id)}:{str(ticket_type.id)}:{attendee['email']}"
+                    ticket.qr_code = qr_data
+                    ticket.save()
                     
-                    tickets.append(ticket)
-                
-                # Deduct from wallet
-                user_wallet.debit(
-                    amount=total_amount,
-                    reference=payment_reference,
-                    description=f"Purchased {quantity} ticket(s) for {event.event_title}"
-                )
-                
-                # Update ticket availability
-                ticket_type.quantity_available -= quantity
-                ticket_type.save()
-                
-                # Award bonus points
-                try:
-                    from bonus.utils import award_vtu_purchase_points
-                    award_vtu_purchase_points(
-                        user=request.user,
-                        purchase_amount=float(total_amount),
-                        reference=payment_reference
-                    )
-                except Exception as e:
-                    logger.warning(f"Failed to award bonus points: {str(e)}")
-                
+                    # Generate QR image
+                    try:
+                        qr_code_image = generate_ticket_qr_code(ticket)
+                    except Exception as qr_error:
+                        logger.warning(f"QR code image generation failed: {str(qr_error)}")
+                    
+                    issued_tickets.append(ticket)
+
+                # Award bonus points (1% of total cost)
+                # bonus_points = int(total_cost * Decimal('0.01'))
+                # if bonus_points > 0:
+                #     BonusPoint.objects.create(
+                #         user=request.user,
+                #         points=bonus_points,
+                #         transaction_type='ticket_purchase',
+                #         description=f'Bonus for purchasing {quantity} ticket(s) for {event.event_title}'
+                #     )
+
+                # logger.info(
+                #     f"User {request.user.id} purchased {quantity} ticket(s) for event '{event.event_title}'. "
+                #     f"Total: ₦{total_cost}, Bonus: {bonus_points} points"
+                # )
+
                 return Response({
-                    'message': f'Successfully purchased {quantity} ticket(s)',
-                    'state': True,
-                    'payment_reference': payment_reference,
-                    'total_amount': float(total_amount),
-                    'tickets': [
-                        {
-                            'id': str(ticket.id),
-                            'owner_name': ticket.owner_name,
-                            'owner_email': ticket.owner_email,
-                            'qr_code': ticket.qr_code
-                        } for ticket in tickets
-                    ]
+                    'success': True,
+                    'message': f'{quantity} {ticket_type.name} ticket(s) purchased successfully for {event.event_title}',
+                    'tickets': IssuedTicketSerializer(issued_tickets, many=True, context={'request': request}).data,
+                    'total_cost': str(total_cost),
+                    'wallet_balance': str(wallet.balance),
+                    # 'bonus_points_earned': bonus_points
                 }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            logger.error(f"Ticket purchase failed: {str(e)}", exc_info=True)
+            return Response({
+                'error': f"Transaction failed: {str(e)}",
+                'state': False
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class MyTicketsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -810,35 +964,40 @@ class ExportAttendeesView(APIView):
 
 class TicketListView(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     @extend_schema(
-        summary="Get user's tickets",
-        description="Retrieve all tickets purchased by the authenticated user with optional status filtering",
+        summary="Get all tickets owned by current user",
+        description="Retrieve all tickets that YOU CURRENTLY OWN (including transferred to you). Filter by status.",
         parameters=[
             OpenApiParameter(
                 name='status',
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description='Filter by status: all, upcoming, used, expired, transferred, canceled',
-                required=False
+                description='Filter tickets by status',
+                enum=['all', 'upcoming', 'used', 'expired', 'canceled']
             )
         ],
-        responses={200: OpenApiTypes.OBJECT},
-        tags=['Marketplace']
+        responses={200: TicketListSerializer(many=True)},
+        tags=['Ticketing']
     )
     def get(self, request):
+        """Get all tickets owned by the current user (by owner_email, not purchaser)"""
         status_filter = request.query_params.get('status', 'all')
         
-        tickets = IssuedTicket.objects.filter(purchased_by=request.user).select_related(
-            'event', 'ticket_type', 'event__vendor'
-        )
+        # Get tickets where the user is the CURRENT OWNER (not original purchaser)
+        tickets = IssuedTicket.objects.filter(
+            owner_email=request.user.email
+        ).select_related('event', 'ticket_type', 'event__vendor')
         
+        # Apply status filter
         if status_filter != 'all':
             tickets = tickets.filter(status=status_filter)
         
-        # Serialize tickets
-        from .serializers import TicketListSerializer
-        serializer = TicketListSerializer(tickets, many=True)
+        serializer = TicketListSerializer(
+            tickets, 
+            many=True, 
+            context={'request': request}
+        )
         
         return Response({
             'state': True,
@@ -879,47 +1038,51 @@ class TicketDetailView(APIView):
 
 class MyTicketsListView(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     @extend_schema(
-        summary="Get my tickets with stats",
-        description="Get all tickets with status breakdown statistics",
+        summary="Get my tickets with statistics",
+        description="Get all tickets you currently own with grouped statistics",
         parameters=[
             OpenApiParameter(
                 name='status',
                 type=str,
                 location=OpenApiParameter.QUERY,
                 description='Filter by status',
-                required=False
+                enum=['all', 'upcoming', 'used', 'expired', 'canceled']
             )
         ],
-        responses={200: OpenApiTypes.OBJECT},
-        tags=['Marketplace']
+        responses={200: TicketListSerializer(many=True)},
+        tags=['Ticketing']
     )
     def get(self, request):
+        """Get tickets owned by current user with stats"""
         status_filter = request.query_params.get('status', 'all')
         
-        base_queryset = IssuedTicket.objects.filter(
-            purchased_by=request.user
+        # Base queryset - tickets where user is CURRENT OWNER
+        base_tickets = IssuedTicket.objects.filter(
+            owner_email=request.user.email
         ).select_related('event', 'ticket_type', 'event__vendor')
         
-        # Get counts for each status
+        # Calculate statistics
         stats = {
-            'all': base_queryset.count(),
-            'upcoming': base_queryset.filter(status='upcoming').count(),
-            'used': base_queryset.filter(status='used').count(),
-            'expired': base_queryset.filter(status='expired').count(),
-            'transferred': base_queryset.filter(status='transferred').count(),
-            'canceled': base_queryset.filter(status='canceled').count(),
+            'all': base_tickets.count(),
+            'upcoming': base_tickets.filter(status='upcoming').count(),
+            'used': base_tickets.filter(status='used').count(),
+            'expired': base_tickets.filter(status='expired').count(),
+            'canceled': base_tickets.filter(status='canceled').count(),
         }
         
-        # Filter tickets
+        # Filter by status
         if status_filter != 'all':
-            tickets = base_queryset.filter(status=status_filter)
+            tickets = base_tickets.filter(status=status_filter)
         else:
-            tickets = base_queryset
+            tickets = base_tickets
         
-        from .serializers import TicketListSerializer
-        serializer = TicketListSerializer(tickets, many=True)
+        serializer = TicketListSerializer(
+            tickets,
+            many=True,
+            context={'request': request}
+        )
         
         return Response({
             'state': True,
@@ -928,169 +1091,281 @@ class MyTicketsListView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+class TicketDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Get single ticket details",
+        description="Get detailed information about a specific ticket you own",
+        responses={
+            200: TicketDetailSerializer,
+            403: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT
+        },
+        tags=['Ticketing']
+    )
+    def get(self, request, ticket_id):
+        """Get single ticket details - only if you're the current owner"""
+        try:
+            ticket = IssuedTicket.objects.select_related(
+                'event', 'ticket_type', 'purchased_by', 'scanned_by'
+            ).get(id=ticket_id)
+        except IssuedTicket.DoesNotExist:
+            return Response({
+                'error': 'Ticket not found',
+                'state': False
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if user is the CURRENT OWNER (not original purchaser)
+        if ticket.owner_email != request.user.email:
+            return Response({
+                'error': 'You do not own this ticket',
+                'state': False
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        serializer = TicketDetailSerializer(ticket, context={'request': request})
+        
+        return Response({
+            'state': True,
+            'ticket': serializer.data
+        }, status=status.HTTP_200_OK)
+
+
 class TransferTicketView(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     @extend_schema(
-        summary="Transfer ticket to another user",
-        description="Transfer ticket ownership to another email address",
+        summary="Transfer ticket to another person",
+        description="Transfer your ticket to another person. Tickets can only be transferred once and not within 6 hours of event.",
         request={
             'application/json': {
                 'type': 'object',
                 'properties': {
-                    'ticket_id': {'type': 'string', 'format': 'uuid'},
                     'recipient_email': {'type': 'string', 'format': 'email'},
                     'recipient_name': {'type': 'string'}
                 },
-                'required': ['ticket_id', 'recipient_email', 'recipient_name']
+                'required': ['recipient_email', 'recipient_name']
             }
         },
-        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
-        tags=['Marketplace']
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT
+        },
+        tags=['Ticketing']
     )
-    def post(self, request):
-        ticket_id = request.data.get('ticket_id')
+    def post(self, request, ticket_id):
+        """Transfer a ticket to another person"""
         recipient_email = request.data.get('recipient_email')
         recipient_name = request.data.get('recipient_name')
         
-        if not all([ticket_id, recipient_email, recipient_name]):
+        if not recipient_email or not recipient_name:
             return Response({
-                'error': 'ticket_id, recipient_email, and recipient_name are required',
+                'error': 'recipient_email and recipient_name are required',
                 'state': False
             }, status=status.HTTP_400_BAD_REQUEST)
         
+        # Don't allow transferring to yourself
+        if recipient_email.lower() == request.user.email.lower():
+            return Response({
+                'error': 'You cannot transfer a ticket to yourself',
+                'state': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get ticket
+        try:
+            ticket = IssuedTicket.objects.get(id=ticket_id)
+        except IssuedTicket.DoesNotExist:
+            return Response({
+                'error': 'Ticket not found',
+                'state': False
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if current user is the CURRENT OWNER (not original purchaser)
+        if ticket.owner_email != request.user.email:
+            return Response({
+                'error': 'You do not own this ticket. Only the current owner can transfer it.',
+                'state': False
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Check if ticket can be transferred
+        can_transfer, message = ticket.can_transfer()
+        if not can_transfer:
+            return Response({
+                'error': message,
+                'state': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Transfer ticket - ownership changes completely
         try:
             with transaction.atomic():
-                ticket = IssuedTicket.objects.select_related('event').get(
-                    id=ticket_id,
-                    purchased_by=request.user
-                )
+                # Store previous owner info for logging
+                previous_owner = ticket.owner_email
                 
-                # Check if transfer is allowed
-                can_transfer, message = ticket.can_transfer()
-                if not can_transfer:
-                    return Response({
-                        'error': message,
-                        'state': False
-                    }, status=status.HTTP_400_BAD_REQUEST)
-                
-                # Update ticket
+                # Transfer ownership
                 ticket.owner_name = recipient_name
                 ticket.owner_email = recipient_email
                 ticket.transferred_to = recipient_email
                 ticket.transferred_at = timezone.now()
                 ticket.transfer_count += 1
-                ticket.status = 'transferred'
+                ticket.status = 'upcoming'  # Keep as upcoming, not "transferred"
                 ticket.save()
                 
-                # TODO: Send notification email to recipient
-                # send_ticket_transfer_notification(ticket, recipient_email, recipient_name)
+                logger.info(
+                    f"Ticket {ticket.id} transferred from {previous_owner} to {recipient_email}. "
+                    f"Event: {ticket.event.event_title}"
+                )
                 
                 return Response({
-                    'message': f'Ticket successfully transferred to {recipient_email}',
+                    'message': f'Ticket successfully transferred to {recipient_email}. You no longer own this ticket.',
                     'state': True,
-                    'ticket_id': str(ticket.id)
+                    'ticket_id': str(ticket.id),
+                    'transferred_to': f"{recipient_name} ({recipient_email})",
+                    'transferred_at': ticket.transferred_at,
+                    'previous_owner': previous_owner
                 }, status=status.HTTP_200_OK)
-                
-        except IssuedTicket.DoesNotExist:
+        
+        except Exception as e:
+            logger.error(f"Ticket transfer failed: {str(e)}")
             return Response({
-                'error': 'Ticket not found or you do not own this ticket',
+                'error': f"Transfer failed: {str(e)}",
                 'state': False
-            }, status=status.HTTP_404_NOT_FOUND)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class CancelTicketView(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     @extend_schema(
         summary="Cancel ticket and get refund",
-        description="Cancel an upcoming ticket and receive refund based on cancellation policy",
+        description="Cancel your ticket and receive a refund based on cancellation policy. Refund depends on time before event.",
         request={
             'application/json': {
                 'type': 'object',
                 'properties': {
-                    'ticket_id': {'type': 'string', 'format': 'uuid'},
                     'reason': {'type': 'string'},
-                    'transaction_pin': {'type': 'string'}
+                    'transaction_pin': {'type': 'string', 'minLength': 4, 'maxLength': 6}
                 },
-                'required': ['ticket_id', 'transaction_pin']
+                'required': ['reason', 'transaction_pin']
             }
         },
-        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
-        tags=['Marketplace']
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT
+        },
+        tags=['Ticketing']
     )
-    def post(self, request):
+    def post(self, request, ticket_id):
+        """Cancel a ticket and process refund"""
+        reason = request.data.get('reason')
         transaction_pin = request.data.get('transaction_pin')
-
-        if not transaction_pin:
-            return Response({'error': 'Transaction PIN is required', "state": False}, 
-                          status=status.HTTP_400_BAD_REQUEST)
-
-        if not request.user.pin_is_set:
-            return Response({'error': 'Please set your transaction PIN first', "state": False}, 
-                          status=status.HTTP_400_BAD_REQUEST)
-
-        if not request.user.verify_transaction_pin(transaction_pin):
-            return Response({'error': 'Invalid transaction PIN', "state": False}, 
-                          status=status.HTTP_400_BAD_REQUEST)
         
-        ticket_id = request.data.get('ticket_id')
-        reason = request.data.get('reason', '')
-        
-        if not ticket_id:
+        if not reason:
             return Response({
-                'error': 'ticket_id is required',
+                'error': 'Cancellation reason is required',
                 'state': False
             }, status=status.HTTP_400_BAD_REQUEST)
         
+        # Get ticket
         try:
-            with transaction.atomic():
-                ticket = IssuedTicket.objects.select_related(
-                    'event', 'ticket_type'
-                ).get(id=ticket_id, purchased_by=request.user)
-                
-                # Check if cancellation is allowed
-                can_cancel, refund_amount, message = ticket.can_cancel()
-                if not can_cancel:
-                    return Response({
-                        'error': message,
-                        'state': False
-                    }, status=status.HTTP_400_BAD_REQUEST)
-                
-                # Update ticket
-                ticket.status = 'canceled'
-                ticket.canceled_at = timezone.now()
-                ticket.refund_amount = refund_amount
-                ticket.cancellation_reason = reason
-                ticket.save()
-                
-                # Process refund to wallet
-                user_wallet = request.user.wallet
-                payment_reference = f"REFUND-{uuid.uuid4()}"
-                
-                user_wallet.credit(
-                    amount=refund_amount,
-                    reference=payment_reference,
-                    description=f"Refund for canceled ticket: {ticket.event.event_title}"
-                )
-                
-                # Return ticket to availability
-                ticket.ticket_type.quantity_available += 1
-                ticket.ticket_type.save()
-                
-                return Response({
-                    'message': 'Ticket canceled successfully',
-                    'state': True,
-                    'refund_amount': float(refund_amount),
-                    'refund_policy': message,
-                    'ticket_id': str(ticket.id)
-                }, status=status.HTTP_200_OK)
-                
+            ticket = IssuedTicket.objects.get(id=ticket_id)
         except IssuedTicket.DoesNotExist:
             return Response({
-                'error': 'Ticket not found or you do not own this ticket',
+                'error': 'Ticket not found',
                 'state': False
             }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check ownership
+        if ticket.purchased_by != request.user:
+            return Response({
+                'error': 'You do not have permission to cancel this ticket',
+                'state': False
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Check if ticket can be canceled
+        can_cancel, refund_amount, message = ticket.can_cancel()
+        if not can_cancel:
+            return Response({
+                'error': message,
+                'state': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # For paid tickets, verify transaction PIN
+        if ticket.ticket_type and not ticket.event.is_free:
+            if not transaction_pin:
+                return Response({
+                    'error': 'Transaction PIN is required for paid ticket cancellations',
+                    'state': False
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Get user wallet
+            try:
+                wallet = Wallet.objects.get(user=request.user)
+            except Wallet.DoesNotExist:
+                return Response({
+                    'error': 'Wallet not found',
+                    'state': False
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Verify PIN - request.user IS the Profile, no need for Profile.objects.get()
+            if not request.user.verify_transaction_pin(transaction_pin):
+                return Response({
+                    'error': 'Invalid transaction PIN',
+                    'state': False
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Process cancellation
+        try:
+            with transaction.atomic():
+                # Update ticket status
+                ticket.status = 'canceled'
+                ticket.canceled_at = timezone.now()
+                ticket.cancellation_reason = reason
+                ticket.refund_amount = refund_amount
+                ticket.save()
+                
+                # Process refund for paid tickets
+                if refund_amount > 0 and ticket.ticket_type:
+                    wallet.balance += refund_amount
+                    wallet.save()
+                    
+                    # Restore ticket quantity
+                    ticket.ticket_type.quantity_available += 1
+                    ticket.ticket_type.save()
+                    
+                    logger.info(
+                        f"Ticket {ticket.id} canceled. Refund: ₦{refund_amount} credited to user {request.user.id}"
+                    )
+                    
+                    return Response({
+                        'message': 'Ticket canceled successfully',
+                        'state': True,
+                        'refund_amount': str(refund_amount),
+                        'refund_policy': message,
+                        'ticket_id': str(ticket.id),
+                        'canceled_at': ticket.canceled_at,
+                        'wallet_balance': str(wallet.balance)
+                    }, status=status.HTTP_200_OK)
+                else:
+                    # Free ticket cancellation (no refund)
+                    logger.info(f"Free ticket {ticket.id} canceled by user {request.user.id}")
+                    
+                    return Response({
+                        'message': 'Free ticket canceled successfully',
+                        'state': True,
+                        'ticket_id': str(ticket.id),
+                        'canceled_at': ticket.canceled_at
+                    }, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            logger.error(f"Ticket cancellation failed: {str(e)}")
+            return Response({
+                'error': f"Cancellation failed: {str(e)}",
+                'state': False
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 

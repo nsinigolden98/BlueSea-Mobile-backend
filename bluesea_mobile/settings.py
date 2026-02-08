@@ -342,6 +342,8 @@ PAYSTACK_PIN = os.environ.get('PAYSTACK_PIN')
 # Celery Configuration
 CELERY_TIMEZONE = 'Africa/Lagos'
 
+TIME_ZONE = 'Africa/Lagos' 
+
 # Celery Beat Schedule
 
 CELERY_BEAT_SCHEDULE = {

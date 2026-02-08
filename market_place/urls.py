@@ -13,14 +13,16 @@ urlpatterns = [
     path('events/create/', CreateEventView.as_view(), name='create-event'),
     path('events/all/', EventListView.as_view(), name='event-list'),
     path('events/<uuid:event_id>/', EventDetailView.as_view(), name='event-detail'),
-    path('tickets/purchase/', PurchaseTicketView.as_view(), name='purchase-ticket'),
+
+    #purchase ticket
+    path('events/<uuid:event_id>/purchase/', PurchaseTicketView.as_view(), name='purchase-ticket'),
     path('tickets/my/', MyTicketsView.as_view(), name='my-tickets'),
     path('tickets/scan/', ScanTicketView.as_view(), name='scan-ticket'),
     path('events/<uuid:event_id>/attendees/export/', ExportAttendeesView.as_view(), name='export-attendees'),
     # Ticket management endpoints
     path('tickets/', TicketListView.as_view(), name='ticket-list'),
     path('tickets/<uuid:ticket_id>/', TicketDetailView.as_view(), name='ticket-detail'),
-    path('my-tickets/', MyTicketsListView.as_view(), name='my-tickets'),
+    path('mytickets/', MyTicketsListView.as_view(), name='my-tickets'),
     path('tickets/<uuid:ticket_id>/transfer/', TransferTicketView.as_view(), name='transfer-ticket'),
     path('tickets/<uuid:ticket_id>/cancel/', CancelTicketView.as_view(), name='cancel-ticket'),
     # Scanner endpoints
