@@ -24,6 +24,11 @@ from wallet.models import Wallet
 from bonus.models import BonusPoint
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
+from .utils import generate_ticket_qr_code, parse_qr_data
+import uuid
+import base64
+from django.core.files.base import ContentFile
+from rest_framework.throttling import UserRateThrottle
 
 logger = logging.getLogger(__name__)
 
@@ -370,113 +375,129 @@ class EventDetailView(APIView):
 
 class PurchaseTicketView(APIView):
     permission_classes = [IsAuthenticated]
-
+    
     @extend_schema(
         summary="Purchase event tickets",
-        description="Purchase tickets for an event. Max 5 attendees per purchase. Deducts from wallet balance.",
+        description="Purchase one or more tickets for an event",
         request=PurchaseTicketSerializer,
-        responses={201: IssuedTicketSerializer(many=True), 400: OpenApiTypes.OBJECT},
-        tags=['Ticketing']
+        responses={
+            201: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT
+        },
+        tags=['Marketplace']
     )
     def post(self, request):
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required', "state": False}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first', "state": False}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN', "state": False}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+
         serializer = PurchaseTicketSerializer(data=request.data)
         
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        ticket_type_id = serializer.validated_data['ticket_type_id']
-        attendees = serializer.validated_data['attendees']
-        user = request.user
-        
-        # Use atomic transaction to ensure data consistency
-        try:
+        if serializer.is_valid(raise_exception=True):
             with transaction.atomic():
-                # Get ticket type with select_for_update to prevent race conditions
-                ticket_type = TicketType.objects.select_for_update().get(id=ticket_type_id)
-                event = ticket_type.event
+                event = serializer.validated_data['event']
+                ticket_type = serializer.validated_data['ticket_type']
+                quantity = serializer.validated_data['quantity']
+                attendees = serializer.validated_data.get('attendees', [])
                 
-                # Validate event is approved
-                if not event.is_approved:
-                    return Response(
-                        {"error": "Event is not approved for ticket sales"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+                # Calculate total amount
+                total_amount = ticket_type.price * quantity
                 
-                # Validate ticket availability
-                num_tickets = len(attendees)
-                if ticket_type.quantity_available < num_tickets:
-                    return Response(
-                        {"error": f"Only {ticket_type.quantity_available} tickets available"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+                # Check wallet balance
+                user_wallet = request.user.wallet
+                if user_wallet.balance < total_amount:
+                    return Response({
+                        'error': 'Insufficient wallet balance',
+                        'state': False
+                    }, status=status.HTTP_400_BAD_REQUEST)
                 
-                # Calculate total cost
-                total_cost = ticket_type.price * num_tickets
+                # Check ticket availability
+                if ticket_type.quantity_available < quantity:
+                    return Response({
+                        'error': f'Only {ticket_type.quantity_available} tickets available',
+                        'state': False
+                    }, status=status.HTTP_400_BAD_REQUEST)
                 
-                # Get user wallet
-                try:
-                    wallet = Wallet.objects.select_for_update().get(user=user)
-                except Wallet.DoesNotExist:
-                    return Response(
-                        {"error": "User wallet not found"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+                # Create tickets
+                tickets = []
+                payment_reference = f"TKT-{uuid.uuid4()}"
                 
-                # Validate sufficient balance
-                if wallet.balance < total_cost:
-                    return Response(
-                        {"error": f"Insufficient balance. Required: {total_cost}, Available: {wallet.balance}"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-                
-                # Deduct wallet balance
-                wallet.debit(
-                    amount=total_cost,
-                    description=f"Ticket purchase for {event.event_title}",
-                    reference=f"TKT-{secrets.token_hex(8)}"
-                )
-                
-                # Create issued tickets with unique QR codes
-                issued_tickets = []
-                for attendee in attendees:
-                    # Generate cryptographically secure unique QR code
-                    qr_code = f"QR-{secrets.token_urlsafe(32)}"
+                for i in range(quantity):
+                    # Get attendee info or use purchaser info
+                    if i < len(attendees):
+                        owner_name = attendees[i].get('name', request.user.get_full_name())
+                        owner_email = attendees[i].get('email', request.user.email)
+                    else:
+                        owner_name = request.user.get_full_name()
+                        owner_email = request.user.email
                     
+                    # Create ticket
                     ticket = IssuedTicket.objects.create(
                         ticket_type=ticket_type,
                         event=event,
-                        owner_name=attendee['name'],
-                        owner_email=attendee['email'],
-                        purchased_by=user,
-                        qr_code=qr_code,
-                        status='unused'
+                        owner_name=owner_name,
+                        owner_email=owner_email,
+                        purchased_by=request.user,
+                        status='upcoming'
                     )
-                    issued_tickets.append(ticket)
+                    
+                    # Generate QR code
+                    try:
+                        generate_ticket_qr_code(ticket)
+                    except Exception as e:
+                        return Response({
+                            'error': f'Failed to generate QR code: {str(e)}',
+                            'state': False
+                        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    
+                    tickets.append(ticket)
                 
-                # Atomically reduce ticket quantity
-                ticket_type.quantity_available -= num_tickets
+                # Deduct from wallet
+                user_wallet.debit(
+                    amount=total_amount,
+                    reference=payment_reference,
+                    description=f"Purchased {quantity} ticket(s) for {event.event_title}"
+                )
+                
+                # Update ticket availability
+                ticket_type.quantity_available -= quantity
                 ticket_type.save()
                 
-                logger.info(
-                    f"User {user.id} purchased {num_tickets} tickets for event {event.id}"
-                )
-        
-        except TicketType.DoesNotExist:
-            return Response(
-                {"error": "Ticket type not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except Exception as e:
-            logger.error(f"Ticket purchase failed: {str(e)}")
-            return Response(
-                {"error": "Ticket purchase failed. Please try again."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        
-        # Return issued tickets
-        response_serializer = IssuedTicketSerializer(issued_tickets, many=True)
-        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
-
+                # Award bonus points
+                try:
+                    from bonus.utils import award_vtu_purchase_points
+                    award_vtu_purchase_points(
+                        user=request.user,
+                        purchase_amount=float(total_amount),
+                        reference=payment_reference
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to award bonus points: {str(e)}")
+                
+                return Response({
+                    'message': f'Successfully purchased {quantity} ticket(s)',
+                    'state': True,
+                    'payment_reference': payment_reference,
+                    'total_amount': float(total_amount),
+                    'tickets': [
+                        {
+                            'id': str(ticket.id),
+                            'owner_name': ticket.owner_name,
+                            'owner_email': ticket.owner_email,
+                            'qr_code': ticket.qr_code
+                        } for ticket in tickets
+                    ]
+                }, status=status.HTTP_201_CREATED)
 
 class MyTicketsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -503,94 +524,204 @@ class MyTicketsView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class ScannerRateThrottle(UserRateThrottle):
+    """Custom throttle for ticket scanning - 20 scans per minute"""
+    rate = '20/min'
+
+
 class ScanTicketView(APIView):
     permission_classes = [IsAuthenticated]
-
+    throttle_classes = [ScannerRateThrottle]
+    
     @extend_schema(
-        summary="Scan ticket",
-        description="Scan and validate a ticket. Only assigned event scanners can perform this action.",
-        request=ScanTicketSerializer,
-        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT},
-        tags=['Ticketing']
+        summary="Scan and validate ticket QR code",
+        description="Scan a ticket QR code to validate and mark as used. Requires scanner assignment or staff access.",
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'qr_data': {'type': 'string', 'description': 'QR code data from scanner'},
+                    'event_id': {'type': 'string', 'format': 'uuid', 'description': 'Event UUID being scanned for'}
+                },
+                'required': ['qr_data', 'event_id']
+            }
+        },
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+        tags=['Marketplace']
     )
     def post(self, request):
-        serializer = ScanTicketSerializer(data=request.data)
+        qr_data = request.data.get('qr_data')
+        event_id = request.data.get('event_id')
         
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if not qr_data or not event_id:
+            return Response({
+                'error': 'qr_data and event_id are required',
+                'state': False,
+                'error_code': 'MISSING_PARAMETERS'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        qr_code = serializer.validated_data['qr_code']
-        event_id = serializer.validated_data['event_id']
-        user = request.user
+        # Verify event exists and is approved
+        try:
+            event = EventInfo.objects.get(id=event_id, is_approved=True)
+        except EventInfo.DoesNotExist:
+            return Response({
+                'error': 'Event not found or not approved',
+                'state': False,
+                'error_code': 'INVALID_EVENT'
+            }, status=status.HTTP_404_NOT_FOUND)
         
-        # Check if user is an assigned scanner for this event
-        is_scanner = EventScanner.objects.filter(
-            user=user,
-            event_id=event_id
-        ).exists()
+        # Check scanner authorization
+        is_authorized = (
+            request.user.is_staff or 
+            EventScanner.objects.filter(user=request.user, event=event).exists() or
+            event.vendor.user == request.user  # Vendor can scan their own events
+        )
         
-        if not is_scanner and not user.is_staff:
-            return Response(
-                {"error": "You are not authorized to scan tickets for this event"},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        if not is_authorized:
+            return Response({
+                'error': 'You are not authorized to scan tickets for this event',
+                'state': False,
+                'error_code': 'UNAUTHORIZED_SCANNER'
+            }, status=status.HTTP_403_FORBIDDEN)
         
+        # Parse and verify QR code
+        ticket_uuid, qr_event_uuid, is_valid = parse_qr_data(qr_data)
+        
+        if not is_valid:
+            return Response({
+                'error': 'Invalid or tampered QR code',
+                'state': False,
+                'error_code': 'INVALID_QR_CODE',
+                'scan_result': 'rejected'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Verify event UUID matches
+        if str(event.id) != qr_event_uuid:
+            return Response({
+                'error': 'QR code is for a different event',
+                'state': False,
+                'error_code': 'EVENT_MISMATCH',
+                'scan_result': 'rejected'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get ticket with lock to prevent race conditions
         try:
             with transaction.atomic():
-                # Get ticket with lock to prevent concurrent scans
-                ticket = IssuedTicket.objects.select_for_update().get(qr_code=qr_code)
+                ticket = IssuedTicket.objects.select_for_update().select_related(
+                    'event', 'ticket_type', 'purchased_by', 'scanned_by'
+                ).get(id=ticket_uuid)
                 
-                # Validate ticket belongs to the event
-                if str(ticket.event.id) != str(event_id):
-                    return Response(
-                        {"error": "Ticket does not belong to this event"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-                
-                # Check if ticket is already used
+                # Validate ticket status
                 if ticket.status == 'used':
-                    return Response(
-                        {
-                            "error": "Ticket has already been used",
-                            "ticket_owner": ticket.owner_name,
-                            "ticket_email": ticket.owner_email,
-                            "scan_time": ticket.created_at
-                        },
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+                    # Show who scanned it and when
+                    scanned_by_info = {
+                        'email': ticket.scanned_by.email if ticket.scanned_by else 'Unknown',
+                        'time': ticket.scanned_at.strftime('%Y-%m-%d %H:%M:%S') if ticket.scanned_at else 'Unknown'
+                    }
+                    return Response({
+                        'error': 'Ticket has already been used',
+                        'state': False,
+                        'error_code': 'ALREADY_USED',
+                        'scan_result': 'rejected',
+                        'ticket_details': {
+                            'ticket_id': str(ticket.id),
+                            'owner_name': ticket.owner_name,
+                            'owner_email': ticket.owner_email,
+                            'status': ticket.status,
+                            'scanned_by': scanned_by_info['email'],
+                            'scanned_at': scanned_by_info['time']
+                        }
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                if ticket.status == 'expired':
+                    return Response({
+                        'error': 'Ticket has expired',
+                        'state': False,
+                        'error_code': 'EXPIRED',
+                        'scan_result': 'rejected',
+                        'ticket_details': {
+                            'ticket_id': str(ticket.id),
+                            'owner_name': ticket.owner_name,
+                            'status': ticket.status
+                        }
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                if ticket.status == 'transferred':
+                    return Response({
+                        'error': 'Ticket has been transferred to another user',
+                        'state': False,
+                        'error_code': 'TRANSFERRED',
+                        'scan_result': 'rejected',
+                        'ticket_details': {
+                            'ticket_id': str(ticket.id),
+                            'transferred_to': ticket.transferred_to,
+                            'transferred_at': ticket.transferred_at.strftime('%Y-%m-%d %H:%M:%S') if ticket.transferred_at else None
+                        }
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                if ticket.status == 'canceled':
+                    return Response({
+                        'error': 'Ticket has been canceled',
+                        'state': False,
+                        'error_code': 'CANCELED',
+                        'scan_result': 'rejected',
+                        'ticket_details': {
+                            'ticket_id': str(ticket.id),
+                            'canceled_at': ticket.canceled_at.strftime('%Y-%m-%d %H:%M:%S') if ticket.canceled_at else None
+                        }
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Optional: Validate event time (allow scanning 2 hours before event)
+                time_until_event = ticket.event.event_date - timezone.now()
+                if time_until_event.total_seconds() > 2 * 3600:  # 2 hours in seconds
+                    hours_remaining = int(time_until_event.total_seconds() / 3600)
+                    return Response({
+                        'error': f'Event starts in {hours_remaining} hours. Early entry not allowed yet.',
+                        'state': False,
+                        'error_code': 'TOO_EARLY',
+                        'scan_result': 'rejected',
+                        'event_start': ticket.event.event_date.strftime('%Y-%m-%d %H:%M:%S')
+                    }, status=status.HTTP_400_BAD_REQUEST)
                 
                 # Mark ticket as used
                 ticket.status = 'used'
+                ticket.scanned_at = timezone.now()
+                ticket.scanned_by = request.user
                 ticket.save()
                 
-                logger.info(
-                    f"Ticket {ticket.id} scanned by user {user.id} for event {event_id}"
-                )
+                # Build successful response with full ticket details
+                return Response({
+                    'message': 'Ticket validated successfully',
+                    'state': True,
+                    'scan_result': 'success',
+                    'ticket_details': {
+                        'ticket_id': str(ticket.id),
+                        'owner_name': ticket.owner_name,
+                        'owner_email': ticket.owner_email,
+                        'ticket_type': {
+                            'name': ticket.ticket_type.name,
+                            'price': float(ticket.ticket_type.price)
+                        },
+                        'event': {
+                            'title': ticket.event.event_title,
+                            'date': ticket.event.event_date.strftime('%Y-%m-%d %H:%M:%S'),
+                            'location': ticket.event.event_location,
+                            'vendor': ticket.event.vendor.brand_name
+                        },
+                        'purchased_by': ticket.purchased_by.email if ticket.purchased_by else None,
+                        'status': ticket.status,
+                        'scanned_at': ticket.scanned_at.strftime('%Y-%m-%d %H:%M:%S'),
+                        'scanned_by': request.user.email
+                    }
+                }, status=status.HTTP_200_OK)
                 
-                return Response(
-                    {
-                        "success": True,
-                        "message": "Ticket validated successfully",
-                        "ticket_owner": ticket.owner_name,
-                        "ticket_email": ticket.owner_email,
-                        "ticket_type": ticket.ticket_type.name,
-                        "event_title": ticket.event.event_title,
-                        "scan_time": timezone.now()
-                    },
-                    status=status.HTTP_200_OK
-                )
-        
         except IssuedTicket.DoesNotExist:
-            return Response(
-                {"error": "Invalid QR code"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except Exception as e:
-            logger.error(f"Ticket scan failed: {str(e)}")
-            return Response(
-                {"error": "Ticket scan failed. Please try again."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({
+                'error': 'Ticket not found',
+                'state': False,
+                'error_code': 'TICKET_NOT_FOUND',
+                'scan_result': 'rejected'
+            }, status=status.HTTP_404_NOT_FOUND)
 
 
 class ExportAttendeesView(APIView):
@@ -675,3 +806,540 @@ class ExportAttendeesView(APIView):
                 {"error": "Invalid format. Use 'csv' or 'txt'"},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
+class TicketListView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Get user's tickets",
+        description="Retrieve all tickets purchased by the authenticated user with optional status filtering",
+        parameters=[
+            OpenApiParameter(
+                name='status',
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description='Filter by status: all, upcoming, used, expired, transferred, canceled',
+                required=False
+            )
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+        tags=['Marketplace']
+    )
+    def get(self, request):
+        status_filter = request.query_params.get('status', 'all')
+        
+        tickets = IssuedTicket.objects.filter(purchased_by=request.user).select_related(
+            'event', 'ticket_type', 'event__vendor'
+        )
+        
+        if status_filter != 'all':
+            tickets = tickets.filter(status=status_filter)
+        
+        # Serialize tickets
+        from .serializers import TicketListSerializer
+        serializer = TicketListSerializer(tickets, many=True)
+        
+        return Response({
+            'state': True,
+            'count': tickets.count(),
+            'tickets': serializer.data
+        }, status=status.HTTP_200_OK)
+
+
+class TicketDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Get ticket details",
+        description="Retrieve detailed information for a specific ticket including QR code",
+        responses={200: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+        tags=['Marketplace']
+    )
+    def get(self, request, ticket_id):
+        try:
+            ticket = IssuedTicket.objects.select_related(
+                'event', 'ticket_type', 'event__vendor', 'purchased_by', 'scanned_by'
+            ).get(id=ticket_id, purchased_by=request.user)
+            
+            from .serializers import TicketDetailSerializer
+            serializer = TicketDetailSerializer(ticket)
+            
+            return Response({
+                'state': True,
+                'ticket': serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        except IssuedTicket.DoesNotExist:
+            return Response({
+                'error': 'Ticket not found',
+                'state': False
+            }, status=status.HTTP_404_NOT_FOUND)
+
+
+class MyTicketsListView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Get my tickets with stats",
+        description="Get all tickets with status breakdown statistics",
+        parameters=[
+            OpenApiParameter(
+                name='status',
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description='Filter by status',
+                required=False
+            )
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+        tags=['Marketplace']
+    )
+    def get(self, request):
+        status_filter = request.query_params.get('status', 'all')
+        
+        base_queryset = IssuedTicket.objects.filter(
+            purchased_by=request.user
+        ).select_related('event', 'ticket_type', 'event__vendor')
+        
+        # Get counts for each status
+        stats = {
+            'all': base_queryset.count(),
+            'upcoming': base_queryset.filter(status='upcoming').count(),
+            'used': base_queryset.filter(status='used').count(),
+            'expired': base_queryset.filter(status='expired').count(),
+            'transferred': base_queryset.filter(status='transferred').count(),
+            'canceled': base_queryset.filter(status='canceled').count(),
+        }
+        
+        # Filter tickets
+        if status_filter != 'all':
+            tickets = base_queryset.filter(status=status_filter)
+        else:
+            tickets = base_queryset
+        
+        from .serializers import TicketListSerializer
+        serializer = TicketListSerializer(tickets, many=True)
+        
+        return Response({
+            'state': True,
+            'stats': stats,
+            'tickets': serializer.data
+        }, status=status.HTTP_200_OK)
+
+
+class TransferTicketView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Transfer ticket to another user",
+        description="Transfer ticket ownership to another email address",
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'ticket_id': {'type': 'string', 'format': 'uuid'},
+                    'recipient_email': {'type': 'string', 'format': 'email'},
+                    'recipient_name': {'type': 'string'}
+                },
+                'required': ['ticket_id', 'recipient_email', 'recipient_name']
+            }
+        },
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        tags=['Marketplace']
+    )
+    def post(self, request):
+        ticket_id = request.data.get('ticket_id')
+        recipient_email = request.data.get('recipient_email')
+        recipient_name = request.data.get('recipient_name')
+        
+        if not all([ticket_id, recipient_email, recipient_name]):
+            return Response({
+                'error': 'ticket_id, recipient_email, and recipient_name are required',
+                'state': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            with transaction.atomic():
+                ticket = IssuedTicket.objects.select_related('event').get(
+                    id=ticket_id,
+                    purchased_by=request.user
+                )
+                
+                # Check if transfer is allowed
+                can_transfer, message = ticket.can_transfer()
+                if not can_transfer:
+                    return Response({
+                        'error': message,
+                        'state': False
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Update ticket
+                ticket.owner_name = recipient_name
+                ticket.owner_email = recipient_email
+                ticket.transferred_to = recipient_email
+                ticket.transferred_at = timezone.now()
+                ticket.transfer_count += 1
+                ticket.status = 'transferred'
+                ticket.save()
+                
+                # TODO: Send notification email to recipient
+                # send_ticket_transfer_notification(ticket, recipient_email, recipient_name)
+                
+                return Response({
+                    'message': f'Ticket successfully transferred to {recipient_email}',
+                    'state': True,
+                    'ticket_id': str(ticket.id)
+                }, status=status.HTTP_200_OK)
+                
+        except IssuedTicket.DoesNotExist:
+            return Response({
+                'error': 'Ticket not found or you do not own this ticket',
+                'state': False
+            }, status=status.HTTP_404_NOT_FOUND)
+
+
+class CancelTicketView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Cancel ticket and get refund",
+        description="Cancel an upcoming ticket and receive refund based on cancellation policy",
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'ticket_id': {'type': 'string', 'format': 'uuid'},
+                    'reason': {'type': 'string'},
+                    'transaction_pin': {'type': 'string'}
+                },
+                'required': ['ticket_id', 'transaction_pin']
+            }
+        },
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        tags=['Marketplace']
+    )
+    def post(self, request):
+        transaction_pin = request.data.get('transaction_pin')
+
+        if not transaction_pin:
+            return Response({'error': 'Transaction PIN is required', "state": False}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.pin_is_set:
+            return Response({'error': 'Please set your transaction PIN first', "state": False}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response({'error': 'Invalid transaction PIN', "state": False}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        ticket_id = request.data.get('ticket_id')
+        reason = request.data.get('reason', '')
+        
+        if not ticket_id:
+            return Response({
+                'error': 'ticket_id is required',
+                'state': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            with transaction.atomic():
+                ticket = IssuedTicket.objects.select_related(
+                    'event', 'ticket_type'
+                ).get(id=ticket_id, purchased_by=request.user)
+                
+                # Check if cancellation is allowed
+                can_cancel, refund_amount, message = ticket.can_cancel()
+                if not can_cancel:
+                    return Response({
+                        'error': message,
+                        'state': False
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Update ticket
+                ticket.status = 'canceled'
+                ticket.canceled_at = timezone.now()
+                ticket.refund_amount = refund_amount
+                ticket.cancellation_reason = reason
+                ticket.save()
+                
+                # Process refund to wallet
+                user_wallet = request.user.wallet
+                payment_reference = f"REFUND-{uuid.uuid4()}"
+                
+                user_wallet.credit(
+                    amount=refund_amount,
+                    reference=payment_reference,
+                    description=f"Refund for canceled ticket: {ticket.event.event_title}"
+                )
+                
+                # Return ticket to availability
+                ticket.ticket_type.quantity_available += 1
+                ticket.ticket_type.save()
+                
+                return Response({
+                    'message': 'Ticket canceled successfully',
+                    'state': True,
+                    'refund_amount': float(refund_amount),
+                    'refund_policy': message,
+                    'ticket_id': str(ticket.id)
+                }, status=status.HTTP_200_OK)
+                
+        except IssuedTicket.DoesNotExist:
+            return Response({
+                'error': 'Ticket not found or you do not own this ticket',
+                'state': False
+            }, status=status.HTTP_404_NOT_FOUND)
+
+
+
+
+class ScannerDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Get scanner dashboard statistics",
+        description="Retrieve scan statistics for a specific event including total tickets, scanned count, and recent scans",
+        responses={200: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+        tags=['Marketplace']
+    )
+    def get(self, request, event_id):
+        try:
+            event = EventInfo.objects.get(id=event_id, is_approved=True)
+        except EventInfo.DoesNotExist:
+            return Response({
+                'error': 'Event not found or not approved',
+                'state': False
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check authorization
+        is_authorized = (
+            request.user.is_staff or 
+            EventScanner.objects.filter(user=request.user, event=event).exists() or
+            event.vendor.user == request.user
+        )
+        
+        if not is_authorized:
+            return Response({
+                'error': 'You are not authorized to view this event\'s dashboard',
+                'state': False
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get statistics
+        all_tickets = IssuedTicket.objects.filter(event=event)
+        total_issued = all_tickets.count()
+        total_scanned = all_tickets.filter(status='used').count()
+        total_remaining = all_tickets.filter(status='upcoming').count()
+        total_expired = all_tickets.filter(status='expired').count()
+        total_canceled = all_tickets.filter(status='canceled').count()
+        
+        # Get scanner's personal scan count
+        personal_scans = all_tickets.filter(scanned_by=request.user).count()
+        
+        # Get recent scans (last 20)
+        recent_scans = IssuedTicket.objects.filter(
+            event=event,
+            status='used'
+        ).select_related('scanned_by', 'ticket_type').order_by('-scanned_at')[:20]
+        
+        recent_scans_data = [
+            {
+                'ticket_id': str(scan.id)[:8],
+                'owner_name': scan.owner_name,
+                'ticket_type': scan.ticket_type.name,
+                'scanned_at': scan.scanned_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'scanned_by': scan.scanned_by.email if scan.scanned_by else 'Unknown'
+            }
+            for scan in recent_scans
+        ]
+        
+        return Response({
+            'state': True,
+            'event': {
+                'id': str(event.id),
+                'title': event.event_title,
+                'date': event.event_date.strftime('%Y-%m-%d %H:%M:%S'),
+                'location': event.event_location,
+                'vendor': event.vendor.brand_name
+            },
+            'statistics': {
+                'total_issued': total_issued,
+                'total_scanned': total_scanned,
+                'total_remaining': total_remaining,
+                'total_expired': total_expired,
+                'total_canceled': total_canceled,
+                'scan_percentage': round((total_scanned / total_issued * 100) if total_issued > 0 else 0, 2)
+            },
+            'personal_stats': {
+                'scans_by_you': personal_scans,
+                'percentage_of_total': round((personal_scans / total_scanned * 100) if total_scanned > 0 else 0, 2)
+            },
+            'recent_scans': recent_scans_data
+        }, status=status.HTTP_200_OK)
+
+
+
+
+class MyScannerAssignmentsView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Get my scanner assignments",
+        description="Retrieve all events the authenticated user is assigned to scan",
+        responses={200: OpenApiTypes.OBJECT},
+        tags=['Marketplace']
+    )
+    def get(self, request):
+        # Get events user is assigned to scan
+        assignments = EventScanner.objects.filter(
+            user=request.user
+        ).select_related('event', 'event__vendor')
+        
+        # Also include events owned by user's vendor account
+        vendor_events = []
+        try:
+            vendor = TicketVendor.objects.get(user=request.user)
+            vendor_events = EventInfo.objects.filter(vendor=vendor, is_approved=True)
+        except TicketVendor.DoesNotExist:
+            pass
+        
+        # Build response
+        assigned_events = []
+        
+        for assignment in assignments:
+            event = assignment.event
+            if not event.is_approved:
+                continue
+            
+            # Get stats for this event
+            total_tickets = IssuedTicket.objects.filter(event=event).count()
+            scanned_tickets = IssuedTicket.objects.filter(event=event, status='used').count()
+            
+            assigned_events.append({
+                'event_id': str(event.id),
+                'event_title': event.event_title,
+                'event_date': event.event_date.strftime('%Y-%m-%d %H:%M:%S'),
+                'event_location': event.event_location,
+                'event_banner': request.build_absolute_uri(event.event_banner.url) if event.event_banner else None,
+                'vendor': event.vendor.brand_name,
+                'role': 'scanner',
+                'statistics': {
+                    'total_tickets': total_tickets,
+                    'scanned_tickets': scanned_tickets,
+                    'remaining': total_tickets - scanned_tickets
+                },
+                'assigned_at': assignment.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            })
+        
+        # Add vendor's own events
+        for event in vendor_events:
+            total_tickets = IssuedTicket.objects.filter(event=event).count()
+            scanned_tickets = IssuedTicket.objects.filter(event=event, status='used').count()
+            
+            assigned_events.append({
+                'event_id': str(event.id),
+                'event_title': event.event_title,
+                'event_date': event.event_date.strftime('%Y-%m-%d %H:%M:%S'),
+                'event_location': event.event_location,
+                'event_banner': request.build_absolute_uri(event.event_banner.url) if event.event_banner else None,
+                'vendor': event.vendor.brand_name,
+                'role': 'vendor',
+                'statistics': {
+                    'total_tickets': total_tickets,
+                    'scanned_tickets': scanned_tickets,
+                    'remaining': total_tickets - scanned_tickets
+                }
+            })
+        
+        return Response({
+            'state': True,
+            'count': len(assigned_events),
+            'events': assigned_events
+        }, status=status.HTTP_200_OK)
+
+
+class AddEventScannerView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Add scanner to event",
+        description="Assign a user as scanner for your event (vendor only)",
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'user_email': {'type': 'string', 'format': 'email'},
+                },
+                'required': ['user_email']
+            }
+        },
+        responses={201: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT},
+        tags=['Marketplace']
+    )
+    def post(self, request, event_id):
+        user_email = request.data.get('user_email')
+        
+        if not user_email:
+            return Response({
+                'error': 'user_email is required',
+                'state': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            event = EventInfo.objects.get(id=event_id)
+        except EventInfo.DoesNotExist:
+            return Response({
+                'error': 'Event not found',
+                'state': False
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Verify user is vendor and owns this event
+        try:
+            vendor = TicketVendor.objects.get(user=request.user)
+            if event.vendor != vendor:
+                return Response({
+                    'error': 'You can only add scanners to your own events',
+                    'state': False
+                }, status=status.HTTP_403_FORBIDDEN)
+        except TicketVendor.DoesNotExist:
+            return Response({
+                'error': 'Only vendors can add scanners',
+                'state': False
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get user to assign
+        try:
+            from accounts.models import CustomUser
+            scanner_user = CustomUser.objects.get(email=user_email)
+        except CustomUser.DoesNotExist:
+            return Response({
+                'error': 'User with this email not found',
+                'state': False
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if already assigned
+        if EventScanner.objects.filter(user=scanner_user, event=event).exists():
+            return Response({
+                'error': 'User is already assigned as scanner for this event',
+                'state': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create scanner assignment
+        scanner = EventScanner.objects.create(
+            user=scanner_user,
+            event=event
+        )
+        
+        # TODO: Send notification to scanner
+        # send_scanner_assignment_notification(scanner_user, event)
+        
+        return Response({
+            'message': f'{scanner_user.email} added as scanner for {event.event_title}',
+            'state': True,
+            'scanner': {
+                'email': scanner_user.email,
+                'event': event.event_title,
+                'assigned_at': scanner.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            }
+        }, status=status.HTTP_201_CREATED)

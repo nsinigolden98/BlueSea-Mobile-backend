@@ -235,53 +235,102 @@ class TicketTypeAdmin(admin.ModelAdmin):
 @admin.register(IssuedTicket)
 class IssuedTicketAdmin(admin.ModelAdmin):
     list_display = ['short_id', 'owner_name', 'owner_email', 'event_link', 'ticket_type_link', 
-                    'status', 'purchased_by_link', 'created_at']
-    list_filter = ['status', 'created_at', 'event__category']
+                    'status', 'transfer_count', 'purchased_by_link', 'created_at']
+    list_filter = ['status', 'created_at', 'event__category', 'transferred_at', 'canceled_at']
     search_fields = ['owner_name', 'owner_email', 'qr_code', 'event__event_title']
-    readonly_fields = ['id', 'qr_code', 'created_at']
+    readonly_fields = ['id', 'qr_code', 'qr_code_preview', 'created_at', 'updated_at']
     list_per_page = 25
     date_hierarchy = 'created_at'
-    actions = ['mark_as_used', 'mark_as_unused']
+    actions = ['mark_as_used', 'mark_as_expired', 'regenerate_qr_codes']
     
     fieldsets = (
         ('Ticket Information', {
-            'fields': ('id', 'qr_code', 'ticket_type', 'event', 'status')
+            'fields': ('id', 'qr_code', 'qr_code_image', 'qr_code_preview', 'ticket_type', 'event', 'status')
         }),
         ('Owner Information', {
             'fields': ('owner_name', 'owner_email', 'purchased_by')
         }),
+        ('Transfer Information', {
+            'fields': ('transferred_to', 'transferred_at', 'transfer_count'),
+            'classes': ('collapse',)
+        }),
+        ('Cancellation Information', {
+            'fields': ('canceled_at', 'refund_amount', 'cancellation_reason'),
+            'classes': ('collapse',)
+        }),
+        ('Scan Information', {
+            'fields': ('scanned_at', 'scanned_by'),
+            'classes': ('collapse',)
+        }),
         ('Timestamps', {
-            'fields': ('created_at',)
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
         }),
     )
     
     def short_id(self, obj):
+        """Display shortened UUID"""
         return str(obj.id)[:8]
     short_id.short_description = 'ID'
     
     def event_link(self, obj):
+        """Link to event detail"""
         url = reverse('admin:market_place_eventinfo_change', args=[obj.event.id])
         return format_html('<a href="{}">{}</a>', url, obj.event.event_title)
     event_link.short_description = 'Event'
     
     def ticket_type_link(self, obj):
+        """Link to ticket type detail"""
         url = reverse('admin:market_place_tickettype_change', args=[obj.ticket_type.id])
         return format_html('<a href="{}">{}</a>', url, obj.ticket_type.name)
     ticket_type_link.short_description = 'Ticket Type'
     
     def purchased_by_link(self, obj):
-        return obj.purchased_by.email if obj.purchased_by else '-'
+        """Link to user who purchased"""
+        if obj.purchased_by:
+            # Assuming you're using custom user model
+            url = reverse('admin:accounts_customuser_change', args=[obj.purchased_by.id])
+            return format_html('<a href="{}">{}</a>', url, obj.purchased_by.email)
+        return '-'
     purchased_by_link.short_description = 'Purchased By'
     
-    def mark_as_used(self, request, queryset):
-        updated = queryset.update(status='used')
-        self.message_user(request, f'{updated} ticket(s) marked as used.', messages.SUCCESS)
-    mark_as_used.short_description = 'Mark selected tickets as used'
+    def qr_code_preview(self, obj):
+        """Display QR code preview"""
+        if obj.qr_code_image:
+            return format_html(
+                '<a href="{}" target="_blank"><img src="{}" style="max-height: 200px;"/></a>',
+                obj.qr_code_image.url,
+                obj.qr_code_image.url
+            )
+        return "No QR code"
+    qr_code_preview.short_description = 'QR Code Preview'
     
-    def mark_as_unused(self, request, queryset):
-        updated = queryset.update(status='unused')
-        self.message_user(request, f'{updated} ticket(s) marked as unused.', messages.WARNING)
-    mark_as_unused.short_description = 'Mark selected tickets as unused'
+    def mark_as_used(self, request, queryset):
+        """Mark tickets as used"""
+        updated = queryset.update(status='used', scanned_at=timezone.now())
+        self.message_user(request, f'{updated} ticket(s) marked as used.', messages.SUCCESS)
+    mark_as_used.short_description = '✅ Mark as used'
+    
+    def regenerate_qr_codes(self, request, queryset):
+        """Regenerate QR codes for selected tickets"""
+        from .utils import generate_ticket_qr_code
+        
+        count = 0
+        for ticket in queryset:
+            try:
+                generate_ticket_qr_code(ticket)
+                count += 1
+            except Exception as e:
+                self.message_user(request, f'Failed to generate QR for ticket {ticket.id}: {str(e)}', messages.ERROR)
+        
+        self.message_user(request, f'Successfully regenerated {count} QR code(s)', messages.SUCCESS)
+    regenerate_qr_codes.short_description = '🔄 Regenerate QR codes'
+    
+    def mark_as_expired(self, request, queryset):
+        """Mark tickets as expired"""
+        updated = queryset.update(status='expired')
+        self.message_user(request, f'{updated} ticket(s) marked as expired.', messages.WARNING)
+    mark_as_expired.short_description = '⏰ Mark as expired'
 
 
 @admin.register(EventScanner)
