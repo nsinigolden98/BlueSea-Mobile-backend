@@ -705,18 +705,20 @@ class ScanTicketView(APIView):
     )
     def post(self, request):
         qr_data = request.data.get('qr_data')
-        event_id = request.data.get('event_id')
+        # event_id = request.data.get('event_id')
         
-        if not qr_data or not event_id:
+        if not qr_data:
             return Response({
-                'error': 'qr_data and event_id are required',
+                'error': 'qr_data is required',
                 'state': False,
                 'error_code': 'MISSING_PARAMETERS'
             }, status=status.HTTP_400_BAD_REQUEST)
         
+        ticket_uuid, event_uuid, is_valid = parse_qr_data(qr_data)
+        
         # Verify event exists and is approved
         try:
-            event = EventInfo.objects.get(id=event_id, is_approved=True)
+            event = EventInfo.objects.get(id=event_uuid, is_approved=True)
         except EventInfo.DoesNotExist:
             return Response({
                 'error': 'Event not found or not approved',
@@ -1585,9 +1587,9 @@ class AddEventScannerView(APIView):
         
         # Get user to assign
         try:
-            from accounts.models import CustomUser
-            scanner_user = CustomUser.objects.get(email=user_email)
-        except CustomUser.DoesNotExist:
+            from accounts.models import Profile
+            scanner_user = Profile.objects.get(email=user_email)
+        except Profile.DoesNotExist:
             return Response({
                 'error': 'User with this email not found',
                 'state': False

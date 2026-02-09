@@ -26,8 +26,8 @@ urlpatterns = [
     path('tickets/<uuid:ticket_id>/transfer/', TransferTicketView.as_view(), name='transfer-ticket'),
     path('tickets/<uuid:ticket_id>/cancel/', CancelTicketView.as_view(), name='cancel-ticket'),
     # Scanner endpoints
-    path('scan/', ScanTicketView.as_view(), name='scan-ticket'),
+    path('tickets/scan/', ScanTicketView.as_view(), name='scan-ticket'),
     path('events/<uuid:event_id>/scan-stats/', ScannerDashboardView.as_view(), name='scanner-dashboard'),
     path('my-scanner-assignments/', MyScannerAssignmentsView.as_view(), name='my-scanner-assignments'),
-    path('events/<uuid:event_id>/scanners/', AddEventScannerView.as_view(), name='add-event-scanner'),
+    path('events/<uuid:event_id>/scanner/', AddEventScannerView.as_view(), name='add-event-scanner'),
 ]
