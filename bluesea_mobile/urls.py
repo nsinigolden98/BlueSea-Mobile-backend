@@ -18,7 +18,7 @@ urlpatterns = [
     path('payments/', include('payments.urls')),
     path('payments/group/', include('group_payment.urls')),
     # path('notifications/', include('notifications.urls')),
-    path('market_place/', include('market_place.urls')),
+    path('marketplace/', include('market_place.urls')),
     path('wallet/', include('wallet.urls')),
     path('transactions/', include('transactions.urls')),
     path('bonus/', include('bonus.urls')),
