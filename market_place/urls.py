@@ -5,11 +5,12 @@ from .views import (
     ExportAttendeesView, CreateTicketVendor, VendorStatusView
 )
 from .admin_views import reject_vendors_with_reason
-from .views import TicketListView, TicketDetailView, MyTicketsListView, TransferTicketView, CancelTicketView, ScannerDashboardView, MyScannerAssignmentsView, AddEventScannerView
+from .views import TicketListView, TicketDetailView, MyTicketsListView, TransferTicketView, CancelTicketView, ScannerDashboardView, MyScannerAssignmentsView, AddEventScannerView, VendorTicketsList
 
 urlpatterns = [
     path('vendor/create/', CreateTicketVendor.as_view(), name='create-vendor'),
     path('vendor/status/', VendorStatusView.as_view(), name='vendor-status'),
+    path('vendor/tickets/', VendorTicketsList.as_view(), name='vendor tickets'),
     path('events/create/', CreateEventView.as_view(), name='create-event'),
     path('events/all/', EventListView.as_view(), name='event-list'),
     path('events/<uuid:event_id>/', EventDetailView.as_view(), name='event-detail'),
