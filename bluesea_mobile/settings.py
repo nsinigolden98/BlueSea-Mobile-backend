@@ -66,6 +66,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'debug_toolbar',
+    'django_celery_beat',
+
 
     # rest framework
     'rest_framework',
