@@ -561,90 +561,89 @@ STARTIMES_PLANS = [
 class AirtimeTopUp(models.Model):
     amount = models.IntegerField()
     network = models.CharField(max_length = 10, choices= NETWORK_TYPES)
-    phone_number = models.CharField()
+    phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
 class MTNDataTopUp(models.Model):
     plan = models.CharField(max_length = 50, choices= MTN_PLANS)
     billersCode = models.CharField(max_length = 20)
-    phone_number = models.CharField(max_length= 20)
+    phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length = 50, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
 class AirtelDataTopUp(models.Model):
     plan = models.CharField(max_length = 100, choices= AIRTEL_PLANS)
     billersCode = models.CharField(max_length = 20)
-    phone_number = models.CharField(max_length= 20)
+    phone_number = models.CharField(max_length= 11)
     request_id = models.CharField(max_length = 50, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
 class GloDataTopUp(models.Model):
     plan = models.CharField(max_length = 100, choices= GLO_PLANS)
     billersCode = models.CharField(max_length = 20)
-    phone_number = models.CharField(max_length= 20)
+    phone_number = models.CharField(max_length= 11)
     request_id = models.CharField(max_length = 50, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
 class EtisalatDataTopUp(models.Model):
     plan = models.CharField(max_length = 100, choices= ETISALAT_PLANS)
     billersCode = models.CharField(max_length = 20)
-    phone_number = models.CharField(max_length= 20)
+    phone_number = models.CharField(max_length= 11)
     request_id = models.CharField(max_length = 50, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 class DSTVPayment(models.Model):
-    billersCode = models.CharField()
+    billersCode = models.CharField(max_length=20)
     dstv_plan = models.CharField(max_length = 100, choices= DSTV_PLANS)
     subscription_type = models.CharField(max_length = 20, choices= SUB_TYPE)
-    phone_number = models.CharField()
+    phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
 class GOTVPayment(models.Model):
-    billersCode = models.CharField()
+    billersCode = models.CharField(max_length=20)
     gotv_plan = models.CharField(max_length = 100, choices= GOTV_PLANS)
     subscription_type = models.CharField(max_length = 20, choices= SUB_TYPE)
-    phone_number = models.CharField()
+    phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
 class StartimesPayment(models.Model):
-    billersCode = models.CharField()
+    billersCode = models.CharField(max_length=20)
     startimes_plan = models.CharField(max_length = 100, choices= STARTIMES_PLANS)
-    phone_number = models.CharField()
+    phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
 class ShowMaxPayment(models.Model):
     showmax_plan = models.CharField(max_length = 100, choices= SHOWMAX_PLANS)
-    phone_number = models.CharField()
+    phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
 class ElectricityPayment(models.Model):
-    billerCode = models.CharField()
+    billerCode = models.CharField(max_length= 20)
     amount = models.IntegerField()
     biller_name = models.CharField(max_length = 30, choices= BILLER_NAME)
     meter_type = models.CharField(max_length = 20, choices= METER_TYPES)
-    phone_number = models.CharField()
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
 class WAECRegitration(models.Model):
-    phone_number = models.CharField()
+    phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
 class WAECResultChecker(models.Model):
-    phone_number = models.CharField()
+    phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
 class JAMBRegistration(models.Model):
-    billerCode = models.CharField()
+    billerCode = models.CharField(max_length=30)
     exam_type = models.CharField(max_length = 20, choices= EXAM_TYPES)
-    phone_number = models.CharField()
+    phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -706,6 +705,12 @@ class GroupPaymentContribution(models.Model):
 class Airtime2Cash(models.Model):
     amount = models.IntegerField()
     network = models.CharField(max_length = 10, choices= NETWORK_TYPES)
-    phone_number = models.CharField()
+    phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=20, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+class ElectricityPaymentCustomers(models.Model):
+    biller=  models.CharField(max_length = 30, choices= BILLER_NAME)
+    meter_number= models.IntegerField()
+    meter_type =  models.CharField(max_length = 20, choices= METER_TYPES)  
+
