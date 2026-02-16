@@ -30,6 +30,7 @@ import base64
 from django.core.files.base import ContentFile
 from rest_framework.throttling import UserRateThrottle
 from accounts.models import Profile
+from django.db import models
 
 logger = logging.getLogger(__name__)
 
@@ -1020,7 +1021,7 @@ class TicketDetailView(APIView):
     def get(self, request, ticket_id):
         try:
             ticket = IssuedTicket.objects.select_related(
-                'event', 'ticket_type', 'event__vendor', 'purchased_by', 'scanned_by'
+                'event', 'ticket_type', 'purchased_by', 'scanned_by'
             ).get(id=ticket_id, purchased_by=request.user)
             
             from .serializers import TicketDetailSerializer
@@ -1620,3 +1621,129 @@ class AddEventScannerView(APIView):
                 'assigned_at': scanner.created_at.strftime('%Y-%m-%d %H:%M:%S')
             }
         }, status=status.HTTP_201_CREATED)
+
+
+class VendorTicketsList(APIView):
+    """View for vendors to see all tickets from their events"""
+    permission_classes = [IsAuthenticated]
+    
+    @extend_schema(
+        summary="Get all tickets from vendor's events",
+        description="Retrieve all tickets issued for events created by the vendor, with filtering and statistics",
+        parameters=[
+            OpenApiParameter(
+                name='event_id',
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description='Filter by specific event ID',
+                required=False
+            ),
+            OpenApiParameter(
+                name='status',
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description='Filter by ticket status',
+                enum=['all', 'upcoming', 'used', 'expired', 'canceled'],
+                required=False
+            ),
+            OpenApiParameter(
+                name='search',
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description='Search by ticket owner name or email',
+                required=False
+            )
+        ],
+        responses={
+            200: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT
+        },
+        tags=['Ticketing']
+    )
+    def get(self, request):
+        """Get all tickets from vendor's events"""
+        try:
+            # Get vendor profile for current user
+            vendor = TicketVendor.objects.get(user=request.user)
+            
+            if not vendor.is_verified:
+                return Response({
+                    'error': 'Your vendor account is not verified',
+                    'state': False
+                }, status=status.HTTP_403_FORBIDDEN)
+            
+        except TicketVendor.DoesNotExist:
+            return Response({
+                'error': 'Vendor profile not found',
+                'state': False
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get query parameters
+        event_id = request.query_params.get('event_id')
+        status_filter = request.query_params.get('status', 'all')
+        search_query = request.query_params.get('search', '')
+        
+        # Base queryset - all tickets from vendor's events
+        base_tickets = IssuedTicket.objects.filter(
+            event__vendor=vendor
+        ).select_related(
+            'event', 'ticket_type', 'purchased_by', 'scanned_by'
+        ).order_by('-created_at')
+        
+        # Filter by specific event if provided
+        if event_id:
+            base_tickets = base_tickets.filter(event_id=event_id)
+        
+        # Filter by status
+        if status_filter != 'all':
+            base_tickets = base_tickets.filter(status=status_filter)
+        
+        # Search by owner name or email
+        if search_query:
+            base_tickets = base_tickets.filter(
+                models.Q(owner_name__icontains=search_query) |
+                models.Q(owner_email__icontains=search_query)
+            )
+        
+        # Calculate statistics
+        stats = {
+            'total_tickets': IssuedTicket.objects.filter(event__vendor=vendor).count(),
+            'upcoming': IssuedTicket.objects.filter(event__vendor=vendor, status='upcoming').count(),
+            'used': IssuedTicket.objects.filter(event__vendor=vendor, status='used').count(),
+            'expired': IssuedTicket.objects.filter(event__vendor=vendor, status='expired').count(),
+            'canceled': IssuedTicket.objects.filter(event__vendor=vendor, status='canceled').count(),
+        }
+        
+        # Get event breakdown
+        event_stats = []
+        vendor_events = EventInfo.objects.filter(vendor=vendor).order_by('-event_date')
+        
+        for event in vendor_events:
+            event_tickets = IssuedTicket.objects.filter(event=event)
+            event_stats.append({
+                'event_id': str(event.id),
+                'event_title': event.event_title,
+                'event_date': event.event_date.strftime('%Y-%m-%d %H:%M:%S'),
+                'total_tickets': event_tickets.count(),
+                'upcoming': event_tickets.filter(status='upcoming').count(),
+                'used': event_tickets.filter(status='used').count(),
+                'expired': event_tickets.filter(status='expired').count(),
+                'canceled': event_tickets.filter(status='canceled').count(),
+            })
+        
+        # Serialize tickets
+        from .serializers import IssuedTicketSerializer
+        serializer = IssuedTicketSerializer(base_tickets, many=True, context={'request': request})
+        
+        return Response({
+            'state': True,
+            'vendor': {
+                'id': str(vendor.id),
+                'brand_name': vendor.brand_name
+            },
+            'statistics': stats,
+            'event_breakdown': event_stats,
+            'filtered_count': base_tickets.count(),
+            'tickets': serializer.data
+        }, status=status.HTTP_200_OK)
