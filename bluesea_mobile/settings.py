@@ -280,7 +280,7 @@ CORS_ALLOWED_ORIGINS = [
     # "http://localhost:8080",
     "https://www.blueseamobile.com.ng",
     "https://blueseamobile.com.ng",
-    # "https://attemptable-chelsea-preadvisable.ngrok-free.dev",
+    "https://attemptable-chelsea-preadvisable.ngrok-free.dev",
 
     # Add other local ports if needed, like Vue (8080) or Angular (4200)
 ]
@@ -299,26 +299,26 @@ CELERY_TIMEZONE = 'UTC'
 REDIS_LOCATION = os.environ.get('REDIS_LOCATION')
 
 
-if REDIS_LOCATION:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': REDIS_LOCATION,
-            'OPTIONS': {
-                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            },
-            'KEY_PREFIX': 'bluesea',
-            'TIMEOUT': 300,
-        }
-    }
-else:
-    # Fallback to local memory cache if Redis not configured
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-            'LOCATION': 'unique-snowflake',
-        }
-    }
+# if REDIS_LOCATION:
+#     CACHES = {
+#         'default': {
+#             'BACKEND': 'django_redis.cache.RedisCache',
+#             'LOCATION': REDIS_LOCATION,
+#             'OPTIONS': {
+#                 'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+#             },
+#             'KEY_PREFIX': 'bluesea',
+#             'TIMEOUT': 300,
+#         }
+#     }
+# else:
+#     # Fallback to local memory cache if Redis not configured
+#     CACHES = {
+#         'default': {
+#             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+#             'LOCATION': 'unique-snowflake',
+#         }
+#     }
 
 # Session Configuration
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
