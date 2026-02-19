@@ -1725,6 +1725,7 @@ class VendorTicketsList(APIView):
                 'event_id': str(event.id),
                 'event_title': event.event_title,
                 'event_date': event.event_date.strftime('%Y-%m-%d %H:%M:%S'),
+                'is_approved': event.is_approved,
                 'total_tickets': event_tickets.count(),
                 'upcoming': event_tickets.filter(status='upcoming').count(),
                 'used': event_tickets.filter(status='used').count(),
