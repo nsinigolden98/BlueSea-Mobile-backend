@@ -419,16 +419,23 @@ class EventDetailView(APIView):
 
     @extend_schema(
         summary="Get event details",
-        description="Retrieve detailed information about a specific event including available ticket types",
+        description="Retrieve detailed information about a specific event. Accepts either the event UUID or slug.",
         parameters=[
-            OpenApiParameter(name='event_id', type=OpenApiTypes.UUID, location=OpenApiParameter.PATH)
+            OpenApiParameter(name='lookup', type=str, location=OpenApiParameter.PATH,
+                             description='Event UUID or slug')
         ],
         responses={200: EventInfoSerializer, 404: OpenApiTypes.OBJECT},
         tags=['Ticketing']
     )
-    def get(self, request, event_id):
-        event = get_object_or_404(EventInfo, id=event_id, is_approved=True)
-        serializer = EventInfoSerializer(event)
+    def get(self, request, lookup):
+        import uuid as uuid_lib
+        # Try UUID first, fall back to slug
+        try:
+            uuid_lib.UUID(str(lookup))
+            event = get_object_or_404(EventInfo, id=lookup, is_approved=True)
+        except (ValueError, AttributeError):
+            event = get_object_or_404(EventInfo, slug=lookup, is_approved=True)
+        serializer = EventInfoSerializer(event, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -449,8 +456,15 @@ class PurchaseTicketView(APIView):
         },
         tags=['Ticketing']
     )
-    def post(self, request, event_id):
+    def post(self, request, lookup):
         """Purchase tickets for a specific event"""
+        import uuid as uuid_lib
+        try:
+            uuid_lib.UUID(str(lookup))
+            event_id = lookup
+        except (ValueError, AttributeError):
+            event = get_object_or_404(EventInfo, slug=lookup, is_approved=True)
+            event_id = event.id
         # Pass event_id to serializer context
         serializer = PurchaseTicketSerializer(
             data=request.data, 
@@ -894,12 +908,17 @@ class ExportAttendeesView(APIView):
         responses={200: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
         tags=['Ticketing']
     )
-    def get(self, request, event_id):
+    def get(self, request, lookup):
+        import uuid as uuid_lib
         user = request.user
         export_format = request.query_params.get('format', 'csv').lower()
         
-        # Get event
-        event = get_object_or_404(EventInfo, id=event_id)
+        # Get event (supports UUID or slug)
+        try:
+            uuid_lib.UUID(str(lookup))
+            event = get_object_or_404(EventInfo, id=lookup)
+        except (ValueError, AttributeError):
+            event = get_object_or_404(EventInfo, slug=lookup)
         
         # Check permissions: must be admin or event owner
         is_owner = event.vendor.id == request.query_params.get('vendor_id')
@@ -1382,9 +1401,13 @@ class ScannerDashboardView(APIView):
         responses={200: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
         tags=['Marketplace']
     )
-    def get(self, request, event_id):
+    def get(self, request, lookup):
+        import uuid as uuid_lib
         try:
-            event = EventInfo.objects.get(id=event_id, is_approved=True)
+            uuid_lib.UUID(str(lookup))
+            event = get_object_or_404(EventInfo, id=lookup, is_approved=True)
+        except (ValueError, AttributeError):
+            event = get_object_or_404(EventInfo, slug=lookup, is_approved=True)
         except EventInfo.DoesNotExist:
             return Response({
                 'error': 'Event not found or not approved',
@@ -1555,7 +1578,8 @@ class AddEventScannerView(APIView):
         responses={201: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT},
         tags=['Marketplace']
     )
-    def post(self, request, event_id):
+    def post(self, request, lookup):
+        import uuid as uuid_lib
         user_email = request.data.get('user_email')
         
         if not user_email:
@@ -1565,7 +1589,13 @@ class AddEventScannerView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            event = EventInfo.objects.get(id=event_id)
+            uuid_lib.UUID(str(lookup))
+            event = EventInfo.objects.get(id=lookup)
+        except ValueError:
+            try:
+                event = EventInfo.objects.get(slug=lookup)
+            except EventInfo.DoesNotExist:
+                return Response({'error': 'Event not found', 'state': False}, status=status.HTTP_404_NOT_FOUND)
         except EventInfo.DoesNotExist:
             return Response({
                 'error': 'Event not found',
