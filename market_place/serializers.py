@@ -42,12 +42,12 @@ class EventInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventInfo
         fields = [
-            'id', 'vendor', 'event_title', 'event_description', 'event_date',
+            'id', 'slug', 'vendor', 'event_title', 'event_description', 'event_date',
             'event_location', 'hosted_by', 'category', 'is_free', 'event_banner',
             'ticket_image', 'is_approved', 'ticket_types', 'total_tickets', 
             'tickets_sold', 'created_at'
         ]
-        read_only_fields = ['id', 'vendor', 'is_approved', 'ticket_types', 'created_at']
+        read_only_fields = ['id', 'slug', 'vendor', 'is_approved', 'ticket_types', 'created_at']
     
     def get_total_tickets(self, obj):
         """Calculate total tickets across all types"""

@@ -5,6 +5,7 @@ from django.core.validators import MinValueValidator, FileExtensionValidator
 from django.conf import settings
 import uuid
 from django.utils import timezone
+from django.utils.text import slugify
 
 User = get_user_model()
 
@@ -157,6 +158,7 @@ class EventInfo(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     vendor = models.ForeignKey(TicketVendor, on_delete=models.CASCADE, related_name="events")
     event_title = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=300, unique=True, blank=True, db_index=True)
     hosted_by = models.CharField(max_length=255, help_text="Name of the host/organizer")
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
     event_banner = models.ImageField(upload_to='event_banners/%Y/%m/%d/')
@@ -172,6 +174,17 @@ class EventInfo(models.Model):
     is_free = models.BooleanField(default=False)
     is_approved = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def _generate_slug(self):
+        """Generate a unique slug from event_title"""
+        base_slug = slugify(self.event_title)
+        # short_id = str(self.id).replace('-', '')[:8]
+        return f"{base_slug}"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = self._generate_slug()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.event_title
