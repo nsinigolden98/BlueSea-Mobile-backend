@@ -71,12 +71,11 @@ JAZZMIN_SETTINGS = {
         {'name': 'Transactions', 'model': 'transactions.WalletTransaction'},
         {'name': 'Events', 'model': 'market_place.EventInfo'},
         {'name': 'Wallets', 'model': 'wallet.Wallet'},
-    ],
-
-    'usermenu_links': [
-        {'name': 'View Site', 'url': '/', 'new_window': True},
         {'name': 'Logout', 'url': 'admin:logout'},
     ],
+
+    'usermenu_links': [],
+    'show_avatar': False,
 
     'show_sidebar': True,
     'navigation_expanded': True,
