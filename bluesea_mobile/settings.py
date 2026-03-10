@@ -74,8 +74,11 @@ JAZZMIN_SETTINGS = {
         {'name': 'Logout', 'url': 'admin:logout'},
     ],
 
-    'usermenu_links': [],
-    'show_avatar': False,
+    'usermenu_links': [
+        {'name': 'My Profile', 'url': '/admin/accounts/profile/', 'icon': 'fas fa-user'},
+        {'name': 'Logout', 'url': 'admin:logout', 'icon': 'fas fa-sign-out-alt'},
+    ],
+    'show_avatar': True,
 
     'show_sidebar': True,
     'navigation_expanded': True,
