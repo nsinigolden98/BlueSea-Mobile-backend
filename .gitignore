@@ -31,3 +31,6 @@ venv/
 
 google.html
 /media/
+
+# Static files
+/staticfiles/

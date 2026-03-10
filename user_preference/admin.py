@@ -1,3 +1,8 @@
 from django.contrib import admin
+from .models import UpdateUserModel
 
-# Register your models here.
+
+@admin.register(UpdateUserModel)
+class UpdateUserModelAdmin(admin.ModelAdmin):
+    list_display = ['user', 'image']
+    search_fields = ['user__email']

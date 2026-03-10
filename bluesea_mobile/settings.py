@@ -35,17 +35,17 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = os.environ.get('DEBUG') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 
 # CSRF and CORS
 CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
 
-SECURE_SSL_REDIRECT = not DEBUG
+SECURE_SSL_REDIRECT = DEBUG
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = DEBUG
+CSRF_COOKIE_SECURE = DEBUG
 
 
 INTERNAL_IPS = [
@@ -56,7 +56,146 @@ INTERNAL_IPS = [
 
 # Application definition
 
+JAZZMIN_SETTINGS = {
+    'site_title': 'BlueSea Admin',
+    'site_header': 'BlueseaMobile',
+    'site_brand': 'BlueseaMobile',
+    'site_logo': None,
+    'site_icon': None,
+    'welcome_sign': 'Welcome to the BlueSea Admin Portal',
+    'copyright': 'BlueSea Mobile Technologies',
+
+    'topmenu_links': [
+        {'name': 'Dashboard', 'url': 'admin:index', 'permissions': ['auth.view_user']},
+        {'name': 'Users', 'model': 'accounts.Profile'},
+        {'name': 'Transactions', 'model': 'transactions.WalletTransaction'},
+        {'name': 'Events', 'model': 'market_place.EventInfo'},
+        {'name': 'Wallets', 'model': 'wallet.Wallet'},
+        {'name': 'Logout', 'url': 'admin:logout'},
+    ],
+
+    'usermenu_links': [
+        {'name': 'My Profile', 'url': '/admin/accounts/profile/', 'icon': 'fas fa-user'},
+        {'name': 'Logout', 'url': 'admin:logout', 'icon': 'fas fa-sign-out-alt'},
+    ],
+    'show_avatar': True,
+
+    'show_sidebar': True,
+    'navigation_expanded': True,
+    'hide_apps': [],
+    'hide_models': [],
+
+    'order_with_respect_to': [
+        'accounts',
+        'wallet',
+        'transactions',
+        'payments',
+        'market_place',
+        'group_payment',
+        'bonus',
+        'loyalty_market',
+        'notifications',
+        'autotopup',
+        'user_preference',
+        'support',
+        'auth',
+        'django_celery_beat',
+    ],
+    'icons': {
+        'auth': 'fas fa-users-cog',
+        'auth.group': 'fas fa-layer-group',
+        'accounts.Profile': 'fas fa-user-circle',
+        'accounts.EmailVerification': 'fas fa-envelope-open-text',
+        'accounts.ResetPassword': 'fas fa-key',
+        'wallet.Wallet': 'fas fa-wallet',
+        'transactions.WalletTransaction': 'fas fa-exchange-alt',
+        'transactions.FundWallet': 'fas fa-arrow-circle-down',
+        'transactions.Withdraw': 'fas fa-arrow-circle-up',
+        'transactions.AccountName': 'fas fa-university',
+        'payments.AirtimeTopUp': 'fas fa-phone',
+        'payments.MTNDataTopUp': 'fas fa-wifi',
+        'payments.AirtelDataTopUp': 'fas fa-wifi',
+        'payments.GloDataTopUp': 'fas fa-wifi',
+        'payments.EtisalatDataTopUp': 'fas fa-wifi',
+        'payments.DSTVPayment': 'fas fa-tv',
+        'payments.GOTVPayment': 'fas fa-tv',
+        'payments.StartimesPayment': 'fas fa-tv',
+        'payments.ElectricityPayment': 'fas fa-bolt',
+        'payments.WAECRegitration': 'fas fa-graduation-cap',
+        'payments.WAECResultChecker': 'fas fa-graduation-cap',
+        'payments.JAMBRegistration': 'fas fa-graduation-cap',
+        'payments.Airtime2Cash': 'fas fa-money-bill-wave',
+        'market_place.TicketVendor': 'fas fa-store',
+        'market_place.VendorKYC': 'fas fa-id-card',
+        'market_place.EventInfo': 'fas fa-calendar-alt',
+        'market_place.TicketType': 'fas fa-ticket-alt',
+        'market_place.IssuedTicket': 'fas fa-qrcode',
+        'market_place.EventScanner': 'fas fa-barcode',
+        'group_payment.Group': 'fas fa-users',
+        'group_payment.GroupMember': 'fas fa-user-friends',
+        'bonus.BonusPoint': 'fas fa-coins',
+        'bonus.BonusHistory': 'fas fa-history',
+        'bonus.BonusCampaign': 'fas fa-bullhorn',
+        'bonus.Referral': 'fas fa-handshake',
+        'loyalty_market.Reward': 'fas fa-gift',
+        'loyalty_market.RedemptionTransaction': 'fas fa-receipt',
+        'notifications.Notification': 'fas fa-bell',
+        'autotopup.AutoTopUp': 'fas fa-sync-alt',
+        'autotopup.AutoTopUpHistory': 'fas fa-clock',
+        'django_celery_beat.PeriodicTask': 'fas fa-tasks',
+        'django_celery_beat.CrontabSchedule': 'fas fa-calendar-check',
+        'django_celery_beat.IntervalSchedule': 'fas fa-stopwatch',
+    },
+    'default_icon_parents': 'fas fa-folder',
+    'default_icon_children': 'fas fa-circle',
+
+    'related_modal_active': True,
+    'custom_css': None,
+    'custom_js': None,
+    'use_google_fonts_cdn': True,
+    'show_ui_builder': False,
+    'changeform_format': 'horizontal_tabs',
+    'changeform_format_overrides': {
+        'auth.user': 'collapsible',
+        'auth.group': 'vertical_tabs',
+    },
+}
+
+JAZZMIN_UI_TWEAKS = {
+    'navbar_small_text': False,
+    'footer_small_text': False,
+    'body_small_text': False,
+    'brand_small_text': False,
+    'brand_colour': 'navbar-primary',
+    'accent': 'accent-primary',
+    'navbar': 'navbar-dark',
+    'no_navbar_border': True,
+    'navbar_fixed': True,
+    'layout_boxed': False,
+    'footer_fixed': False,
+    'sidebar_fixed': True,
+    'sidebar': 'sidebar-dark-primary',
+    'sidebar_nav_small_text': False,
+    'sidebar_disable_expand': False,
+    'sidebar_nav_child_indent': True,
+    'sidebar_nav_compact_style': False,
+    'sidebar_nav_legacy_style': False,
+    'sidebar_nav_flat_style': False,
+    'theme': 'default',
+    'default_theme_mode': 'light',
+    'button_classes': {
+        'primary': 'btn-primary',
+        'secondary': 'btn-outline-secondary',
+        'info': 'btn-info',
+        'warning': 'btn-warning',
+        'danger': 'btn-danger',
+        'success': 'btn-success',
+    },
+    'actions_sticky_top': True,
+}
+
 INSTALLED_APPS = [
+    'jazzmin',
     'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -95,6 +234,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.gzip.GZipMiddleware',
@@ -188,11 +328,11 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=360),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1020)
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=24),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7)
 }
 
-LOCAL_URL = "http://127.0.0.1:8000"
+LOCAL_URL = os.environ.get('LOCAL_URL')
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
@@ -211,6 +351,16 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -273,19 +423,10 @@ LOGGING = {
 # Set to True only if you are okay with ANY domain accessing your backend 
 # (not recommended for production).
 
-CORS_ALLOW_ALL_ORIGINS = False  
+CORS_ALLOW_ALL_ORIGINS = False
 
 # Use the specific URL/port of your frontend development server
-CORS_ALLOWED_ORIGINS = [
-    "http://127.0.0.1:8000",
-    "http://127.0.0.1:5500",
-    # "http://localhost:8080",
-    "https://www.blueseamobile.com.ng",
-    "https://blueseamobile.com.ng",
-    # "https://attemptable-chelsea-preadvisable.ngrok-free.dev",
-
-    # Add other local ports if needed, like Vue (8080) or Angular (4200)
-]
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
 
 
 # celery settings
