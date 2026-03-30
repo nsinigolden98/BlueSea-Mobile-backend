@@ -34,3 +34,9 @@ google.html
 media
 
 env
+=======
+/media/
+
+# Static files
+/staticfiles/
+

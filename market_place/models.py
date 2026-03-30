@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, FileExtensionValidator
 from django.conf import settings
 import uuid
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -79,13 +80,37 @@ class TicketVendor(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return self.brand_name
 
     class Meta:
         verbose_name = "Ticket Vendor"
         verbose_name_plural = "Ticket Vendors"
         ordering = ['-created_at']
+
+    def __str__(self):
+        return self.brand_name
+    
+    def approve(self):
+        self.is_verified = True
+        self.verification_status = 'approved'
+        self.rejection_reason = None
+        self.save()
+    
+    def reject(self, reason):
+        self.is_verified = False
+        self.verification_status = 'rejected'
+        self.rejection_reason = reason
+        self.save()
+    
+    def save(self, *args, **kwargs):
+        # Sync verification_status with is_verified
+        if self.is_verified:
+            self.verification_status = 'approved'
+        elif self.verification_status == 'rejected':
+            self.is_verified = False
+        elif self.verification_status == 'pending':
+            self.is_verified = False
+        
+        super().save(*args, **kwargs)
 
 
 class VendorKYC(models.Model):
@@ -161,30 +186,98 @@ class TicketType(models.Model):
     name = models.CharField(max_length=255, default='General Admission')  # e.g Regular, VIP, General Admission
     price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity_available = models.IntegerField()
+    description = models.TextField(null=True, blank=True, help_text="Optional ticket tier description")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.event.event_title} - {self.name}"
+    
+    class Meta:
+        ordering = ['price']
 
 
 class IssuedTicket(models.Model):
     STATUS_CHOICES = [
-        ('unused', 'Unused'),
+        ('upcoming', 'Upcoming'),
         ('used', 'Used'),
+        ('expired', 'Expired'),
+        ('canceled', 'Canceled'),
     ]
-
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    ticket_type = models.ForeignKey(TicketType, on_delete=models.CASCADE, related_name="issued_tickets")
-    event = models.ForeignKey(EventInfo, on_delete=models.CASCADE, related_name="issued_tickets")
-    owner_name = models.CharField(max_length=255)
-    owner_email = models.EmailField()
-    purchased_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="purchased_tickets")
-    qr_code = models.CharField(max_length=255, unique=True)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='unused')
+    ticket_type = models.ForeignKey(TicketType, on_delete=models.CASCADE, related_name='issued_tickets', null=True, blank=True)
+    event = models.ForeignKey(EventInfo, on_delete=models.CASCADE, related_name='issued_tickets')
+    owner_name = models.CharField(max_length=255, help_text="Current owner's name")
+    owner_email = models.EmailField(help_text="Current owner's email")
+    purchased_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='purchased_tickets', help_text="Original purchaser")
+    qr_code = models.CharField(max_length=500, unique=True)
+    qr_code_image = models.ImageField(upload_to='ticket_qr_codes/', null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='upcoming')
+    
+    # Transfer tracking
+    transferred_to = models.EmailField(null=True, blank=True, help_text="Email of person this was transferred to (if any)")
+    transferred_at = models.DateTimeField(null=True, blank=True)
+    transfer_count = models.IntegerField(default=0, help_text="Number of times this ticket has been transferred")
+    
+    # Cancellation tracking
+    canceled_at = models.DateTimeField(null=True, blank=True)
+    refund_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    cancellation_reason = models.TextField(null=True, blank=True)
+    
+    # Scan tracking
+    scanned_at = models.DateTimeField(null=True, blank=True)
+    scanned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='scanned_tickets')
+    
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
 
     def __str__(self):
-        return f"Ticket for {self.owner_name} - {self.event.event_title}"
+        ticket_type_name = self.ticket_type.name if self.ticket_type else "Free Entry"
+        return f"{self.owner_name} - {self.event.event_title} ({ticket_type_name})"
+    
+    def can_transfer(self):
+        """Check if ticket can be transferred"""
+        if self.status != 'upcoming':
+            return False, "Only upcoming tickets can be transferred"
+        
+        # Max 3 transfers per ticket
+        if self.transfer_count >= 3:
+            return False, "Maximum transfer limit (3) reached"
+        
+        # Check if event is within 6 hours
+        time_until_event = self.event.event_date - timezone.now()
+        if time_until_event.total_seconds() < 6 * 3600:
+            return False, "Cannot transfer tickets within 6 hours of event start"
+        
+        return True, "Transfer allowed"
+    
+    def can_cancel(self):
+        """Check if ticket can be canceled and calculate refund"""
+        # Only upcoming tickets can be canceled
+        if self.status not in ['upcoming']:
+            return False, 0, "Only upcoming tickets can be canceled"
+        
+        # Free tickets cannot be canceled (no refund)
+        if not self.ticket_type or self.event.is_free:
+            return False, 0, "Free tickets cannot be canceled"
+        
+        # Calculate days until event
+        days_until_event = (self.event.event_date - timezone.now()).days
+        
+        # Determine refund percentage based on time until event
+        if days_until_event > 7:
+            refund_percentage = 100
+        elif days_until_event >= 3:
+            refund_percentage = 50
+        else:
+            return False, 0, "No refunds within 3 days of event"
+        
+        # Calculate refund amount
+        refund = (self.ticket_type.price * refund_percentage) / 100
+        return True, refund, f"{refund_percentage}% refund"
 
 
 class EventScanner(models.Model):
