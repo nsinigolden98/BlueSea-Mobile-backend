@@ -18,82 +18,133 @@ class CreateGroupView(APIView):
         responses={201: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
         examples=[
             OpenApiExample(
-                'Create Group',
+                "Create Group",
                 value={
                     "name": "Family Group",
-                    "description": "Group for family bill payments"
+                    "description": "Group for family bill payments",
                 },
-                request_only=True
+                request_only=True,
             )
         ],
-        tags=['Group Payments']
+        tags=["Group Payments"],
     )
     def post(self, request):
-        transaction_pin = request.data.get('transaction_pin')
+        transaction_pin = request.data.get("transaction_pin")
 
         if not transaction_pin:
-            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Transaction PIN is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if not request.user.pin_is_set:
-            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Please set your transaction PIN first"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if not request.user.verify_transaction_pin(transaction_pin):
-            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid transaction PIN"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
         try:
-            name = request.data.get('name')
-            description = request.data.get('description', '')
-            service_type =request.data.get('service_type')
-            sub_number =request.data.get('sub_number')
-            target_amount =request.data.get('target_amount')
-            invite_members =request.data.get('invite_members')
-            plan =request.data.get('plan')
-            plan_type =request.data.get('plan_type','')
-            join_code =request.data.get('join_code')
+            name = request.data.get("name")
+            description = request.data.get("description", "")
+            service_type = request.data.get("service_type")
+            sub_number = request.data.get("sub_number")
+            target_amount = request.data.get("target_amount")
+            invite_members = request.data.get("invite_members", "")
+            plan = request.data.get("plan")
+            plan_type = request.data.get("plan_type", "")
+            deadline = request.data.get("deadline")
 
             if not name:
                 return Response(
-                    {'error': 'Group name is required'},
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"error": "Group name is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
+            if not service_type:
+                return Response(
+                    {"error": "Service type is required (airtime, data, or lightbill)"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Validate invite members - check if emails exist in database
+            from accounts.models import Profile
+
+            invalid_users = []
+            valid_emails = []
+
+            if invite_members:
+                email_list = [
+                    email.strip()
+                    for email in invite_members.split(",")
+                    if email.strip()
+                ]
+
+                for email in email_list:
+                    if Profile.objects.filter(email__iexact=email).exists():
+                        valid_emails.append(email)
+                    else:
+                        invalid_users.append(email)
+
+                if invalid_users:
+                    return Response(
+                        {
+                            "error": "Some users not found",
+                            "invalid_users": invalid_users,
+                            "valid_users": valid_emails,
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            # Create group
             group = Group.objects.create(
                 name=name,
                 description=description,
                 service_type=service_type,
-                sub_number= sub_number,
-                target_amount= target_amount,
-                invite_members= invite_members,
-                plan= plan,
-                plan_type= plan_type,
-                join_code = join_code,
-                created_by=request.user
+                sub_number=sub_number,
+                target_amount=target_amount,
+                invite_members=invite_members,
+                plan=plan,
+                plan_type=plan_type,
+                created_by=request.user,
+                status="pending",
             )
 
             # Add creator as owner
             GroupMember.objects.create(
                 group=group,
                 user=request.user,
-                role='owner'
+                role="owner",
+                payment_status="paid",
+                paid_amount=target_amount,
             )
 
-            return Response({
-                'success': True,
-                'message': 'Group created successfully',
-                'group': {
-                    'id': group.id,
-                    'name': group.name,
-                    'description': group.description,
-                    'created_at': group.created_at
-                }
-            }, status=status.HTTP_201_CREATED)
+            return Response(
+                {
+                    "success": True,
+                    "message": "Group created successfully",
+                    "group": {
+                        "id": str(group.id),
+                        "name": group.name,
+                        "description": group.description,
+                        "service_type": group.service_type,
+                        "target_amount": group.target_amount,
+                        "status": group.status,
+                        "join_code": group.join_code,
+                        "created_at": group.created_at.isoformat(),
+                    },
+                },
+                status=status.HTTP_201_CREATED,
+            )
 
         except Exception as e:
-           # print(str(e))
             return Response(
-                {'error': str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
 
 
 class AddGroupMemberView(APIView):
@@ -106,71 +157,70 @@ class AddGroupMemberView(APIView):
         responses={200: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT},
         examples=[
             OpenApiExample(
-                'Add Member',
+                "Add Member",
                 value={
                     "group_id": 1,
                     "user_email": "member@example.com",
-                    "role": "member"
+                    "role": "member",
                 },
-                request_only=True
+                request_only=True,
             )
         ],
-        tags=['Group Payments']
+        tags=["Group Payments"],
     )
     def post(self, request):
         try:
-            group_id = request.data.get('group_id')
-            user_email = request.data.get('user_email')
-            role = request.data.get('role', 'member')
+            group_id = request.data.get("group_id")
+            user_email = request.data.get("user_email")
+            role = request.data.get("role", "member")
 
             group = get_object_or_404(Group, id=group_id)
 
             # Check if requester is admin/owner
             requester_member = GroupMember.objects.filter(
-                group=group,
-                user=request.user,
-                role__in=['owner', 'admin']
+                group=group, user=request.user, role__in=["owner", "admin"]
             ).first()
 
             if not requester_member:
                 return Response(
-                    {'error': 'Only group admins can add members'},
-                    status=status.HTTP_403_FORBIDDEN
+                    {"error": "Only group admins can add members"},
+                    status=status.HTTP_403_FORBIDDEN,
                 )
 
             # Get user to add
             from accounts.models import Profile
+
             user_to_add = get_object_or_404(Profile, email=user_email)
 
             # Check if already a member
             if GroupMember.objects.filter(group=group, user=user_to_add).exists():
                 return Response(
-                    {'error': 'User is already a member of this group'},
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"error": "User is already a member of this group"},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
             # Add member
             member = GroupMember.objects.create(
-                group=group,
-                user=user_to_add,
-                role=role
+                group=group, user=user_to_add, role=role
             )
 
-            return Response({
-                'success': True,
-                'message': f'{user_to_add.email} added to group',
-                'member': {
-                    'id': member.id,
-                    'email': user_to_add.email,
-                    'role': member.role,
-                    'joined_at': member.joined_at
-                }
-            }, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "success": True,
+                    "message": f"{user_to_add.email} added to group",
+                    "member": {
+                        "id": member.id,
+                        "email": user_to_add.email,
+                        "role": member.role,
+                        "joined_at": member.joined_at,
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
 
         except Exception as e:
             return Response(
-                {'error': str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 
@@ -181,36 +231,52 @@ class ListMyGroupsView(APIView):
         summary="List my groups",
         description="Get all groups the authenticated user belongs to",
         responses={200: OpenApiTypes.OBJECT},
-        tags=['Group Payments']
+        tags=["Group Payments"],
     )
     def get(self, request):
         try:
-            memberships = GroupMember.objects.filter(user=request.user).select_related('group')
-            
+            memberships = GroupMember.objects.filter(user=request.user).select_related(
+                "group"
+            )
+
             groups = []
             for membership in memberships:
                 group = membership.group
                 member_count = GroupMember.objects.filter(group=group).count()
-                
-                groups.append({
-                    'id': group.id,
-                    'name': group.name,
-                    'description': group.description,
-                    'my_role': membership.role,
-                    'member_count': member_count,
-                    'created_at': group.created_at
-                })
+                paid_members = GroupMember.objects.filter(
+                    group=group, payment_status="paid"
+                ).count()
+                pending_members = GroupMember.objects.filter(
+                    group=group, payment_status="pending"
+                ).count()
 
-            return Response({
-                'success': True,
-                'count': len(groups),
-                'groups': groups
-            }, status=status.HTTP_200_OK)
+                groups.append(
+                    {
+                        "id": str(group.id),
+                        "name": group.name,
+                        "description": group.description,
+                        "service_type": group.service_type,
+                        "target_amount": group.target_amount,
+                        "current_amount": group.current_amount,
+                        "status": group.status,
+                        "my_role": membership.role,
+                        "my_payment_status": membership.payment_status,
+                        "member_count": member_count,
+                        "paid_members": paid_members,
+                        "pending_members": pending_members,
+                        "join_code": group.join_code,
+                        "created_at": group.created_at.isoformat(),
+                    }
+                )
+
+            return Response(
+                {"success": True, "count": len(groups), "groups": groups},
+                status=status.HTTP_200_OK,
+            )
 
         except Exception as e:
             return Response(
-                {'error': str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 
@@ -221,7 +287,7 @@ class GroupDetailsView(APIView):
         summary="Get group details",
         description="Get detailed information about a group including all members",
         responses={200: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
-        tags=['Group Payments']
+        tags=["Group Payments"],
     )
     def get(self, request, group_id):
         try:
@@ -229,124 +295,288 @@ class GroupDetailsView(APIView):
 
             # Check if user is a member
             is_member = GroupMember.objects.filter(
-                group=group,
-                user=request.user
+                group=group, user=request.user
             ).exists()
 
             if not is_member:
                 return Response(
-                    {'error': 'You are not a member of this group'},
-                    status=status.HTTP_403_FORBIDDEN
+                    {"error": "You are not a member of this group"},
+                    status=status.HTTP_403_FORBIDDEN,
                 )
 
             # Get all members
-            members = GroupMember.objects.filter(group=group).select_related('user')
+            members = GroupMember.objects.filter(group=group).select_related("user")
             member_list = []
-            
-            for member in members:
-                member_list.append({
-                    'id': member.id,
-                    'email': member.user.email,
-                    'name': f"{member.user.surname} {member.user.other_names}",
-                    'role': member.role,
-                    'joined_at': member.joined_at
-                })
 
-            return Response({
-                'success': True,
-                'group': {
-                    'id': group.id,
-                    'name': group.name,
-                    'description': group.description,
-                    'created_at': group.created_at,
-                    'member_count': len(member_list),
-                    'members': member_list
-                }
-            }, status=status.HTTP_200_OK)
+            for member in members:
+                member_list.append(
+                    {
+                        "id": member.id,
+                        "email": member.user.email,
+                        "name": f"{member.user.surname} {member.user.other_names}",
+                        "role": member.role,
+                        "joined_at": member.joined_at,
+                    }
+                )
+
+            return Response(
+                {
+                    "success": True,
+                    "group": {
+                        "id": group.id,
+                        "name": group.name,
+                        "description": group.description,
+                        "created_at": group.created_at,
+                        "member_count": len(member_list),
+                        "members": member_list,
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
 
         except Exception as e:
             return Response(
-                {'error': str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-            
+
+
 class JoinGroupView(APIView):
-    permission_class =[IsAuthenticated]
-    
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
-        
-        transaction_pin = request.data.get('transaction_pin')
+        transaction_pin = request.data.get("transaction_pin")
 
         if not transaction_pin:
-            return Response({'error': 'Transaction PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Transaction PIN is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if not request.user.pin_is_set:
-            return Response({'error': 'Please set your transaction PIN first'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Please set your transaction PIN first"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if not request.user.verify_transaction_pin(transaction_pin):
-            return Response({'error': 'Invalid transaction PIN'}, status=status.HTTP_400_BAD_REQUEST)
-            
+            return Response(
+                {"error": "Invalid transaction PIN"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
         try:
             user_email = request.user.email
-            join_code = request.data.get('join_code')
-            
-            check_membership = Group.objects.filter(join_code=join_code, invite_memebers__iexact = user_email, active= True).exists()
-            
+            join_code = request.data.get("join_code")
+
+            if not join_code:
+                return Response(
+                    {"error": "Join code is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Find group by join code
+            try:
+                group_obj = Group.objects.get(join_code__iexact=join_code, active=True)
+            except Group.DoesNotExist:
+                return Response(
+                    {"error": "Invalid join code"}, status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Check if already a member
+            from accounts.models import Profile
+
+            user_profile = Profile.objects.get(email=user_email)
+
+            if GroupMember.objects.filter(group=group_obj, user=user_profile).exists():
+                return Response(
+                    {"error": "You are already a member of this group"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Add member
+            member = GroupMember.objects.create(
+                group=group_obj, user=user_profile, role="member"
+            )
+
+            return Response(
+                {
+                    "success": True,
+                    "message": f"Successfully joined group '{group_obj.name}'",
+                    "group": {
+                        "id": str(group_obj.id),
+                        "name": group_obj.name,
+                        "join_code": group_obj.join_code,
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except Profile.DoesNotExist:
+            return Response(
+                {"error": "User profile not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        if not request.user.pin_is_set:
+            return Response(
+                {"error": "Please set your transaction PIN first"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response(
+                {"error": "Invalid transaction PIN"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user_email = request.user.email
+            join_code = request.data.get("join_code")
+
+            check_membership = Group.objects.filter(
+                join_code=join_code, invite_memebers__iexact=user_email, active=True
+            ).exists()
+
             if check_membership:
-                
-                group_obj = Group.objects.get(join_code=join_code, invite_members__iexact= user_email, active=True )
-                
-                group_id= group_obj.id
-                
-                role = request.data.get('role', 'member')
-    
+                group_obj = Group.objects.get(
+                    join_code=join_code, invite_members__iexact=user_email, active=True
+                )
+
+                group_id = group_obj.id
+
+                role = request.data.get("role", "member")
+
                 group = get_object_or_404(Group, id=group_id)
-    
+
                 # Get user to add
                 from accounts.models import Profile
+
                 user_to_add = get_object_or_404(Profile, email=user_email)
-    
+
                 # Check if already a member
                 if GroupMember.objects.filter(group=group, user=user_to_add).exists():
                     return Response(
-                        {'error': 'User is already a member of this group'},
-                        status=status.HTTP_400_BAD_REQUEST
+                        {"error": "User is already a member of this group"},
+                        status=status.HTTP_400_BAD_REQUEST,
                     )
-    
+
                 # Add member
                 member = GroupMember.objects.create(
-                    group=group,
-                    user=user_to_add,
-                    role=role
+                    group=group, user=user_to_add, role=role
                 )
-    
-                return Response({
-                    'success': True,
-                    'message': f'{user_to_add.email} added to group',
-                    'member': {
-                        'id': member.id,
-                        'email': user_to_add.email,
-                        'role': member.role,
-                        'joined_at': member.joined_at
-                    }
-                }, status=status.HTTP_200_OK)
 
-                
+                return Response(
+                    {
+                        "success": True,
+                        "message": f"{user_to_add.email} added to group",
+                        "member": {
+                            "id": member.id,
+                            "email": user_to_add.email,
+                            "role": member.role,
+                            "joined_at": member.joined_at,
+                        },
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
             else:
-                return Response({'success':False,
-                    'message': 'Invalid Code Or Not Added To Group Payment'})
-                    
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Invalid Code Or Not Added To Group Payment",
+                    }
+                )
+
         except Exception as e:
             return Response(
-                {'error': str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-# this is the view for only the group admin to delete a group payment        
-class DeleteGroupView(APIView):
-    pass
- 
- # This is the view for  group members to leave a group if they are not interested again
+
+
 class LeaveGroupView(APIView):
-    pass
-        
-        
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            group_id = request.data.get("group_id")
+
+            if not group_id:
+                return Response(
+                    {"error": "Group ID is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            group = get_object_or_404(Group, id=group_id)
+
+            # Check if user is a member
+            member = GroupMember.objects.filter(group=group, user=request.user).first()
+
+            if not member:
+                return Response(
+                    {"error": "You are not a member of this group"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if member.role == "owner":
+                return Response(
+                    {
+                        "error": "Owner cannot leave the group. Cancel the group instead."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Delete member
+            member.delete()
+
+            return Response(
+                {"success": True, "message": "Successfully left the group"},
+                status=status.HTTP_200_OK,
+            )
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class CancelGroupView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            group_id = request.data.get("group_id")
+
+            if not group_id:
+                return Response(
+                    {"error": "Group ID is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            group = get_object_or_404(Group, id=group_id)
+
+            # Check if user is owner
+            member = GroupMember.objects.filter(
+                group=group, user=request.user, role="owner"
+            ).first()
+
+            if not member:
+                return Response(
+                    {"error": "Only group owner can cancel the group"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            # Cancel group
+            group.status = "canceled"
+            group.active = False
+            group.save()
+
+            return Response(
+                {"success": True, "message": "Group payment canceled successfully"},
+                status=status.HTTP_200_OK,
+            )
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
