@@ -67,6 +67,70 @@ import uuid
 
 logger = logging.getLogger(__name__)
 
+
+def get_payment_description(
+    payment_type,
+    network=None,
+    phone=None,
+    plan=None,
+    amount=0,
+    meter_number=None,
+    biller_name=None,
+    meter_type=None,
+    exam_type=None,
+    disco=None,
+):
+    phone_last4 = phone[-4:] if phone and len(phone) >= 4 else phone
+
+    descriptions = {
+        "airtime": {
+            "full": f"AIRTIME: {network.upper() if network else ''} {phone_last4} - ₦{amount}",
+            "short": f"Airtime - {network.upper() if network else ''}",
+        },
+        "data": {
+            "full": f"DATA: {network.upper() if network else ''} {phone_last4} - {plan} - ₦{amount}",
+            "short": f"Data - {network.upper() if network else ''}",
+        },
+        "dstv": {
+            "full": f"DSTV: {phone_last4} - {plan} - ₦{amount}",
+            "short": "DSTV",
+        },
+        "gotv": {
+            "full": f"GOTV: {phone_last4} - {plan} - ₦{amount}",
+            "short": "GOTV",
+        },
+        "startimes": {
+            "full": f"STARTIMES: {phone_last4} - {plan} - ₦{amount}",
+            "short": "Startimes",
+        },
+        "showmax": {
+            "full": f"SHOWMAX: {phone_last4} - {plan} - ₦{amount}",
+            "short": "Showmax",
+        },
+        "electricity": {
+            "full": f"ELECTRICITY: {biller_name.replace('-', ' ').title() if biller_name else ''} {meter_type.capitalize() if meter_type else ''} {meter_number[-4:] if meter_number else ''} - ₦{amount}",
+            "short": f"Electricity - {biller_name.replace('-', ' ').title() if biller_name else ''}",
+        },
+        "waec-registration": {
+            "full": f"WAEC Registration - ₦{amount}",
+            "short": "WAEC Registration",
+        },
+        "waec-result": {
+            "full": f"WAEC Result Checker - ₦{amount}",
+            "short": "WAEC Result",
+        },
+        "jamb": {
+            "full": f"JAMB {'UTME Mock' if exam_type == 'utme-mock' else 'UTME'} - ₦{amount}",
+            "short": "JAMB Registration",
+        },
+    }
+
+    return descriptions.get(
+        payment_type,
+        {"full": f"{payment_type.title()} - ₦{amount}", "short": payment_type.title()},
+    )
+
+
 VTU_AFRICA_APIKEY = ""
 
 
@@ -696,9 +760,17 @@ class AirtimeTopUpViews(APIView):
                         buy_airtime_response.get("response_description")
                         == "TRANSACTION SUCCESSFUL"
                     ):
+                        phone = serializer.data.get("phone_number", "")
+                        network = serializer.data.get("network", "")
+                        desc = get_payment_description(
+                            payment_type="airtime",
+                            network=network,
+                            phone=phone,
+                            amount=amount,
+                        )
                         user_wallet.debit(
                             amount=amount,
-                            description="Airtime Purchase",
+                            description=desc["full"],
                             reference=request_id,
                         )
 
@@ -812,9 +884,18 @@ class MTNDataTopUpViews(APIView):
                         subscription_response.get("response_description")
                         == "TRANSACTION SUCCESSFUL"
                     ):
+                        phone = serializer.data.get("billersCode", "")
+                        plan = serializer.data.get("plan", "")
+                        desc = get_payment_description(
+                            payment_type="data",
+                            network="MTN",
+                            phone=phone,
+                            plan=plan,
+                            amount=amount,
+                        )
                         user_wallet.debit(
                             amount=amount,
-                            description="MTN Data Subscription",
+                            description=desc["full"],
                             reference=request_id,
                         )
 
@@ -927,9 +1008,18 @@ class AirtelDataTopUpViews(APIView):
                         subscription_response.get("response_description")
                         == "TRANSACTION SUCCESSFUL"
                     ):
+                        phone = serializer.data.get("billersCode", "")
+                        plan = serializer.data.get("plan", "")
+                        desc = get_payment_description(
+                            payment_type="data",
+                            network="Airtel",
+                            phone=phone,
+                            plan=plan,
+                            amount=amount,
+                        )
                         user_wallet.debit(
                             amount=amount,
-                            description="Airtel Data Subscription",
+                            description=desc["full"],
                             reference=request_id,
                         )
 
@@ -1039,9 +1129,18 @@ class EtisalatDataTopUpViews(APIView):
                         subscription_response.get("response_description")
                         == "TRANSACTION SUCCESSFUL"
                     ):
+                        phone = serializer.data.get("billersCode", "")
+                        plan = serializer.data.get("plan", "")
+                        desc = get_payment_description(
+                            payment_type="data",
+                            network="9Mobile",
+                            phone=phone,
+                            plan=plan,
+                            amount=amount,
+                        )
                         user_wallet.debit(
                             amount=amount,
-                            description="9Mobile Data Subscription",
+                            description=desc["full"],
                             reference=request_id,
                         )
 
@@ -1152,9 +1251,18 @@ class GloDataTopUpViews(APIView):
                         subscription_response.get("response_description")
                         == "TRANSACTION SUCCESSFUL"
                     ):
+                        phone = serializer.data.get("billersCode", "")
+                        plan = serializer.data.get("plan", "")
+                        desc = get_payment_description(
+                            payment_type="data",
+                            network="Glo",
+                            phone=phone,
+                            plan=plan,
+                            amount=amount,
+                        )
                         user_wallet.debit(
                             amount=amount,
-                            description=" Glo Data Subscription",
+                            description=desc["full"],
                             reference=request_id,
                         )
 
@@ -1267,9 +1375,17 @@ class DSTVPaymentViews(APIView):
                         subscription_response.get("response_description")
                         == "TRANSACTION SUCCESSFUL"
                     ):
+                        phone = serializer.data.get("billersCode", "")
+                        plan = serializer.data.get("dstv_plan", "")
+                        desc = get_payment_description(
+                            payment_type="dstv",
+                            phone=phone,
+                            plan=plan,
+                            amount=amount,
+                        )
                         user_wallet.debit(
                             amount=amount,
-                            description="DSTV Subscription",
+                            description=desc["full"],
                             reference=request_id,
                         )
 
@@ -1383,9 +1499,17 @@ class GOTVPaymentViews(APIView):
                         subscription_response.get("response_description")
                         == "TRANSACTION SUCCESSFUL"
                     ):
+                        phone = serializer.data.get("billersCode", "")
+                        plan = serializer.data.get("gotv_plan", "")
+                        desc = get_payment_description(
+                            payment_type="gotv",
+                            phone=phone,
+                            plan=plan,
+                            amount=amount,
+                        )
                         user_wallet.debit(
                             amount=amount,
-                            description="GOTV Subscription",
+                            description=desc["full"],
                             reference=request_id,
                         )
 
@@ -1501,7 +1625,19 @@ class StartimesPaymentViews(APIView):
                         subscription_response.get("response_description")
                         == "TRANSACTION SUCCESSFUL"
                     ):
-                        user_wallet.debit(amount=amount, reference=request_id)
+                        phone = serializer.data.get("billersCode", "")
+                        plan = serializer.data.get("startimes_plan", "")
+                        desc = get_payment_description(
+                            payment_type="startimes",
+                            phone=phone,
+                            plan=plan,
+                            amount=amount,
+                        )
+                        user_wallet.debit(
+                            amount=amount,
+                            description=desc["full"],
+                            reference=request_id,
+                        )
 
                         # Award bonus points
                         try:
@@ -1612,7 +1748,19 @@ class ShowMaxPaymentViews(APIView):
                         subscription_response.get("response_description")
                         == "TRANSACTION SUCCESSFUL"
                     ):
-                        user_wallet.debit(amount=amount, reference=request_id)
+                        phone = serializer.data.get("billersCode", "")
+                        plan = serializer.data.get("startimes_plan", "")
+                        desc = get_payment_description(
+                            payment_type="startimes",
+                            phone=phone,
+                            plan=plan,
+                            amount=amount,
+                        )
+                        user_wallet.debit(
+                            amount=amount,
+                            description=desc["full"],
+                            reference=request_id,
+                        )
 
                         # Award bonus points
                         try:
@@ -1831,7 +1979,15 @@ class WAECRegitrationViews(APIView):
                     registration_response.get("response_description")
                     == "TRANSACTION SUCCESSFUL"
                 ):
-                    user_wallet.debit(amount=amount, reference=request_id)
+                    desc = get_payment_description(
+                        payment_type="waec-registration",
+                        amount=amount,
+                    )
+                    user_wallet.debit(
+                        amount=amount,
+                        description=desc["full"],
+                        reference=request_id,
+                    )
 
                     # Award bonus points
                     try:
@@ -1924,7 +2080,15 @@ class WAECResultCheckerViews(APIView):
                     registration_response.get("response_description")
                     == "TRANSACTION SUCCESSFUL"
                 ):
-                    user_wallet.debit(amount=amount, reference=request_id)
+                    desc = get_payment_description(
+                        payment_type="waec-registration",
+                        amount=amount,
+                    )
+                    user_wallet.debit(
+                        amount=amount,
+                        description=desc["full"],
+                        reference=request_id,
+                    )
 
                     # Award bonus points
                     try:
@@ -2018,7 +2182,17 @@ class JAMBRegistrationViews(APIView):
                     jamb_registration_response.get("response_description")
                     == "TRANSACTION SUCCESSFUL"
                 ):
-                    user_wallet.debit(amount=amount, reference=request_id)
+                    exam_type = serializer.data.get("exam_type", "")
+                    desc = get_payment_description(
+                        payment_type="jamb",
+                        exam_type=exam_type,
+                        amount=amount,
+                    )
+                    user_wallet.debit(
+                        amount=amount,
+                        description=desc["full"],
+                        reference=request_id,
+                    )
 
                     # Award bonus points
                     try:

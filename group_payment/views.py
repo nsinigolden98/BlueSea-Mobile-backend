@@ -261,6 +261,8 @@ class ListMyGroupsView(APIView):
                         "status": group.status,
                         "my_role": membership.role,
                         "my_payment_status": membership.payment_status,
+                        "my_locked_amount": membership.locked_amount,
+                        "my_paid_amount": membership.paid_amount,
                         "member_count": member_count,
                         "paid_members": paid_members,
                         "pending_members": pending_members,
@@ -390,6 +392,20 @@ class JoinGroupView(APIView):
                 return Response(
                     {"error": "You are already a member of this group"},
                     status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Check if user's email was invited
+            invited_emails = (
+                group_obj.invite_members.split(",") if group_obj.invite_members else []
+            )
+            invited_emails = [e.strip().lower() for e in invited_emails]
+
+            if user_email.lower() not in invited_emails:
+                return Response(
+                    {
+                        "error": "You were not invited to this group. Only invited members can join."
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
                 )
 
             # Add member

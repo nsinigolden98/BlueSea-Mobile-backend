@@ -30,9 +30,18 @@ class WalletBalance(APIView):
         try:
             wallet_user = Wallet.objects.get(user=request.user)
             wallet = f"₦{wallet_user.balance:,.2f}"
+            locked = f"₦{wallet_user.locked_balance:,.2f}"
+            available = f"₦{wallet_user.available_balance:,.2f}"
 
-            return Response({"balance": str(wallet)}, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "balance": str(wallet),
+                    "locked_balance": str(locked),
+                    "available_balance": str(available),
+                },
+                status=status.HTTP_200_OK,
+            )
         except Wallet.DoesNotExist:
-            return Response({"error": "Wallet not found."}, status=status.HTTP_404_NOT_FOUND)
-        
-
+            return Response(
+                {"error": "Wallet not found."}, status=status.HTTP_404_NOT_FOUND
+            )
