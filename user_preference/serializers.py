@@ -4,14 +4,25 @@ from .models import UpdateUserModel
 
 User = get_user_model()
 
+
 class CurrentUserSerializer(serializers.ModelSerializer):
-    
     class Meta:
         model = User
         # Include the fields you want to return
-        fields = ['id', 'other_names', 'email', 'phone', 'surname', 'pin_is_set',"image"]
-        
+        fields = [
+            "id",
+            "other_names",
+            "email",
+            "phone",
+            "surname",
+            "pin_is_set",
+            "image",
+        ]
+
+
 class UpdateUserSerializer(serializers.ModelSerializer):
+    phone = serializers.CharField(required=False, allow_blank=True)
+
     class Meta:
-        model  = UpdateUserModel
-        fields = ["image"]
+        model = UpdateUserModel
+        fields = ["image", "phone"]
