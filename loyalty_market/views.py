@@ -1,125 +1,122 @@
-# from rest_framework.views import APIView
-# from rest_framework.response import Response
-# from rest_framework.permissions import IsAuthenticated, IsAdminUser
-# from rest_framework import status
-# from django.db import transaction
-# from django.shortcuts import get_object_or_404
-# from django.http import HttpResponse
-# from django.utils import timezone
-# from decimal import Decimal
-# import secrets
-# import csv
-
-# from loyalty_market.models import (
-#     Reward, RedemptionTransaction
-# )
-
-# from wallet.models import Wallet
-# from bonus.models import BonusPoint
-# from drf_spectacular.utils import extend_schema, OpenApiParameter
-# from drf_spectacular.types import OpenApiTypes
-
-# import logging
-
-# logger = logging.getLogger(__name__)
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+from django.db import transaction
+from .models import Reward, RedemptionTransaction
+from .serializers import RewardSerializer
+from bonus.models import BonusPoint
 
 
-# # ============= EXISTING REWARD VIEWS =============
+class RewardListView(APIView):
+    permission_classes = [IsAuthenticated]
 
-# class RewardListView(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     @extend_schema(
-#         summary="List all rewards",
-#         description="Get all available rewards in the loyalty marketplace",
-#         responses={200: RewardSerializer(many=True)},
-#         tags=['Loyalty Market']
-#     )
-#     def get(self, request):
-#         rewards = Reward.objects.all()
-#         serializer = RewardSerializer(rewards, many=True)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
+    def get(self, request):
+        rewards = Reward.objects.filter(inventory__gt=0).order_by("-created_at")
+        serializer = RewardSerializer(rewards, many=True)
+        return Response(
+            {"count": rewards.count(), "rewards": serializer.data},
+            status=status.HTTP_200_OK,
+        )
 
 
-# class RewardDetailView(APIView):
-#     permission_classes = [IsAuthenticated]
+class RewardDetailView(APIView):
+    permission_classes = [IsAuthenticated]
 
-#     @extend_schema(
-#         summary="Get reward details",
-#         description="Retrieve details of a specific reward",
-#         parameters=[
-#             OpenApiParameter(name='reward_id', type=int, location=OpenApiParameter.PATH, description='Reward ID')
-#         ],
-#         responses={200: RewardSerializer, 404: OpenApiTypes.OBJECT},
-#         tags=['Loyalty Market']
-#     )
-#     def get(self, request, reward_id):
-#         try:
-#             reward = Reward.objects.get(id=reward_id)
-#         except Reward.DoesNotExist:
-#             logger.error(f"Reward with id {reward_id} not found.")
-#             return Response({"error": "Reward not found."}, status=status.HTTP_404_NOT_FOUND)
-
-#         serializer = RewardSerializer(reward)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
+    def get(self, request, reward_id):
+        reward = get_object_or_404(Reward, id=reward_id)
+        serializer = RewardSerializer(reward)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# class UserPointsView(APIView):
-#     permission_classes = [IsAuthenticated]
+class RedeemRewardView(APIView):
+    permission_classes = [IsAuthenticated]
 
-#     @extend_schema(
-#         summary="Get user points balance",
-#         description="Retrieve the authenticated user's total bonus points",
-#         responses={200: OpenApiTypes.OBJECT},
-#         tags=['Loyalty Market']
-#     )
-#     def get(self, request):
-#         user = request.user
-#         try:
-#             bonus_point = BonusPoint.objects.get(user=user)
-#             total_points = bonus_point.points
-#         except BonusPoint.DoesNotExist:
-#             total_points = 0
+    def post(self, request, reward_id):
+        reward = get_object_or_404(Reward, id=reward_id)
 
-#         return Response({"total_points": total_points}, status=status.HTTP_200_OK)
+        # Check inventory
+        if reward.inventory and reward.inventory <= 0:
+            return Response(
+                {"error": "This reward is out of stock"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check user's points
+        try:
+            bonus_points = BonusPoint.objects.get(user=request.user)
+        except BonusPoint.DoesNotExist:
+            return Response(
+                {"error": "You do not have any bonus points"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if bonus_points.points < reward.points_cost:
+            return Response(
+                {
+                    "error": f"Insufficient points. You need {reward.points_cost} points but have {bonus_points.points}"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Deduct points and create redemption
+        with transaction.atomic():
+            bonus_points.deduct_points(reward.points_cost)
+
+            redemption = RedemptionTransaction.objects.create(
+                user_id=request.user,
+                reward_id=reward,
+                points_deducted=reward.points_cost,
+                status="completed",
+                fulfilment_payload={
+                    "fulfilment_type": reward.fulfilment_type,
+                    "delivery_info": request.data.get("delivery_info", ""),
+                },
+            )
+
+            # Decrease inventory
+            if reward.inventory:
+                reward.inventory -= 1
+                reward.save()
+
+        return Response(
+            {
+                "success": True,
+                "message": "Reward redeemed successfully",
+                "redemption": {
+                    "id": str(redemption.id),
+                    "reward": reward.title,
+                    "points_deducted": redemption.points_deducted,
+                    "status": redemption.status,
+                    "created_at": redemption.created_at,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
-# class AdminCreateRewardView(APIView):
-#     permission_classes = [IsAuthenticated]
+class UserRedemptionsView(APIView):
+    permission_classes = [IsAuthenticated]
 
-#     @extend_schema(
-#         summary="Create new reward (Admin)",
-#         description="Create a new reward in the loyalty marketplace (admin only)",
-#         request=RewardSerializer,
-#         responses={201: RewardSerializer, 400: OpenApiTypes.OBJECT},
-#         tags=['Loyalty Market']
-#     )
-#     def post(self, request):
-#         serializer = RewardSerializer(data=request.data)
+    def get(self, request):
+        redemptions = RedemptionTransaction.objects.filter(
+            user_id=request.user
+        ).order_by("-created_at")
 
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#         else:
-#             logger.error(f"Reward creation failed: {serializer.errors}")
-#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        results = []
+        for r in redemptions:
+            results.append(
+                {
+                    "id": str(r.id),
+                    "reward": r.reward_id.title if r.reward_id else "Unknown",
+                    "points_deducted": r.points_deducted,
+                    "status": r.status,
+                    "created_at": r.created_at,
+                }
+            )
 
-
-# class RedeemPointsView(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     @extend_schema(
-#         summary="Redeem points for reward",
-#         description="Redeem bonus points to claim a reward",
-#         request=RedeemPointsSerializer,
-#         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
-#         tags=['Loyalty Market']
-#     )
-#     def post(self, request):
-#         serializer = RedeemPointsSerializer(data=request.data)
-
-#         if not serializer.is_valid():
-#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-#         points = Reward.objects.get(id=request.data.get('reward_id')).points_cost
-#         # Implementation continues here...
+        return Response(
+            {"count": redemptions.count(), "redemptions": results},
+            status=status.HTTP_200_OK,
+        )

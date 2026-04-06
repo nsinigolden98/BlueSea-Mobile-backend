@@ -71,7 +71,21 @@ class CreateGroupView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            # Validate invite members - check if emails exist in database
+            # Require sub_number
+            if not sub_number:
+                return Response(
+                    {"error": "Phone/account number is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Require plan for data service type
+            if service_type == "data" and not plan:
+                return Response(
+                    {"error": "Plan is required for data service type"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Validate invite members - ALL emails must exist in database
             from accounts.models import Profile
 
             invalid_users = []
@@ -90,12 +104,12 @@ class CreateGroupView(APIView):
                     else:
                         invalid_users.append(email)
 
+                # Block group creation if ANY invalid users found
                 if invalid_users:
                     return Response(
                         {
-                            "error": "Some users not found",
+                            "error": "Invalid invite: some users do not exist in the system. Group not created.",
                             "invalid_users": invalid_users,
-                            "valid_users": valid_emails,
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
@@ -331,6 +345,56 @@ class GroupDetailsView(APIView):
                         "created_at": group.created_at,
                         "member_count": len(member_list),
                         "members": member_list,
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class UpdateGroupView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Update group details",
+        description="Update group sub_number (only owner can do this)",
+        request=OpenApiTypes.OBJECT,
+        responses={200: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT},
+        tags=["Group Payments"],
+    )
+    def patch(self, request, group_id):
+        try:
+            group = get_object_or_404(Group, id=group_id)
+
+            # Check if user is owner
+            member = GroupMember.objects.filter(
+                group=group, user=request.user, role="owner"
+            ).first()
+
+            if not member:
+                return Response(
+                    {"error": "Only group owner can update details"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            # Update allowed fields
+            sub_number = request.data.get("sub_number")
+            if sub_number:
+                group.sub_number = sub_number
+                group.save()
+
+            return Response(
+                {
+                    "success": True,
+                    "message": "Group updated successfully",
+                    "group": {
+                        "id": str(group.id),
+                        "name": group.name,
+                        "sub_number": group.sub_number,
                     },
                 },
                 status=status.HTTP_200_OK,

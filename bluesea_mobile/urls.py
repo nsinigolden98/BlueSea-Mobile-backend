@@ -24,7 +24,8 @@ urlpatterns = [
     path("wallet/", include("wallet.urls")),
     path("transactions/", include("transactions.urls")),
     path("bonus/", include("bonus.urls")),
-    # path('market/', include('loyalty_market.urls')),
+    path("loyalty/", include("loyalty_market.urls")),
     path("user_preference/", include("user_preference.urls")),
     path("autotopup/", include("autotopup.urls")),
+    path("support/", include("support.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

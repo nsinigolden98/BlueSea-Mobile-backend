@@ -34,8 +34,8 @@ class Group(models.Model):
     service_type = models.CharField(
         max_length=20, choices=SERVICE_TYPE_CHOICES, default=""
     )
-    sub_number = models.CharField(max_length=20, default="")
-    plan = models.CharField(max_length=100, default="")
+    sub_number = models.CharField(max_length=20, blank=True, default="")
+    plan = models.CharField(max_length=100, blank=True, default="")
     plan_type = models.CharField(max_length=100, blank=True, null=True, default="")
     target_amount = models.IntegerField(default=0)
     current_amount = models.IntegerField(default=0)
