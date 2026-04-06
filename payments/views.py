@@ -2076,6 +2076,12 @@ class WAECResultCheckerViews(APIView):
 
                 user_wallet = request.user.wallet
 
+                if user_wallet.balance < amount:
+                    return Response(
+                        {"error": "Insufficient Funds", "success": False},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
                 registration_response = top_up(data)
                 if (
                     registration_response.get("response_description")
@@ -2178,6 +2184,13 @@ class JAMBRegistrationViews(APIView):
                 }
 
                 user_wallet = request.user.wallet
+
+                if user_wallet.balance < amount:
+                    return Response(
+                        {"error": "Insufficient Funds", "success": False},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
                 jamb_registration_response = top_up(data)
                 if (
                     jamb_registration_response.get("response_description")

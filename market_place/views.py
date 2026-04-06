@@ -1083,7 +1083,9 @@ class ExportAttendeesView(APIView):
         event = get_object_or_404(EventInfo, id=event_id)
 
         # Check permissions: must be admin or event owner
-        is_owner = event.vendor.id == request.query_params.get("vendor_id")
+        # Get user's vendor(s) and check if they own this event
+        user_vendors = user.ticket_vendors.all()
+        is_owner = event.vendor in user_vendors
         is_admin = user.is_staff
 
         if not (is_admin or is_owner):
