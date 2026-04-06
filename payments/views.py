@@ -1375,10 +1375,10 @@ class DSTVPaymentViews(APIView):
                         subscription_response.get("response_description")
                         == "TRANSACTION SUCCESSFUL"
                     ):
-                        phone = serializer.data.get("billersCode", "")
-                        plan = serializer.data.get("dstv_plan", "")
+                        phone = serializer.data.get("phone_number", "")
+                        plan = serializer.data.get("showmax_plan", "")
                         desc = get_payment_description(
-                            payment_type="dstv",
+                            payment_type="showmax",
                             phone=phone,
                             plan=plan,
                             amount=amount,
@@ -1733,6 +1733,7 @@ class ShowMaxPaymentViews(APIView):
                         "billersCode": serializer.data["phone_number"],
                         "variation_code": variation_code,
                         "amount": amount,
+                        "phone": serializer.data["phone_number"],
                     }
 
                     user_wallet = request.user.wallet
@@ -2172,7 +2173,7 @@ class JAMBRegistrationViews(APIView):
                     "request_id": request_id,
                     "serviceID": "jamb",
                     "variation_code": serializer.data["exam_type"],
-                    "billersCode": serializer.data["billersCode"],
+                    "billersCode": serializer.data["billerCode"],
                     "phone": serializer.data["phone_number"],
                 }
 
