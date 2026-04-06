@@ -283,29 +283,29 @@ ASGI_APPLICATION = "bluesea_mobile.asgi.application"
 #Database
 #https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#         'CONN_MAX_AGE': 600,
+#     }
+# }
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-        'CONN_MAX_AGE': 600,
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("DATABASE_NAME"),
+        "USER": os.environ.get("DATABASE_USER"),
+        "PASSWORD": os.environ.get("DATABASE_PASSWORD"),
+        "HOST": os.environ.get("DATABASE_HOST"),
+        "PORT": os.environ.get("DATABASE_PORT"),
+        "CONN_MAX_AGE": 600,
+        "OPTIONS": {
+            "connect_timeout": 10,
+            "options": "-c statement_timeout=30000"
+        },
     }
 }
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.postgresql",
-#         "NAME": os.environ.get("DATABASE_NAME"),
-#         "USER": os.environ.get("DATABASE_USER"),
-#         "PASSWORD": os.environ.get("DATABASE_PASSWORD"),
-#         "HOST": os.environ.get("DATABASE_HOST"),
-#         "PORT": os.environ.get("DATABASE_PORT"),
-#         "CONN_MAX_AGE": 600,
-#         "OPTIONS": {
-#             "connect_timeout": 10,
-#             "options": "-c statement_timeout=30000"
-#         },
-#     }
-# }
 
 
 
@@ -442,26 +442,26 @@ CELERY_TIMEZONE = 'UTC'
 REDIS_LOCATION = os.environ.get('REDIS_LOCATION')
 
 
-# if REDIS_LOCATION:
-#     CACHES = {
-#         'default': {
-#             'BACKEND': 'django_redis.cache.RedisCache',
-#             'LOCATION': REDIS_LOCATION,
-#             'OPTIONS': {
-#                 'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-#             },
-#             'KEY_PREFIX': 'bluesea',
-#             'TIMEOUT': 300,
-#         }
-#     }
-# else:
-#     # Fallback to local memory cache if Redis not configured
-#     CACHES = {
-#         'default': {
-#             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-#             'LOCATION': 'unique-snowflake',
-#         }
-#     }
+if REDIS_LOCATION:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_LOCATION,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            },
+            'KEY_PREFIX': 'bluesea',
+            'TIMEOUT': 300,
+        }
+    }
+else:
+    # Fallback to local memory cache if Redis not configured
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+        }
+    }
 
 # Session Configuration
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
