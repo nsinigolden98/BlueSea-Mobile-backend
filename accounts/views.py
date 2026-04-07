@@ -1,4 +1,4 @@
-from linecache import cache
+from django.core.cache import cache
 import random
 import uuid
 from click import confirm
