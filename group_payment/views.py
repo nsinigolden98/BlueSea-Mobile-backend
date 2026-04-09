@@ -54,10 +54,9 @@ class CreateGroupView(APIView):
             service_type = request.data.get("service_type")
             sub_number = request.data.get("sub_number")
             target_amount = request.data.get("target_amount")
-            invite_members = request.data.get("invite_members", "")
+            invite_members = request.data.get("invite_members")
             plan = request.data.get("plan")
             plan_type = request.data.get("plan_type", "")
-            deadline = request.data.get("deadline")
 
             if not name:
                 return Response(
@@ -88,21 +87,21 @@ class CreateGroupView(APIView):
             # Validate invite members - ALL emails must exist in database
             from accounts.models import Profile
 
-            invalid_users = []
-            valid_emails = []
+            invalid_users = set()
+            valid_emails = set()
 
             if invite_members:
-                email_list = [
+                email_list= [
                     email.strip()
                     for email in invite_members.split(",")
                     if email.strip()
                 ]
-
+              
                 for email in email_list:
                     if Profile.objects.filter(email__iexact=email).exists():
-                        valid_emails.append(email)
+                        valid_emails.add(email)
                     else:
-                        invalid_users.append(email)
+                        invalid_users.add(email)
 
                 # Block group creation if ANY invalid users found
                 if invalid_users:
@@ -110,6 +109,13 @@ class CreateGroupView(APIView):
                         {
                             "error": "Invalid invite: some users do not exist in the system. Group not created.",
                             "invalid_users": invalid_users,
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                elif(request.user.email in email_list):
+                    return Response(
+                        {
+                            "error": "You can not invite yourself. Group not created.",
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
@@ -121,7 +127,7 @@ class CreateGroupView(APIView):
                 service_type=service_type,
                 sub_number=sub_number,
                 target_amount=target_amount,
-                invite_members=invite_members,
+                invite_members= valid_emails,
                 plan=plan,
                 plan_type=plan_type,
                 created_by=request.user,
@@ -252,7 +258,6 @@ class ListMyGroupsView(APIView):
             memberships = GroupMember.objects.filter(user=request.user).select_related(
                 "group"
             )
-
             groups = []
             for membership in memberships:
                 group = membership.group
@@ -278,12 +283,14 @@ class ListMyGroupsView(APIView):
                         "my_locked_amount": membership.locked_amount,
                         "my_paid_amount": membership.paid_amount,
                         "member_count": member_count,
+                        # "invite_members": group.invite_members,
                         "paid_members": paid_members,
                         "pending_members": pending_members,
                         "join_code": group.join_code,
                         "created_at": group.created_at.isoformat(),
                     }
                 )
+            
 
             return Response(
                 {"success": True, "count": len(groups), "groups": groups},

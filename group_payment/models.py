@@ -12,6 +12,10 @@ class Group(models.Model):
         ("airtime", "Airtime"),
         ("data", "Data"),
         ("lightbill", "Light Bill"),
+        ("gotv", "GOTV"),
+        ("dstv", "DSTV"),
+        ("showmax", "Showmax"),
+        ("startimes", "StarTimes"),
     ]
 
     STATUS_CHOICES = [
@@ -40,7 +44,7 @@ class Group(models.Model):
     target_amount = models.IntegerField(default=0)
     current_amount = models.IntegerField(default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
-    deadline = models.DateTimeField(null=True, blank=True)
+    # deadline = models.DateTimeField(null=True, blank=True)
     active = models.BooleanField(default=True)
     invite_members = models.TextField(default="")
     join_code = models.CharField(max_length=10, default=generate_join_code, unique=True)
@@ -61,7 +65,6 @@ class GroupMember(models.Model):
 
     ROLE_CHOICES = [
         ("owner", "Owner"),
-        ("admin", "Admin"),
         ("member", "Member"),
     ]
 
