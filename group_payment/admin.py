@@ -39,7 +39,7 @@ class GroupAdmin(admin.ModelAdmin):
     service_type_badge.short_description = 'Service'
 
     def member_count(self, obj):
-        count = obj.groupmember_set.count()
+        count = len(obj.invite_members.split(','))
         return format_html(
             '<span style="font-weight:600;">{} member{}</span>',
             count, 's' if count != 1 else ''

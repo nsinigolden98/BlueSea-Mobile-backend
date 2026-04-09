@@ -11,7 +11,7 @@ class Group(models.Model):
     SERVICE_TYPE_CHOICES = [
         ("airtime", "Airtime"),
         ("data", "Data"),
-        ("lightbill", "Light Bill"),
+        ("electricity", "Electricity"),
         ("gotv", "GOTV"),
         ("dstv", "DSTV"),
         ("showmax", "Showmax"),

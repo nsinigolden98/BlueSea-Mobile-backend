@@ -1,3 +1,4 @@
+import math
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -91,12 +92,12 @@ class CreateGroupView(APIView):
             valid_emails = set()
 
             if invite_members:
-                email_list= [
+                email_list = [
                     email.strip()
                     for email in invite_members.split(",")
                     if email.strip()
                 ]
-              
+
                 for email in email_list:
                     if Profile.objects.filter(email__iexact=email).exists():
                         valid_emails.add(email)
@@ -112,7 +113,7 @@ class CreateGroupView(APIView):
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-                elif(request.user.email in email_list):
+                elif request.user.email in email_list:
                     return Response(
                         {
                             "error": "You can not invite yourself. Group not created.",
@@ -126,8 +127,9 @@ class CreateGroupView(APIView):
                 description=description,
                 service_type=service_type,
                 sub_number=sub_number,
+                current_amount=math.ceil(target_amount / (len(valid_emails) + 1)),
                 target_amount=target_amount,
-                invite_members= valid_emails,
+                invite_members=",".join(sorted(valid_emails)),
                 plan=plan,
                 plan_type=plan_type,
                 created_by=request.user,
@@ -140,6 +142,7 @@ class CreateGroupView(APIView):
                 user=request.user,
                 role="owner",
                 payment_status="paid",
+                locked_amount=math.ceil(target_amount / (len(valid_emails) + 1)),
                 paid_amount=target_amount,
             )
 
@@ -218,20 +221,29 @@ class AddGroupMemberView(APIView):
                     {"error": "User is already a member of this group"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            group.invite_members = group.invite_members + "," + user_email
 
-            # Add member
-            member = GroupMember.objects.create(
-                group=group, user=user_to_add, role=role
+            count = GroupMember.objects.filter(
+                payment_status="paid", group=group
+            ).count()
+
+            invited_emails = group.invite_members.split(",")
+            target_amount = group.target_amount
+
+            # Update contribution balance
+            group.current_amount = (
+                math.ceil(target_amount / (len(invited_emails) + 1)) * count
             )
+            group.save()
 
             return Response(
                 {
                     "success": True,
-                    "message": f"{user_to_add.email} added to group",
+                    "message": f"{user_to_add.email} added to group. Member can now join with group code",
                     "member": {
-                        "id": member.id,
+                        "id": group.id,
                         "email": user_to_add.email,
-                        "role": member.role,
+                        "role": role,
                         "joined_at": member.joined_at,
                     },
                 },
@@ -274,23 +286,26 @@ class ListMyGroupsView(APIView):
                         "id": str(group.id),
                         "name": group.name,
                         "description": group.description,
+                        "sub_number": group.sub_number,
                         "service_type": group.service_type,
+                        "sub_number": group.sub_number,
                         "target_amount": group.target_amount,
                         "current_amount": group.current_amount,
                         "status": group.status,
+                        "plan": group.plan,
+                        "plan_type": group.plan_type,
                         "my_role": membership.role,
                         "my_payment_status": membership.payment_status,
                         "my_locked_amount": membership.locked_amount,
                         "my_paid_amount": membership.paid_amount,
                         "member_count": member_count,
-                        # "invite_members": group.invite_members,
+                        "invite_members": group.invite_members,
                         "paid_members": paid_members,
                         "pending_members": pending_members,
                         "join_code": group.join_code,
                         "created_at": group.created_at.isoformat(),
                     }
                 )
-            
 
             return Response(
                 {"success": True, "count": len(groups), "groups": groups},
@@ -332,6 +347,10 @@ class GroupDetailsView(APIView):
             member_list = []
 
             for member in members:
+                profile_picture = None
+                if member.user.image:
+                    profile_picture = member.user.image.url
+
                 member_list.append(
                     {
                         "id": member.id,
@@ -339,6 +358,8 @@ class GroupDetailsView(APIView):
                         "name": f"{member.user.surname} {member.user.other_names}",
                         "role": member.role,
                         "joined_at": member.joined_at,
+                        "locked_amount": member.locked_amount,
+                        "profile_picture": profile_picture,
                     }
                 )
 
@@ -348,16 +369,24 @@ class GroupDetailsView(APIView):
                     "group": {
                         "id": group.id,
                         "name": group.name,
+                        "sub_number": group.sub_number,
                         "description": group.description,
                         "created_at": group.created_at,
                         "member_count": len(member_list),
+                        "current_amount": group.current_amount,
+                        "total_amount": group.target_amount,
                         "members": member_list,
+                        "plan": group.plan,
+                        "plan_type": group.plan_type,
+                        "invite_members": group.invite_members,
+                        "join_code": group.join_code,
                     },
                 },
                 status=status.HTTP_200_OK,
             )
 
         except Exception as e:
+            print(e)
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
@@ -479,9 +508,23 @@ class JoinGroupView(APIView):
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
+            target_amount = group_obj.target_amount
+
+            # Update contribution balance
+            group_obj.current_amount += math.ceil(
+                target_amount / (len(invited_emails) + 1)
+            )
+            group_obj.save()
+
             # Add member
+
             member = GroupMember.objects.create(
-                group=group_obj, user=user_profile, role="member"
+                group=group_obj,
+                user=user_profile,
+                role="member",
+                locked_amount=target_amount / (len(invited_emails) + 1),
+                paid_amount=target_amount,
+                payment_status="paid",
             )
 
             return Response(
@@ -501,80 +544,6 @@ class JoinGroupView(APIView):
             return Response(
                 {"error": "User profile not found"}, status=status.HTTP_404_NOT_FOUND
             )
-        except Exception as e:
-            return Response(
-                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-        if not request.user.pin_is_set:
-            return Response(
-                {"error": "Please set your transaction PIN first"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if not request.user.verify_transaction_pin(transaction_pin):
-            return Response(
-                {"error": "Invalid transaction PIN"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            user_email = request.user.email
-            join_code = request.data.get("join_code")
-
-            check_membership = Group.objects.filter(
-                join_code=join_code, invite_memebers__iexact=user_email, active=True
-            ).exists()
-
-            if check_membership:
-                group_obj = Group.objects.get(
-                    join_code=join_code, invite_members__iexact=user_email, active=True
-                )
-
-                group_id = group_obj.id
-
-                role = request.data.get("role", "member")
-
-                group = get_object_or_404(Group, id=group_id)
-
-                # Get user to add
-                from accounts.models import Profile
-
-                user_to_add = get_object_or_404(Profile, email=user_email)
-
-                # Check if already a member
-                if GroupMember.objects.filter(group=group, user=user_to_add).exists():
-                    return Response(
-                        {"error": "User is already a member of this group"},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
-                # Add member
-                member = GroupMember.objects.create(
-                    group=group, user=user_to_add, role=role
-                )
-
-                return Response(
-                    {
-                        "success": True,
-                        "message": f"{user_to_add.email} added to group",
-                        "member": {
-                            "id": member.id,
-                            "email": user_to_add.email,
-                            "role": member.role,
-                            "joined_at": member.joined_at,
-                        },
-                    },
-                    status=status.HTTP_200_OK,
-                )
-
-            else:
-                return Response(
-                    {
-                        "success": False,
-                        "message": "Invalid Code Or Not Added To Group Payment",
-                    }
-                )
-
         except Exception as e:
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -613,6 +582,11 @@ class LeaveGroupView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+            target_amount = group.target_amount
+            invited_emails = group.invite_members.split(",")
+            # Update contribution balance
+            group.current_amount -= math.ceil(target_amount / (len(invited_emails) + 1))
+            group.save()
             # Delete member
             member.delete()
 
