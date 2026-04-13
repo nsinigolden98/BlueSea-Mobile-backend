@@ -381,6 +381,33 @@ class EventScanner(models.Model):
 
     def __str__(self):
         return f"Scanner {self.user.username} for Event {self.event.event_title}"
-
     class Meta:
         unique_together = ["user", "event"]
+
+
+class EventWithdrawal(models.Model):
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("failed", "Failed"),
+        ("successful", "Successful"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey(
+        EventInfo, on_delete=models.CASCADE, related_name="withdrawals"
+    )
+    account_name = models.CharField(max_length=100)
+    account_number = models.CharField(max_length=10)
+    bank_code = models.CharField(max_length=10)
+    bank_name = models.CharField(max_length=50)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    payment_reference = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Withdrawal {self.amount} for {self.event.event_title} - {self.status}"
+
+    class Meta:
+        ordering = ["-created_at"]

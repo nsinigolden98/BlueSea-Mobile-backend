@@ -2012,3 +2012,132 @@ class VendorTicketsList(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class VerifyAccountNameView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from transactions.paystack import get_account_name
+
+        account_number = request.data.get("account_number")
+        bank_code = request.data.get("bank_code")
+
+        if not account_number or not bank_code:
+            return Response(
+                {"error": "Account number and bank code are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        result = get_account_name(account_number, bank_code)
+        if result.get("success"):
+            return Response(result, status=status.HTTP_200_OK)
+        return Response(result, status=status.HTTP_404_NOT_FOUND)
+
+
+class EventWithdrawalView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from .models import EventWithdrawal
+        from .serializers import EventWithdrawalSerializer
+        import uuid
+
+        event_id = request.data.get("event_id")
+        account_name = request.data.get("account_name")
+        account_number = request.data.get("account_number")
+        bank_code = request.data.get("bank_code")
+        bank_name = request.data.get("bank_name")
+        amount = request.data.get("amount")
+
+        if not all(
+            [event_id, account_name, account_number, bank_code, bank_name, amount]
+        ):
+            return Response(
+                {"error": "All fields are required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verify event belongs to user
+        event = get_object_or_404(EventInfo, id=event_id)
+        try:
+            vendor = TicketVendor.objects.get(user=request.user)
+            if event.vendor != vendor:
+                return Response(
+                    {"error": "You can only withdraw from your own events"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+        except TicketVendor.DoesNotExist:
+            return Response(
+                {"error": "Only vendors can withdraw"}, status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Calculate available balance (profit from tickets sold)
+        tickets_sold = IssuedTicket.objects.filter(event=event).count()
+        if event.is_free or not event.ticket_types.exists():
+            available = 0
+        else:
+            total = sum(
+                tt.price * tt.quantity_available for tt in event.ticket_types.all()
+            )
+            sold_values = sum(
+                tt.price * min(tickets_sold, tt.quantity_available)
+                for tt in event.ticket_types.all()
+            )
+            available = float(sold_values)
+
+        if float(amount) > available:
+            return Response(
+                {"error": f"Insufficient funds. Available: ₦{available}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Create withdrawal record
+        withdrawal = EventWithdrawal.objects.create(
+            event=event,
+            account_name=account_name,
+            account_number=account_number,
+            bank_code=bank_code,
+            bank_name=bank_name,
+            amount=amount,
+            payment_reference=f"EW{uuid.uuid4().hex[:12].upper()}",
+            status="pending",
+        )
+
+        serializer = EventWithdrawalSerializer(withdrawal)
+        return Response(
+            {
+                "state": True,
+                "message": "Withdrawal request submitted",
+                "withdrawal": serializer.data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    def get(self, request):
+        from .models import EventWithdrawal
+        from .serializers import EventWithdrawalSerializer
+
+        event_id = request.query_params.get("event_id")
+        if not event_id:
+            return Response(
+                {"error": "event_id is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verify ownership
+        event = get_object_or_404(EventInfo, id=event_id)
+        try:
+            vendor = TicketVendor.objects.get(user=request.user)
+            if event.vendor != vendor:
+                return Response(
+                    {"error": "You can only view your own event withdrawals"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+        except TicketVendor.DoesNotExist:
+            return Response(
+                {"error": "Only vendors can view withdrawals"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        withdrawals = EventWithdrawal.objects.filter(event=event)
+        serializer = EventWithdrawalSerializer(withdrawals, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

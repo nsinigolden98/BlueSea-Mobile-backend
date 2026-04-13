@@ -542,3 +542,30 @@ class CancelTicketSerializer(serializers.Serializer):
         max_length=6,
         help_text="Transaction PIN (required for paid tickets only)",
     )
+
+
+class EventWithdrawalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = __import__(
+            "market_place.models", fromlist=["EventWithdrawal"]
+        ).EventWithdrawal
+        fields = [
+            "id",
+            "event",
+            "account_name",
+            "account_number",
+            "bank_code",
+            "bank_name",
+            "amount",
+            "status",
+            "payment_reference",
+            "created_at",
+            "completed_at",
+        ]
+        read_only_fields = [
+            "id",
+            "status",
+            "payment_reference",
+            "created_at",
+            "completed_at",
+        ]
