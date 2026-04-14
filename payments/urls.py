@@ -17,6 +17,7 @@ from .views import (
     GroupPaymentHistory,
     ElectricityPaymentCustomerViews,
     Airtime2CashViews,
+    InternalTransferView,
 )
 
 urlpatterns = [
@@ -48,5 +49,8 @@ urlpatterns = [
         "electricity/customer/",
         ElectricityPaymentCustomerViews.as_view(),
         name="electricity-payment-customer",
+    ),
+    path(
+        "internal-transfer/", InternalTransferView.as_view(), name="internal-transfer"
     ),
 ]

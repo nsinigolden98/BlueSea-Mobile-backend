@@ -1171,3 +1171,32 @@ def reset_transaction_pin(request):
             {"message": "An error occurred", "state": False},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+class LookupUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        email = request.data.get("email")
+
+        if not email:
+            return Response(
+                {"error": "Email parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user = User.objects.get(email=email)
+            return Response(
+                {
+                    "found": True,
+                    "email": user.email,
+                    "name": f'{user.other_names} {user.surname}',
+                    "image": user.image.url if user.image else None,
+                }
+            )
+        except User.DoesNotExist:
+            return Response(
+                {"found": False, "error": "User not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )

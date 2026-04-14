@@ -1,10 +1,18 @@
+from django.conf import settings
 from django.db import transaction
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
 from decimal import Decimal
+import uuid
+import logging
+
+User = get_user_model()
+logger = logging.getLogger(__name__)
+
 from group_payment.models import Group, GroupMember
 from wallet.models import Wallet
 from .models import GroupPayment, GroupPaymentContribution
@@ -27,6 +35,30 @@ from .serializers import (
     Airtime2CashSerializer,
     ElectricityPaymentCustomerSerializer,
 )
+from .serializers import (
+    AirtimeTopUpSerializer,
+    JAMBRegistrationSerializer,
+    WAECRegitrationSerializer,
+    WAECResultCheckerSerializer,
+    ElectricityPaymentSerializer,
+    DSTVPaymentSerializer,
+    GOTVPaymentSerializer,
+    StartimesPaymentSerializer,
+    ShowMaxPaymentSerializer,
+    MTNDataTopUpSerializer,
+    AirtelDataTopUpSerializer,
+    GloDataTopUpSerializer,
+    EtisalatDataTopUpSerializer,
+    GroupPaymentSerializer,
+    Airtime2CashSerializer,
+    ElectricityPaymentCustomerSerializer,
+)
+from notifications.utils import (
+    send_notification,
+    contribution_notification,
+    group_payment_success,
+    group_payment_failed,
+)
 from .vtpass import (
     generate_reference_id,
     top_up,
@@ -40,6 +72,9 @@ from .vtpass import (
     etisalat_dict,
     get_customer,
     get_receipt,
+)
+from .vtuafrica import (
+    top_up2,
 )
 from .vtuafrica import (
     top_up2,
@@ -221,10 +256,41 @@ class Airtime2CashViews(APIView):
                         "ref": request_id,
                         "sitephone": sitephone,
                     }
-                    user_wallet = request.user.wallet
-                    airtime2cash_response = top_up2(user_data, "airtime-cash")
-                    if airtime2cash_response["code"] == 101:
+
+                    topup_response = top_up2(user_data, "airtime2cash")
+
+                    if topup_response.get("success"):
+                        user_wallet = request.user.wallet
                         user_wallet.credit(amount=amount, reference=request_id)
+
+                        try:
+                            send_notification(
+                                user=request.user,
+                                title="Airtime Converted",
+                                message=f"₦{amount} converted to cash successfully",
+                                notification_type="payment_success",
+                                email_subject="BlueSea - Airtime Converted",
+                            )
+                        except Exception as e:
+                            logger.error(f"Error sending notification: {str(e)}")
+
+                        return Response(
+                            {
+                                "success": True,
+                                "message": "Airtime converted successfully",
+                            },
+                            status=status.HTTP_200_OK,
+                        )
+
+                    return Response(
+                        {"success": False, "error": "Conversion failed"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                return Response(
+                    {"success": False, "error": "Service unavailable"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
 
 class GroupPaymentViews(APIView):
@@ -2279,5 +2345,129 @@ class ElectricityPaymentCustomerViews(APIView):
         except Exception as e:
             return Response(
                 {"success": False, "error": f"Request failed: {str(e)}."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class InternalTransferView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        transaction_pin = request.data.get("transaction_pin")
+        recipient_email = request.data.get("email")
+        amount = request.data.get("amount")
+
+        if not transaction_pin:
+            return Response(
+                {"error": "Transaction PIN is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not request.user.pin_is_set:
+            return Response(
+                {"error": "Please set your transaction PIN first"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response(
+                {"error": "Invalid transaction PIN"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not recipient_email:
+            return Response(
+                {"error": "Recipient email is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not amount or Decimal(str(amount)) <= 0:
+            return Response(
+                {"error": "Valid amount is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        amount = Decimal(str(amount))
+
+        # Get recipient user
+        try:
+            recipient = User.objects.get(email=recipient_email)
+        except User.DoesNotExist:
+            return Response(
+                {"error": "Recipient not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if recipient == request.user:
+            return Response(
+                {"error": "Cannot transfer to yourself"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        sender_wallet = request.user.wallet
+
+        if sender_wallet.balance < amount:
+            return Response(
+                {"error": "Insufficient funds"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        sender_reference = generate_reference_id()
+        recipient_reference = generate_reference_id()
+
+        try:
+            with transaction.atomic():
+                # Debit sender
+                sender_wallet.debit(
+                    amount=amount,
+                    description=f"Internal transfer to {recipient.email}",
+                    reference=sender_reference,
+                )
+
+                # Credit recipient
+                recipient_wallet = recipient.wallet
+                recipient_wallet.credit(
+                    amount=amount,
+                    description=f"Internal transfer from {request.user.email}",
+                    reference=recipient_reference,
+                )
+
+                # Send notification to sender
+                try:
+                    send_notification(
+                        user=request.user,
+                        title="Transfer Successful",
+                        message=f"₦{amount} transferred to {recipient.email}",
+                        notification_type="payment_success",
+                        email_subject="BlueSea - Transfer Successful",
+                    )
+                except Exception as e:
+                    logger.error(f"Error sending notification: {str(e)}")
+
+                # Send notification to recipient
+                try:
+                    send_notification(
+                        user=recipient,
+                        title=" funds Received",
+                        message=f"₦{amount} received from {request.user.email}",
+                        notification_type="payment_success",
+                        email_subject="BlueSea - Funds Received",
+                    )
+                except Exception as e:
+                    logger.error(f"Error sending notification: {str(e)}")
+
+            return Response(
+                {
+                    "success": True,
+                    "message": "Transfer successful",
+                    "reference": sender_reference,
+                    "amount": str(amount),
+                    "recipient": recipient.email,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except Exception as e:
+            return Response(
+                {"success": False, "error": f"Transfer failed: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
