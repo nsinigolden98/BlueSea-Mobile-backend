@@ -116,34 +116,34 @@ class EventInfoSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Event date must be in the future")
         return value
 
-
 class CreateEventSerializer(serializers.ModelSerializer):
-    """Serializer for creating events with multiple ticket types"""
-
-    ticket_types = serializers.ListField(
-        child=serializers.DictField(),
-        required=False,
-        allow_empty=True,
-        write_only=True,
-        help_text="Array of ticket types with name, price, quantity_available, and optional description",
-    )
+    # Use your actual serializer here instead of ListField/DictField
+    ticket_types = TicketTypeSerializer(many=True, required=False)
 
     class Meta:
         model = EventInfo
         fields = [
-            "vendor",
-            "event_title",
-            "event_description",
-            "event_date",
-            "event_location",
-            "hosted_by",
-            "category",
-            "is_free",
-            "quantity",
-            "event_banner",
-            "ticket_image",
-            "ticket_types",
+            "vendor", "event_title", "event_description", 
+            "event_date", "event_location", "hosted_by", 
+            "category", "is_free", "quantity", "event_banner", 
+            "ticket_image", "ticket_types",
         ]
+
+    def create(self, validated_data):
+        # 1. Pop the validated ticket data
+        ticket_types_data = validated_data.pop('ticket_types', [])
+
+        # 2. Create the Event instance
+        event = EventInfo.objects.create(**validated_data)
+
+        # 3. Use the TicketType model to save
+        for ticket_data in ticket_types_data:
+            # Note: Ensure your TicketType model has a ForeignKey to EventInfo
+            # named 'event' or similar.
+            TicketType.objects.create(event=event, **ticket_data)
+
+        return event
+
 
     def validate(self, data):
         # Convert string booleans to actual booleans

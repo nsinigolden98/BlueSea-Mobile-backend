@@ -117,9 +117,6 @@ class CreateEventView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
-        elif isinstance(ticket_types_data, list):
-            # Already a list (from JSON request body)
-            pass
 
         else:
             # Unknown type
@@ -1975,41 +1972,16 @@ class VendorTicketsList(APIView):
         }
 
         # Get event breakdown
-        event_stats = []
         vendor_events = EventInfo.objects.filter(vendor=vendor).order_by("-event_date")
-
-        for event in vendor_events:
-            event_tickets = IssuedTicket.objects.filter(event=event)
-            event_stats.append(
-                {
-                    "event_id": str(event.id),
-                    "event_title": event.event_title,
-                    "event_date": event.event_date.strftime("%Y-%m-%d %H:%M:%S"),
-                    "is_approved": event.is_approved,
-                    "total_tickets": event_tickets.count(),
-                    "upcoming": event_tickets.filter(status="upcoming").count(),
-                    "used": event_tickets.filter(status="used").count(),
-                    "expired": event_tickets.filter(status="expired").count(),
-                    "canceled": event_tickets.filter(status="canceled").count(),
-                }
-            )
-
-        # Serialize tickets
-        from .serializers import IssuedTicketSerializer
-
-        serializer = IssuedTicketSerializer(
-            base_tickets, many=True, context={"request": request}
-        )
-
+        all_event = EventInfoSerializer(vendor_events, many=True)
+          
         return Response(
             {
                 "state": True,
                 "vendor": {"id": str(vendor.id), "brand_name": vendor.brand_name},
                 "statistics": stats,
-                "event_breakdown": event_stats,
-                "filtered_count": base_tickets.count(),
-                "tickets": serializer.data,
-            },
+                "data": all_event.data
+            } ,
             status=status.HTTP_200_OK,
         )
 
