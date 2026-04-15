@@ -187,7 +187,8 @@ class CreateEventView(APIView):
 
 class CreateTicketVendor(APIView):
     permission_classes = [IsAuthenticated]
-
+    parser_classes = [MultiPartParser, FormParser]
+    
     def post(self, request):
         logger.info(f"Vendor creation request initiated by user {request.user.id}")
         logger.debug(f"Request data keys: {list(request.data.keys())}")
