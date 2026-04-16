@@ -42,7 +42,7 @@ class Wallet(models.Model):
         )
 
     def debit(self, amount, description="Debit", reference=None):
-        if amount <= 0:
+        if amount < 0:
             raise ValueError("Amount must be positive")
         
         if self.balance < Decimal(amount):

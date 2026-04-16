@@ -35,6 +35,7 @@ from django.core.files.base import ContentFile
 from rest_framework.throttling import UserRateThrottle
 from accounts.models import Profile
 from django.db import models
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -577,10 +578,19 @@ class PurchaseTicketView(APIView):
                         qr_data = f"{str(ticket.id)}:free-ticket:{attendee['email']}"
                         ticket.qr_code = qr_data
                         ticket.save()
-
+                        
+                        def generate_reference_id():
+                             now = datetime.now().strftime("%Y%m%d%H%M%S")
+                             unique_part = str(uuid.uuid4()).split("-")[0].upper()
+                             reference_id = f"{now}-{unique_part}"
+                             return reference_id
+         
+                        reference_id = generate_reference_id()
+                        user_wallet = request.user.wallet
+                        
                         user_wallet.debit(
                         amount=  0,
-                        description= f' Bought {quantity} ticket for {event} - {ticket_type_obj}',
+                        description= f' Bought {quantity} ticket for {event}',
                         reference = reference_id,
                         )
 
