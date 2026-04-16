@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 from group_payment.models import Group, GroupMember
 from wallet.models import Wallet
-from .models import GroupPayment, GroupPaymentContribution
+from .models import GroupPayment, GroupPaymentContribution, Withdrawal
 from transactions.models import WalletTransaction
 from .serializers import (
     AirtimeTopUpSerializer,
@@ -34,25 +34,9 @@ from .serializers import (
     GroupPaymentSerializer,
     Airtime2CashSerializer,
     ElectricityPaymentCustomerSerializer,
+    WithdrawalSerializer
 )
-from .serializers import (
-    AirtimeTopUpSerializer,
-    JAMBRegistrationSerializer,
-    WAECRegitrationSerializer,
-    WAECResultCheckerSerializer,
-    ElectricityPaymentSerializer,
-    DSTVPaymentSerializer,
-    GOTVPaymentSerializer,
-    StartimesPaymentSerializer,
-    ShowMaxPaymentSerializer,
-    MTNDataTopUpSerializer,
-    AirtelDataTopUpSerializer,
-    GloDataTopUpSerializer,
-    EtisalatDataTopUpSerializer,
-    GroupPaymentSerializer,
-    Airtime2CashSerializer,
-    ElectricityPaymentCustomerSerializer,
-)
+
 from notifications.utils import (
     send_notification,
     contribution_notification,
@@ -2469,5 +2453,82 @@ class InternalTransferView(APIView):
         except Exception as e:
             return Response(
                 {"success": False, "error": f"Transfer failed: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class WithdrawalView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        account_name = request.data.get("account_name")
+        account_number = request.data.get("account_number")
+        bank_code = request.data.get("bank_code")
+        bank_name = request.data.get("bank_name")
+        amount = int(request.data.get("amount"))
+
+        try:
+            with transaction.atomic():
+                reference_id = generate_reference_id()
+                # Create withdrawal record
+                withdrawal = Withdrawal.objects.create(
+                    user = request.user,
+                    account_name=account_name,
+                    account_number=account_number,
+                    bank_code=bank_code,
+                    bank_name=bank_name,
+                    amount=amount,
+                    payment_reference= reference_id,
+                    status="pending",
+                )
+
+                user_wallet = request.user.wallet
+
+                if  amount < 500:
+                    return Response(
+                    {"error": "Amount must be above 500", "success": False},
+                    status=status.HTTP_400_BAD_REQUEST,
+                    )
+                
+
+                if user_wallet.balance < amount:
+                    return Response(
+                    {"error": "Insufficient funds", "success": False},
+                    status=status.HTTP_400_BAD_REQUEST,
+                    )
+                
+                user_wallet.debit(
+                    amount=amount,
+                    description=f"Transfer to {account_name}",
+                    reference=reference_id,
+                    )
+
+                # Send notification to sender
+                try:
+                    send_notification(
+                        user=request.user,
+                        title="Transfer Successful",
+                        message=f"₦{amount} transferred to {account_name}",
+                        notification_type="payment_success",
+                        email_subject="BlueSea - Transfer Successful",
+                    )
+                except Exception as e:
+                    logger.error(f"Error sending notification: {str(e)}")
+
+                serializer = WithdrawalSerializer(withdrawal)
+                return Response(
+                    {
+                        "state": True,
+                        "message": "Withdrawal request submitted",
+                        "withdrawal": serializer.data,
+                    },
+                    status=status.HTTP_201_CREATED,
+                )
+        
+        except Exception as e:
+             print(e)
+             logger.error(f"Error sending notification: {str(e)}")
+             return Response(
+                {"success": False, "error": f"Withdrawal failed: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

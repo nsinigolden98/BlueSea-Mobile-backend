@@ -18,6 +18,7 @@ from .views import (
     ElectricityPaymentCustomerViews,
     Airtime2CashViews,
     InternalTransferView,
+    WithdrawalView,
 )
 
 urlpatterns = [
@@ -52,5 +53,8 @@ urlpatterns = [
     ),
     path(
         "internal-transfer/", InternalTransferView.as_view(), name="internal-transfer"
+    ),
+    path(
+        "withdrawal/", WithdrawalView.as_view(), name="withdrawal"
     ),
 ]

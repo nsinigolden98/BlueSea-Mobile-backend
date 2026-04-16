@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from group_payment.models import Group, GroupMember
-
+from django.conf import settings
 User = get_user_model()
 
 NETWORK_TYPES = [
@@ -540,3 +540,29 @@ class ElectricityPaymentCustomers(models.Model):
     biller = models.CharField(max_length=30, choices=BILLER_NAME)
     meter_number = models.IntegerField()
     meter_type = models.CharField(max_length=20, choices=METER_TYPES)
+
+
+class Withdrawal(models.Model):
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("failed", "Failed"),
+        ("successful", "Successful"),
+    ]
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="withdrawal"
+    )
+    account_name = models.CharField(max_length=100)
+    account_number = models.CharField(max_length=10)
+    bank_code = models.CharField(max_length=10)
+    bank_name = models.CharField(max_length=50)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    payment_reference = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Withdrawal {self.amount} to {self.account_name} {self.account_number} - {self.status}"
+
+    class Meta:
+        ordering = ["-created_at"]
