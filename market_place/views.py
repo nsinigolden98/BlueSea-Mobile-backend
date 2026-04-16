@@ -578,6 +578,12 @@ class PurchaseTicketView(APIView):
                         ticket.qr_code = qr_data
                         ticket.save()
 
+                        user_wallet.debit(
+                        amount=  0,
+                        description= f' Bought {quantity} ticket for {event} - {ticket_type_obj}',
+                        reference = reference_id,
+                        )
+
                         # Generate QR image
                         try:
                             qr_code_image = generate_ticket_qr_code(ticket)
@@ -677,8 +683,23 @@ class PurchaseTicketView(APIView):
         try:
             with transaction.atomic():
                 # Deduct from wallet
-                wallet.balance -= total_cost
-                wallet.save()
+
+                def generate_reference_id():
+                    now = datetime.now().strftime("%Y%m%d%H%M%S")
+                    unique_part = str(uuid.uuid4()).split("-")[0].upper()
+                    reference_id = f"{now}-{unique_part}"
+                    return reference_id
+
+                reference_id = generate_reference_id()
+                user_wallet = request.user.wallet
+
+
+                user_wallet.debit(
+                    amount= total_cost,
+                    description= f' Bought {quantity} ticket for {event} - {ticket_type_obj}',
+                    reference = reference_id,
+                )
+
 
                 # Reduce ticket quantity
                 ticket_type.quantity_available -= quantity
