@@ -198,6 +198,9 @@ class EventInfo(models.Model):
         ("Conference", "Conference"),
         ("Sports", "Sports"),
         ("Networking", "Networking"),
+        ("Workshop", 'Workshop'),
+        ('Party', 'Party'),
+        ('Others', 'Others')
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
