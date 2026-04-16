@@ -244,6 +244,7 @@ class TicketType(models.Model):
     )  # e.g Regular, VIP, General Admission
     price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity_available = models.IntegerField()
+    initial_quantity = models.IntegerField(default=0)
     description = models.TextField(
         null=True, blank=True, help_text="Optional ticket tier description"
     )

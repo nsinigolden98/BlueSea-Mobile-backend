@@ -26,6 +26,7 @@ class TicketTypeSerializer(serializers.ModelSerializer):
             "name",
             "price",
             "quantity_available",
+            "initial_quantity",
             "description",
             "created_at",
         ]

@@ -2081,10 +2081,10 @@ class EventWithdrawalView(APIView):
             available = 0
         else:
             total = sum(
-                tt.price * tt.quantity_available for tt in event.ticket_types.all()
+                tt.price * tt.initial_quantity for tt in event.ticket_types.all()
             )
             sold_values = sum(
-                tt.price * min(tickets_sold, tt.quantity_available)
+                tt.price * (tt.initial_quantity - tt.quantity_available)
                 for tt in event.ticket_types.all()
             )
             available = float(sold_values)
