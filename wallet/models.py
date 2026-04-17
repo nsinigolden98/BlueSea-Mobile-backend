@@ -20,7 +20,7 @@ class Wallet(models.Model):
     
     @property
     def available_balance(self):
-        return self.balance - (self.locked_balance or Decimal('0.00'))
+        return self.balance
     
 
     def credit(self, amount, description="Credit", reference=None):
