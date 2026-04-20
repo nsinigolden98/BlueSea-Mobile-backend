@@ -2308,7 +2308,7 @@ class ElectricityPaymentCustomerViews(APIView):
                 serializer.save()
 
                 data = {
-                    "billersCode": serializer.data["meter_number"],
+                    "billersCode": int(serializer.data["meter_number"]),
                     "serviceID": serializer.data["biller"],
                     "type": serializer.data["meter_type"],
                 }

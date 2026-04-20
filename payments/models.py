@@ -538,7 +538,7 @@ class Airtime2Cash(models.Model):
 
 class ElectricityPaymentCustomers(models.Model):
     biller = models.CharField(max_length=30, choices=BILLER_NAME)
-    meter_number = models.IntegerField()
+    meter_number = models.CharField(max_length=15)
     meter_type = models.CharField(max_length=20, choices=METER_TYPES)
 
 
