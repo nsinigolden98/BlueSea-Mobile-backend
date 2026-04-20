@@ -17,6 +17,7 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             "surname",
             "pin_is_set",
             "image",
+            "referral_code",
         ]
 
 

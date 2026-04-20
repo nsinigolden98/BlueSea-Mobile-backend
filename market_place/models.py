@@ -198,9 +198,9 @@ class EventInfo(models.Model):
         ("Conference", "Conference"),
         ("Sports", "Sports"),
         ("Networking", "Networking"),
-        ("Workshop", 'Workshop'),
-        ('Party', 'Party'),
-        ('Others', 'Others')
+        ("Workshop", "Workshop"),
+        ("Party", "Party"),
+        ("Others", "Others"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -385,6 +385,7 @@ class EventScanner(models.Model):
 
     def __str__(self):
         return f"Scanner {self.user.username} for Event {self.event.event_title}"
+
     class Meta:
         unique_together = ["user", "event"]
 
@@ -400,13 +401,13 @@ class EventWithdrawal(models.Model):
     event = models.ForeignKey(
         EventInfo, on_delete=models.CASCADE, related_name="withdrawals"
     )
-    account_name = models.CharField(max_length=100)
-    account_number = models.CharField(max_length=10)
-    bank_code = models.CharField(max_length=10)
-    bank_name = models.CharField(max_length=50)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+    platform_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    amount_credited = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
-    payment_reference = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    payment_reference = models.CharField(
+        max_length=100, unique=True, null=True, blank=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(blank=True, null=True)
 

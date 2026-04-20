@@ -6,7 +6,10 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.hashers import make_password, check_password
+import secrets
 
+def generate_referal_code():
+    return secrets.token_hex(3).upper()
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -38,7 +41,7 @@ class Profile(AbstractUser):
     transaction_pin = models.CharField(max_length=255, null=True, blank=True)
     pin_is_set = models.BooleanField(default=False)
     created_on = models.DateTimeField(auto_now_add=True)
-    
+    referral_code= models.CharField(max_length=6, default= generate_referal_code())
 
     objects = UserManager()
 
@@ -53,7 +56,7 @@ class Profile(AbstractUser):
     def get_profile_picture(self):
         if self.image:
             return self.image.url
-    
+
     def get_full_name(self):
         return f"{self.surname}, {self.other_names}"
     

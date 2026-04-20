@@ -118,7 +118,6 @@ class CreateEventView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
-
         else:
             # Unknown type
             ticket_types_data = []
@@ -189,7 +188,7 @@ class CreateEventView(APIView):
 class CreateTicketVendor(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
-    
+
     def post(self, request):
         logger.info(f"Vendor creation request initiated by user {request.user.id}")
         logger.debug(f"Request data keys: {list(request.data.keys())}")
@@ -478,6 +477,16 @@ class EventDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class EventPublicView(APIView):
+    permission_classes = []  # No authentication required
+
+    def get(self, request, event_id):
+        # Only return approved events
+        event = get_object_or_404(EventInfo, id=event_id, is_approved=True)
+        serializer = EventInfoSerializer(event)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class PurchaseTicketView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -578,20 +587,20 @@ class PurchaseTicketView(APIView):
                         qr_data = f"{str(ticket.id)}:free-ticket:{attendee['email']}"
                         ticket.qr_code = qr_data
                         ticket.save()
-                        
+
                         def generate_reference_id():
-                             now = datetime.now().strftime("%Y%m%d%H%M%S")
-                             unique_part = str(uuid.uuid4()).split("-")[0].upper()
-                             reference_id = f"{now}-{unique_part}"
-                             return reference_id
-         
+                            now = datetime.now().strftime("%Y%m%d%H%M%S")
+                            unique_part = str(uuid.uuid4()).split("-")[0].upper()
+                            reference_id = f"{now}-{unique_part}"
+                            return reference_id
+
                         reference_id = generate_reference_id()
                         user_wallet = request.user.wallet
-                        
+
                         user_wallet.debit(
-                        amount=  0,
-                        description= f' Bought {quantity} ticket for {event}',
-                        reference = reference_id,
+                            amount=0,
+                            description=f" Bought {quantity} ticket for {event}",
+                            reference=reference_id,
                         )
 
                         # Generate QR image
@@ -703,13 +712,11 @@ class PurchaseTicketView(APIView):
                 reference_id = generate_reference_id()
                 user_wallet = request.user.wallet
 
-
                 user_wallet.debit(
-                    amount= total_cost,
-                    description= f' Bought {quantity} ticket for {event} - {ticket_type_obj}',
-                    reference = reference_id,
+                    amount=total_cost,
+                    description=f" Bought {quantity} ticket for {event} - {ticket_type_obj}",
+                    reference=reference_id,
                 )
-
 
                 # Reduce ticket quantity
                 ticket_type.quantity_available -= quantity
@@ -2006,14 +2013,14 @@ class VendorTicketsList(APIView):
         # Get event breakdown
         vendor_events = EventInfo.objects.filter(vendor=vendor).order_by("-event_date")
         all_event = EventInfoSerializer(vendor_events, many=True)
-          
+
         return Response(
             {
                 "state": True,
                 "vendor": {"id": str(vendor.id), "brand_name": vendor.brand_name},
                 "statistics": stats,
-                "data": all_event.data
-            } ,
+                "data": all_event.data,
+            },
             status=status.HTTP_200_OK,
         )
 
@@ -2046,19 +2053,13 @@ class EventWithdrawalView(APIView):
         from .models import EventWithdrawal
         from .serializers import EventWithdrawalSerializer
         import uuid
+        from decimal import Decimal
 
         event_id = request.data.get("event_id")
-        account_name = request.data.get("account_name")
-        account_number = request.data.get("account_number")
-        bank_code = request.data.get("bank_code")
-        bank_name = request.data.get("bank_name")
-        amount = request.data.get("amount")
 
-        if not all(
-            [event_id, account_name, account_number, bank_code, bank_name, amount]
-        ):
+        if not event_id:
             return Response(
-                {"error": "All fields are required"}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "Event ID is required"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         # Verify event belongs to user
@@ -2075,43 +2076,80 @@ class EventWithdrawalView(APIView):
                 {"error": "Only vendors can withdraw"}, status=status.HTTP_403_FORBIDDEN
             )
 
-        # Calculate available balance (profit from tickets sold)
-        tickets_sold = IssuedTicket.objects.filter(event=event).count()
-        if event.is_free or not event.ticket_types.exists():
-            available = 0
-        else:
-            total = sum(
-                tt.price * tt.initial_quantity for tt in event.ticket_types.all()
-            )
-            sold_values = sum(
-                tt.price * (tt.initial_quantity - tt.quantity_available)
-                for tt in event.ticket_types.all()
-            )
-            available = float(sold_values)
+        # Calculate total earnings from ticket sales
+        total_earned = Decimal("0")
+        total_tickets_created = 0
+        tickets_available = 0
 
-        if float(amount) > available:
+        if not event.is_free and event.ticket_types.exists():
+            for tt in event.ticket_types.all():
+                sold = tt.initial_quantity - tt.quantity_available
+                total_earned += tt.price * sold
+                total_tickets_created += tt.initial_quantity
+                tickets_available += tt.quantity_available
+
+        # Calculate total already withdrawn
+        total_withdrawn = sum(
+            w.amount
+            for w in EventWithdrawal.objects.filter(event=event, status="successful")
+        )
+
+        # Calculate available balance
+        available = total_earned - total_withdrawn
+
+        if available <= 0:
             return Response(
-                {"error": f"Insufficient funds. Available: ₦{available}"},
+                {"error": "No funds available for withdrawal"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Create withdrawal record
+        # Calculate 90% for wallet credit (10% platform fee)
+        platform_fee = available * Decimal("0.10")
+        wallet_credit = available - platform_fee
+
+        # Credit the user's main wallet
+        payment_ref = f"EW{uuid.uuid4().hex[:12].upper()}"
+        try:
+            user_wallet = request.user.wallet
+            user_wallet.credit(
+                amount=wallet_credit,
+                reference=payment_ref,
+                description=f"Event withdrawal: {event.event_title} (90% of ₦{available}, 10% platform fee)",
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to process withdrawal: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        # Create withdrawal record for tracking
         withdrawal = EventWithdrawal.objects.create(
             event=event,
-            account_name=account_name,
-            account_number=account_number,
-            bank_code=bank_code,
-            bank_name=bank_name,
-            amount=amount,
-            payment_reference=f"EW{uuid.uuid4().hex[:12].upper()}",
-            status="pending",
+            amount=available,
+            platform_fee=platform_fee,
+            amount_credited=wallet_credit,
+            payment_reference=payment_ref,
+            status="successful",
+            completed_at=timezone.now(),
         )
 
         serializer = EventWithdrawalSerializer(withdrawal)
+
+        # Calculate new totals after this withdrawal
+        new_total_withdrawn = total_withdrawn + available
+        amount_left = total_earned - new_total_withdrawn
+
         return Response(
             {
                 "state": True,
-                "message": "Withdrawal request submitted",
+                "message": f"Withdrawal successful! ₦{wallet_credit} added to your wallet (10% platform fee deducted)",
+                "event_summary": {
+                    "total_earned": str(total_earned),
+                    "total_withdrawn": str(new_total_withdrawn),
+                    "amount_left": str(amount_left),
+                    "total_tickets_created": total_tickets_created,
+                    "tickets_available": tickets_available,
+                },
                 "withdrawal": serializer.data,
             },
             status=status.HTTP_201_CREATED,
@@ -2142,6 +2180,39 @@ class EventWithdrawalView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        # Calculate totals
+        from decimal import Decimal
+
+        total_earned = Decimal("0")
+        total_tickets_created = 0
+        tickets_available = 0
+
+        if not event.is_free and event.ticket_types.exists():
+            for tt in event.ticket_types.all():
+                sold = tt.initial_quantity - tt.quantity_available
+                total_earned += tt.price * sold
+                total_tickets_created += tt.initial_quantity
+                tickets_available += tt.quantity_available
+
+        total_withdrawn = sum(
+            w.amount
+            for w in EventWithdrawal.objects.filter(event=event, status="successful")
+        )
+        amount_left = total_earned - total_withdrawn
+
         withdrawals = EventWithdrawal.objects.filter(event=event)
         serializer = EventWithdrawalSerializer(withdrawals, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(
+            {
+                "withdrawals": serializer.data,
+                "summary": {
+                    "total_earned": str(total_earned),
+                    "total_withdrawn": str(total_withdrawn),
+                    "amount_left": str(amount_left),
+                    "total_tickets_created": total_tickets_created,
+                    "tickets_available": tickets_available,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )

@@ -9,4 +9,5 @@ urlpatterns = [
    # path('redeem/', views.RedeemPointsView.as_view(), name='redeem'),
     path('daily-login/', views.ClaimDailyLoginView.as_view(), name='daily-login'),
     path('campaigns/', views.ActiveCampaignsView.as_view(), name='campaigns'),
+    path('referral/', views.ReferralView.as_view(), name='referral')
 ]

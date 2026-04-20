@@ -9,11 +9,11 @@ from .models import Profile, EmailVerification, ResetPassword, ResetPasswordValu
 class ProfileAdmin(UserAdmin):
     list_display = [
         'email', 'full_name', 'phone', 'role_badge',
-        'email_verified_display', 'is_active_display', 'is_staff', 'created_on'
+        'email_verified_display', 'is_active_display', 'is_staff', 'created_on', 'referral_code'
     ]
     list_filter = ['role', 'email_verified', 'is_active', 'is_staff', 'created_on']
     search_fields = ['email', 'surname', 'other_names', 'phone']
-    readonly_fields = ['created_on', 'profile_photo']
+    readonly_fields = ['created_on', 'profile_photo', 'referral_code']
     ordering = ['-created_on']
     list_per_page = 25
     list_display_links = ['email', 'full_name']

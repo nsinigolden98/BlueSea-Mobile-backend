@@ -17,7 +17,7 @@ class Wallet(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s Wallet - {self.balance}"
-    
+
     @property
     def available_balance(self):
         return self.balance

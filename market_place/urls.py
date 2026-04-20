@@ -3,6 +3,7 @@ from .views import (
     CreateEventView,
     EventListView,
     EventDetailView,
+    EventPublicView,
     PurchaseTicketView,
     MyTicketsView,
     ScanTicketView,
@@ -32,6 +33,9 @@ urlpatterns = [
     path("events/create/", CreateEventView.as_view(), name="create-event"),
     path("events/all/", EventListView.as_view(), name="event-list"),
     path("events/<uuid:event_id>/", EventDetailView.as_view(), name="event-detail"),
+    path(
+        "events/public/<uuid:event_id>/", EventPublicView.as_view(), name="event-public"
+    ),
     # purchase ticket
     path(
         "events/<uuid:event_id>/purchase/",

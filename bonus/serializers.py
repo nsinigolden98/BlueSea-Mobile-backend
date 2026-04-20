@@ -72,4 +72,8 @@ class ReferralSerializer(serializers.ModelSerializer):
             'bonus_awarded', 'first_transaction_completed', 
             'created_at', 'completed_at'
         ]
-        read_only_fields = fields
+        read_only_fields = [
+            'id','status', 'status_display', 'count',
+            'bonus_awarded', 'first_transaction_completed', 
+            'created_at', 'completed_at'
+        ]

@@ -117,6 +117,7 @@ class EventInfoSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Event date must be in the future")
         return value
 
+
 class CreateEventSerializer(serializers.ModelSerializer):
     # Use your actual serializer here instead of ListField/DictField
     ticket_types = TicketTypeSerializer(many=True, required=False)
@@ -124,15 +125,23 @@ class CreateEventSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventInfo
         fields = [
-            "vendor", "event_title", "event_description", 
-            "event_date", "event_location", "hosted_by", 
-            "category", "is_free", "quantity", "event_banner", 
-            "ticket_image", "ticket_types",
+            "vendor",
+            "event_title",
+            "event_description",
+            "event_date",
+            "event_location",
+            "hosted_by",
+            "category",
+            "is_free",
+            "quantity",
+            "event_banner",
+            "ticket_image",
+            "ticket_types",
         ]
 
     def create(self, validated_data):
         # 1. Pop the validated ticket data
-        ticket_types_data = validated_data.pop('ticket_types', [])
+        ticket_types_data = validated_data.pop("ticket_types", [])
 
         # 2. Create the Event instance
         event = EventInfo.objects.create(**validated_data)
@@ -144,7 +153,6 @@ class CreateEventSerializer(serializers.ModelSerializer):
             TicketType.objects.create(event=event, **ticket_data)
 
         return event
-
 
     def validate(self, data):
         # Convert string booleans to actual booleans
@@ -553,11 +561,9 @@ class EventWithdrawalSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "event",
-            "account_name",
-            "account_number",
-            "bank_code",
-            "bank_name",
             "amount",
+            "platform_fee",
+            "amount_credited",
             "status",
             "payment_reference",
             "created_at",

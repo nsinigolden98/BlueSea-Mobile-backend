@@ -6,17 +6,19 @@ from django.db import transaction as db_transaction
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from .models import BonusPoint, BonusHistory, BonusCampaign
+from .models import BonusPoint, BonusHistory, BonusCampaign, Referral, User
 from .serializers import (
-    BonusPointSerializer, 
-    BonusHistorySerializer, 
-   # RedeemPointsSerializer,
-    BonusCampaignSerializer
+    BonusPointSerializer,
+    BonusHistorySerializer,
+    # RedeemPointsSerializer,
+    BonusCampaignSerializer,
+    ReferralSerializer,
 )
 from .utils import (
-    redeem_points, 
-    award_daily_login_bonus, 
-    user_points_summary
+    redeem_points,
+    award_daily_login_bonus,
+    user_points_summary,
+    award_signup_bonus,
 )
 import logging
 from drf_spectacular.utils import extend_schema, OpenApiParameter
@@ -27,43 +29,43 @@ logger = logging.getLogger(__name__)
 
 class BonusPointsSummaryView(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     @extend_schema(
         summary="Get bonus points summary",
         description="Retrieve user's bonus points balance and statistics",
         responses={200: OpenApiTypes.OBJECT, 500: OpenApiTypes.OBJECT},
-        tags=['Bonus & Rewards']
+        tags=["Bonus & Rewards"],
     )
     def get(self, request):
         try:
             # Try to get from cache first
-            cache_key = f'bonus_summary_{request.user.id}'
+            cache_key = f"bonus_summary_{request.user.id}"
             cached_data = cache.get(cache_key)
-            
+
             if cached_data:
-                return Response({
-                    'success': True,
-                    'data': cached_data,
-                    'cached': True
-                }, status=status.HTTP_200_OK)
-            
+                return Response(
+                    {"success": True, "data": cached_data, "cached": True},
+                    status=status.HTTP_200_OK,
+                )
+
             # If not in cache, get from database
             summary = user_points_summary(request.user)
-            
+
             # Cache for 5 minutes
             cache.set(cache_key, summary, timeout=300)
-            
-            return Response({
-                'success': True,
-                'data': summary,
-                'cached': False
-            }, status=status.HTTP_200_OK)
+
+            return Response(
+                {"success": True, "data": summary, "cached": False},
+                status=status.HTTP_200_OK,
+            )
         except Exception as e:
-            logger.error(f"Error getting points summary for {request.user.email}: {str(e)}")
-            return Response({
-                'success': False,
-                'error': 'Failed to retrieve points summary'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(
+                f"Error getting points summary for {request.user.email}: {str(e)}"
+            )
+            return Response(
+                {"success": False, "error": "Failed to retrieve points summary"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 class BonusHistoryView(APIView):
@@ -73,70 +75,84 @@ class BonusHistoryView(APIView):
         summary="Get bonus transaction history",
         description="Retrieve user's bonus points transaction history with pagination",
         parameters=[
-            OpenApiParameter(name='type', type=str, description='Filter by transaction type', required=False),
-            OpenApiParameter(name='page', type=int, description='Page number', required=False),
-            OpenApiParameter(name='page_size', type=int, description='Items per page (default: 20)', required=False),
+            OpenApiParameter(
+                name="type",
+                type=str,
+                description="Filter by transaction type",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="page", type=int, description="Page number", required=False
+            ),
+            OpenApiParameter(
+                name="page_size",
+                type=int,
+                description="Items per page (default: 20)",
+                required=False,
+            ),
         ],
         responses={200: BonusHistorySerializer(many=True), 500: OpenApiTypes.OBJECT},
-        tags=['Bonus & Rewards']
+        tags=["Bonus & Rewards"],
     )
-    
     def get(self, request):
         try:
             history = BonusHistory.objects.filter(user=request.user)
-            
+
             # Filter by transaction type if provided
-            transaction_type = request.query_params.get('type')
+            transaction_type = request.query_params.get("type")
             if transaction_type:
                 history = history.filter(transaction_type=transaction_type)
-            
+
             # Pagination
-            page_size = int(request.query_params.get('page_size', 20))
-            page = int(request.query_params.get('page', 1))
+            page_size = int(request.query_params.get("page_size", 20))
+            page = int(request.query_params.get("page", 1))
             start = (page - 1) * page_size
             end = start + page_size
-            
+
             total_count = history.count()
             history = history[start:end]
-            
+
             serializer = BonusHistorySerializer(history, many=True)
-            
-            return Response({
-                'success': True,
-                'count': total_count,
-                'page': page,
-                'page_size': page_size,
-                'data': serializer.data
-            }, status=status.HTTP_200_OK)
-            
+
+            return Response(
+                {
+                    "success": True,
+                    "count": total_count,
+                    "page": page,
+                    "page_size": page_size,
+                    "data": serializer.data,
+                },
+                status=status.HTTP_200_OK,
+            )
+
         except Exception as e:
             logger.error(f"Error getting history for {request.user.email}: {str(e)}")
-            return Response({
-                'success': False,
-                'error': 'Failed to retrieve history'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"success": False, "error": "Failed to retrieve history"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 # class RedeemPointsView(APIView):
 #     permission_classes = [IsAuthenticated]
-    
+
 #     def post(self, request):
 #         serializer = RedeemPointsSerializer(data=request.data)
-        
+
 #         if not serializer.is_valid():
 #             return Response({
 #                 'success': False,
 #                 'errors': serializer.errors
 #             }, status=status.HTTP_400_BAD_REQUEST)
-        
+
 #         points = serializer.validated_data['points']
-        
+
 #         try:
 #             history, wallet_amount = redeem_points(
 #                 user=request.user,
 #                 points=points
 #             )
-            
+
 #             return Response({
 #                 'success': True,
 #                 'message': f'Successfully redeemed {points} points for ₦{wallet_amount}',
@@ -146,7 +162,7 @@ class BonusHistoryView(APIView):
 #                     'new_balance': BonusPoint.objects.get(user=request.user).points
 #                 }
 #             }, status=status.HTTP_200_OK)
-            
+
 #         except ValueError as e:
 #             return Response({
 #                 'success': False,
@@ -166,69 +182,161 @@ class ClaimDailyLoginView(APIView):
     @extend_schema(
         summary="Claim daily login bonus",
         description="Claim daily login bonus points (once per day)",
-        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 500: OpenApiTypes.OBJECT},
-        tags=['Bonus & Rewards']
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            500: OpenApiTypes.OBJECT,
+        },
+        tags=["Bonus & Rewards"],
     )
-    
     def post(self, request):
         try:
             history = award_daily_login_bonus(request.user)
-            
+
             if history:
-                return Response({
-                    'success': True,
-                    'message': 'Daily login bonus claimed!',
-                    'data': {
-                        'points_earned': history.points,
-                        'new_balance': history.balance_after
-                    }
-                }, status=status.HTTP_200_OK)
+                return Response(
+                    {
+                        "success": True,
+                        "message": "Daily login bonus claimed!",
+                        "data": {
+                            "points_earned": history.points,
+                            "new_balance": history.balance_after,
+                        },
+                    },
+                    status=status.HTTP_200_OK,
+                )
             else:
-                return Response({
-                    'success': False,
-                    'message': 'You have already claimed your daily bonus today'
-                }, status=status.HTTP_400_BAD_REQUEST)
-                
+                return Response(
+                    {
+                        "success": False,
+                        "message": "You have already claimed your daily bonus today",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         except Exception as e:
-            logger.error(f"Error claiming daily bonus for {request.user.email}: {str(e)}")
-            return Response({
-                'success': False,
-                'error': 'Failed to claim daily bonus'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(
+                f"Error claiming daily bonus for {request.user.email}: {str(e)}"
+            )
+            return Response(
+                {"success": False, "error": "Failed to claim daily bonus"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 class ActiveCampaignsView(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     @extend_schema(
         summary="Get active campaigns",
         description="Retrieve all currently active bonus campaigns",
         responses={200: BonusCampaignSerializer(many=True), 500: OpenApiTypes.OBJECT},
-        tags=['Bonus & Rewards']
+        tags=["Bonus & Rewards"],
     )
     # Cache for 15 minutes
-    @method_decorator(cache_page(60 * 15)) 
+    @method_decorator(cache_page(60 * 15))
     def get(self, request):
         try:
             from django.utils import timezone
-            
+
             campaigns = BonusCampaign.objects.filter(
                 is_active=True,
                 start_date__lte=timezone.now(),
-                end_date__gte=timezone.now()
+                end_date__gte=timezone.now(),
             )
-            
+
             serializer = BonusCampaignSerializer(campaigns, many=True)
-            
-            return Response({
-                'success': True,
-                'count': campaigns.count(),
-                'data': serializer.data
-            }, status=status.HTTP_200_OK)
-            
+
+            return Response(
+                {"success": True, "count": campaigns.count(), "data": serializer.data},
+                status=status.HTTP_200_OK,
+            )
+
         except Exception as e:
             logger.error(f"Error getting campaigns: {str(e)}")
-            return Response({
-                'success': False,
-                'error': 'Failed to retrieve campaigns'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"success": False, "error": "Failed to retrieve campaigns"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class ReferralView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        referrals = Referral.objects.filter(referrer=request.user)
+        referral_count = referrals.count()
+        completed_count = referrals.filter(status="completed").count()
+        serializer = ReferralSerializer(referrals, many=True)
+
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+                "referral_count": referral_count,
+                "completed_count": completed_count,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def post(self, request):
+        try:
+            referral_code = request.data.get("referral_code")
+
+            if not referral_code:
+                return Response(
+                    {"success": False, "error": "Referral code is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            referrer = User.objects.filter(referral_code=referral_code).first()
+
+            if not referrer:
+                return Response(
+                    {"success": False, "error": "Invalid referral code"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if referrer.id == request.user.id:
+                return Response(
+                    {"success": False, "error": "You cannot refer yourself"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if Referral.objects.filter(referred_user=request.user).exists():
+                return Response(
+                    {
+                        "success": False,
+                        "error": "You have already used a referral code",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            referral_obj = Referral.objects.create(
+                referrer=referrer,
+                referred_user=request.user,
+                referral_code=referral_code,
+                status="pending",
+            )
+
+            # Award signup bonus to the referred user
+            signup_bonus = award_signup_bonus(request.user)
+
+            serializer = ReferralSerializer(referral_obj)
+
+            return Response(
+                {
+                    "success": True,
+                    "message": "Referral applied successfully. You received 20 bonus points!",
+                    "data": serializer.data,
+                    "signup_bonus_awarded": signup_bonus is not None,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        except Exception as e:
+            logger.error(f"Error adding referral for {request.user.email}: {str(e)}")
+            return Response(
+                {"success": False, "error": "Failed to add referral"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
