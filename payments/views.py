@@ -1,20 +1,18 @@
-from django.conf import settings
+import logging
+import uuid
+from decimal import Decimal
 from django.db import transaction
-from rest_framework import generics, status
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from decimal import Decimal
-import uuid
-import logging
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
 from group_payment.models import Group, GroupMember
-from wallet.models import Wallet
 from .models import GroupPayment, GroupPaymentContribution, Withdrawal
 from transactions.models import WalletTransaction
 from .serializers import (
@@ -60,15 +58,7 @@ from .vtpass import (
 from .vtuafrica import (
     top_up2,
 )
-from .vtuafrica import (
-    top_up2,
-)
-from notifications.utils import (
-    send_notification,
-    contribution_notification,
-    group_payment_success,
-    group_payment_failed,
-)
+
 from bluesea_mobile.utils import InsufficientFundsException, VTUAPIException
 from bonus.utils import (
     award_daily_login_bonus,
@@ -82,7 +72,7 @@ from bonus.models import Referral, BonusCampaign, BonusHistory, BonusPoint
 import logging
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
-import uuid
+
 
 logger = logging.getLogger(__name__)
 
@@ -1901,7 +1891,7 @@ class ElectricityPaymentViews(APIView):
                     amount = int(serializer.data["amount"])
                     data = {
                         "request_id": request_id,
-                        "serviceID": serializer.data["biller_name"],
+                        "serviceID": serializer.data.get("biller_name"),
                         "billersCode": serializer.data["billerCode"],
                         "variation_code": serializer.data["meter_type"],
                         "amount": amount,

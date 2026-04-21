@@ -20,6 +20,7 @@ from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from drf_spectacular.types import OpenApiTypes
 from .pagination import WalletTransactionPagination 
+from notifications.utils import send_notification
 
 
 logger = logging.getLogger(__name__)
@@ -374,6 +375,17 @@ class PaymentWebhook(APIView):
                                 "Wallet funded successfully. Old balance: %s, New balance: %s", 
                                 old_balance, wallet.balance
                             )
+
+                            try:
+                                send_notification(
+                                user=request.user,
+                                title="Deposite To Bluesea Account",
+                                message=f"Successful Deposite of ₦{webhook_amount}",
+                                notification_type="Account Deposite",
+                                email_subject="BlueSea - Deposite",
+                            )
+                            except Exception as e:
+                                  logger.error(f"Error awarding bonus points: {str(e)}")
                             
                             return Response({
                                 "success": True, 
