@@ -810,7 +810,7 @@ class AirtimeTopUpViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description=desc["full"],
+                            description=f'{desc["full"]} {buy_airtime_response.get("purchased_code")}',
                             reference=request_id,
                         )
 
@@ -935,7 +935,7 @@ class MTNDataTopUpViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description=desc["full"],
+                            description=f'{desc["full"]} {subscription_response.get("purchased_code")}',
                             reference=request_id,
                         )
 
@@ -1059,7 +1059,7 @@ class AirtelDataTopUpViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description=desc["full"],
+                            description=f'{desc["full"]} {subscription_response.get('purchased_code')}',
                             reference=request_id,
                         )
 
@@ -1180,7 +1180,7 @@ class EtisalatDataTopUpViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description=desc["full"],
+                            description=f'{desc["full"]} {subscription_response.get("purchased_code")}',
                             reference=request_id,
                         )
 
@@ -1302,7 +1302,7 @@ class GloDataTopUpViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description=desc["full"],
+                            description=f'{desc["full"]} {subscription_response.get("purchased_code")}' ,
                             reference=request_id,
                         )
 
@@ -1425,7 +1425,7 @@ class DSTVPaymentViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description=desc["full"],
+                            description=f'{desc["full"]} {subscription_response.get("purchased_code")}',
                             reference=request_id,
                         )
 
@@ -1549,7 +1549,7 @@ class GOTVPaymentViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description=desc["full"],
+                            description=f'{desc["full"]} {subscription_response.get("purchased_code")}',
                             reference=request_id,
                         )
 
@@ -1675,7 +1675,7 @@ class StartimesPaymentViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description=desc["full"],
+                            description= f'{desc["full"]} {subscription_response.get("purchased_code")}',
                             reference=request_id,
                         )
 
@@ -1799,7 +1799,7 @@ class ShowMaxPaymentViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description=desc["full"],
+                            description=f'{desc["full"]} {subscription_response.get("purchased_code")}',
                             reference=request_id,
                         )
 
@@ -1914,7 +1914,7 @@ class ElectricityPaymentViews(APIView):
                         user_wallet.debit(
                             amount=amount,
                             reference=request_id,
-                            description=f"Electricity - {serializer.data['biller_name'].capitalize()}",
+                            description=f"Electricity - {serializer.data['biller_name'].capitalize()} {electricity_response.get('purchased_code')}",
                         )
 
                         # Award bonus points
@@ -2026,7 +2026,7 @@ class WAECRegitrationViews(APIView):
                     )
                     user_wallet.debit(
                         amount=amount,
-                        description=desc["full"],
+                        description=f'{desc["full"]} {registration_response.get("purchased_code")}',
                         reference=request_id,
                     )
 
@@ -2133,7 +2133,7 @@ class WAECResultCheckerViews(APIView):
                     )
                     user_wallet.debit(
                         amount=amount,
-                        description=desc["full"],
+                        description=f'{desc["full"]} {registration_response.get("purchased_code")}',
                         reference=request_id,
                     )
 
@@ -2244,7 +2244,7 @@ class JAMBRegistrationViews(APIView):
                     )
                     user_wallet.debit(
                         amount=amount,
-                        description=desc["full"],
+                        description=f'{desc["full"]} {jamb_registration_response.get("purchased_code")}',
                         reference=request_id,
                     )
 
