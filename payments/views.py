@@ -2001,8 +2001,8 @@ class WAECRegitrationViews(APIView):
                 amount = 14500
                 data = {
                     "request_id": request_id,
-                    "serviceID": "waec-registration",
-                    "variation_code": "waec-registration",
+                    "serviceID": "waec",
+                    "variation_code": "waecdirect",
                     "quantity": 1,
                     "phone": serializer.data["phone_number"],
                 }

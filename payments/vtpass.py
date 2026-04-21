@@ -1,7 +1,6 @@
-import requests
-import json
 import uuid
 from datetime import datetime
+import requests
 from django.conf import settings
 
 BASE_URL = settings.VTPASS_BASE_URL
@@ -299,7 +298,7 @@ def top_up(user_data):
 
 def get_variations():
     response = requests.get(
-        "https://sandbox.vtpass.com/api/service-variations?serviceID=startimes",
+        "https://sandbox.vtpass.com/api/service-variations?serviceID=waec",
         headers=headers,
     )
     return response.json()

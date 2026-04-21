@@ -65,7 +65,7 @@ class GOTVPaymentSerializer(serializers.ModelSerializer):
 class StartimesPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = StartimesPayment
-        fields= ["billersCode","startimes_plan","phone_number"]
+        fields = ["billersCode","startimes_plan","phone_number"]
         read_only_fields= ["id","request_id","created_at"]
         
 class ShowMaxPaymentSerializer(serializers.ModelSerializer):

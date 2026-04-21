@@ -6,7 +6,7 @@ __pycache__/
 *.pyo
 *.pyd
 .git-rewrite
-
+.gitignore
 debug.log
 
 # migration files
@@ -22,7 +22,7 @@ debug.log
 logs/
 *.log.*
 debug.log
-
+test.py
 
 google_test.html
 
