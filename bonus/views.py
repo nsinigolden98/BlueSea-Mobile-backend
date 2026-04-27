@@ -316,7 +316,7 @@ class ReferralView(APIView):
                 referrer=referrer,
                 referred_user=request.user,
                 referral_code=referral_code,
-                status="pending",
+                status="completed",
             )
 
             # Award signup bonus to the referred user

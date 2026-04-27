@@ -810,7 +810,7 @@ class AirtimeTopUpViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description=f'{desc["full"]} {buy_airtime_response.get("purchased_code")}',
+                            description=desc["full"],
                             reference=request_id,
                         )
 
@@ -935,7 +935,7 @@ class MTNDataTopUpViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description=f'{desc["full"]} {subscription_response.get("purchased_code")}',
+                            description=desc["full"],
                             reference=request_id,
                         )
 
@@ -1059,7 +1059,7 @@ class AirtelDataTopUpViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description=f'{desc["full"]} {subscription_response.get('purchased_code')}',
+                            description=desc["full"],
                             reference=request_id,
                         )
 
@@ -1180,7 +1180,7 @@ class EtisalatDataTopUpViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description=f'{desc["full"]} {subscription_response.get("purchased_code")}',
+                            description=desc["full"],
                             reference=request_id,
                         )
 
@@ -1302,7 +1302,7 @@ class GloDataTopUpViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description=f'{desc["full"]} {subscription_response.get("purchased_code")}' ,
+                            description=desc["full"],
                             reference=request_id,
                         )
 
@@ -1425,7 +1425,7 @@ class DSTVPaymentViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description=f'{desc["full"]} {subscription_response.get("purchased_code")}',
+                            description=desc["full"],
                             reference=request_id,
                         )
 
@@ -1549,7 +1549,7 @@ class GOTVPaymentViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description=f'{desc["full"]} {subscription_response.get("purchased_code")}',
+                            description= desc["full"],
                             reference=request_id,
                         )
 
@@ -1675,7 +1675,7 @@ class StartimesPaymentViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description= f'{desc["full"]} {subscription_response.get("purchased_code")}',
+                            description= desc["full"] ,
                             reference=request_id,
                         )
 
@@ -1799,7 +1799,7 @@ class ShowMaxPaymentViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description=f'{desc["full"]} {subscription_response.get("purchased_code")}',
+                            description=desc["full"],
                             reference=request_id,
                         )
 
@@ -2462,24 +2462,22 @@ class WithdrawalView(APIView):
                 reference_id = generate_reference_id()
                 # Create withdrawal record
                 withdrawal = Withdrawal.objects.create(
-                    user = request.user,
+                    user=request.user,
                     account_name=account_name,
                     account_number=account_number,
                     bank_code=bank_code,
                     bank_name=bank_name,
                     amount=amount,
-                    payment_reference= reference_id,
+                    payment_reference=reference_id,
                     status="pending",
                 )
 
                 user_wallet = request.user.wallet
 
-                if  amount < 500:
+                if amount < 500:
                     return Response(
-                    {"error": "Amount must be above 500", "success": False},
-                    status=status.HTTP_400_BAD_REQUEST,
-                    )
-                
+                        {"error": "Amount must be above 500", "success": False},
+                        status=status.HTTP_400_BAD_REQUEST,)             
 
                 if user_wallet.balance < amount:
                     return Response(
@@ -2514,11 +2512,9 @@ class WithdrawalView(APIView):
                     },
                     status=status.HTTP_201_CREATED,
                 )
-        
         except Exception as e:
-             print(e)
-             logger.error(f"Error sending notification: {str(e)}")
-             return Response(
+            logger.error(f"Error sending notification: {str(e)}")
+            return Response(
                 {"success": False, "error": f"Withdrawal failed: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

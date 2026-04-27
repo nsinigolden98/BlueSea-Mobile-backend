@@ -41,7 +41,7 @@ class Profile(AbstractUser):
     transaction_pin = models.CharField(max_length=255, null=True, blank=True)
     pin_is_set = models.BooleanField(default=False)
     created_on = models.DateTimeField(auto_now_add=True)
-    referral_code= models.CharField(max_length=6, default= generate_referal_code())
+    referral_code= models.CharField(max_length=6, default= generate_referal_code(), unique=True)
 
     objects = UserManager()
 
