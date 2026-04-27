@@ -12,7 +12,7 @@ class ProfileAdmin(UserAdmin):
         'email_verified_display', 'is_active_display', 'is_staff', 'created_on', 
         'referral_code'
     ]
-    list_editable =['referral_code']
+    # list_editable =['referral_code']
     list_filter = ['role', 'email_verified', 'is_active', 'is_staff', 'created_on']
     search_fields = ['email', 'surname', 'other_names', 'phone']
     readonly_fields = ['created_on', 'profile_photo']
