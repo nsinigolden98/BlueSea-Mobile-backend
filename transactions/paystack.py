@@ -10,7 +10,7 @@ HEADERS = {
     "Content-Type": "application/json"
 }
 
-1
+
 
 def checkout(payload):
     url = f"{BASE_URL}/transaction/initialize"

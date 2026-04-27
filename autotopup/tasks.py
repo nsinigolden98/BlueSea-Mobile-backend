@@ -53,9 +53,8 @@ def execute_auto_topup(self, auto_topup_id):
         )
         
         try:
-            vtu_data = vtu_data(auto_topup, request_id)
-            
-            vtu_response = top_up(vtu_data)
+            vtu_payload = vtu_data(auto_topup, request_id)
+            vtu_response = top_up(vtu_payload)
             
             if vtu_response.get("response_description") == "TRANSACTION SUCCESSFUL":
                 wallet = auto_topup.user.wallet
@@ -108,12 +107,20 @@ def execute_auto_topup(self, auto_topup_id):
                 
         except Exception as e:
             logger.error(f"Error executing auto top-up {auto_topup_id}: {str(e)}")
-            topup_failure(
-                auto_topup,
-                history,
-                {'error': str(e)}
-            )
-            raise self.retry(exc=e, countdown=60)
+            
+            # Only record failure and unlock if we've exhausted retries
+            if self.request.retries >= self.max_retries:
+                topup_failure(
+                    auto_topup,
+                    history,
+                    {'error': f"Max retries exceeded: {str(e)}"}
+                )
+            else:
+                # Update history to indicate a retry is coming
+                history.status = 'pending'
+                history.error_message = f"Attempt {self.request.retries + 1} failed: {str(e)}. Retrying..."
+                history.save()
+                raise self.retry(exc=e, countdown=60)
 
 
 def vtu_data(auto_topup, request_id):
