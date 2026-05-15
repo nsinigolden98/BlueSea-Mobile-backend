@@ -19,6 +19,8 @@ from .models import (
     ElectricityPaymentCustomers,
     Withdrawal
 )
+# Import your dictionaries from vtpass.py
+from .vtpass import mtn_dict, airtel_dict, glo_dict, etisalat_dict 
 
 class AirtimeTopUpSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,30 +28,66 @@ class AirtimeTopUpSerializer(serializers.ModelSerializer):
         fields= ["amount", "network", "phone_number"]
         read_only_fields= ["id","request_id", "created_at"]
 
+
+
+# 1. MTN Serializer
 class MTNDataTopUpSerializer(serializers.ModelSerializer):
+    # Overriding the model field to allow ID strings (e.g., 'mtn-100')
+    plan = serializers.CharField() 
+
     class Meta:
         model = MTNDataTopUp
-        fields= ["plan", "billersCode", "phone_number"]
-        read_only_fields= ["id","request_id", "created_at"]
-        
+        fields = ["plan", "billersCode", "phone_number"]
+        read_only_fields = ["id", "request_id", "created_at"]
+
+    def validate_plan(self, value):
+        if value not in mtn_dict:
+            raise serializers.ValidationError(f"'{value}' is not a valid MTN plan ID.")
+        return value
+
+# 2. Airtel Serializer
 class AirtelDataTopUpSerializer(serializers.ModelSerializer):
+    plan = serializers.CharField()
+
     class Meta:
         model = AirtelDataTopUp
-        fields= ["plan", "billersCode", "phone_number"]
-        read_only_fields= ["id","request_id", "created_at"]
+        fields = ["plan", "billersCode", "phone_number"]
+        read_only_fields = ["id", "request_id", "created_at"]
 
+    def validate_plan(self, value):
+        if value not in airtel_dict:
+            raise serializers.ValidationError(f"'{value}' is not a valid Airtel plan ID.")
+        return value
+
+# 3. Glo Serializer
 class GloDataTopUpSerializer(serializers.ModelSerializer):
+    plan = serializers.CharField()
+
     class Meta:
         model = GloDataTopUp
-        fields= ["plan", "billersCode", "phone_number"]
-        read_only_fields= ["id","request_id", "created_at"]
-        
+        fields = ["plan", "billersCode", "phone_number"]
+        read_only_fields = ["id", "request_id", "created_at"]
+
+    def validate_plan(self, value):
+        if value not in glo_dict:
+            raise serializers.ValidationError(f"'{value}' is not a valid Glo plan ID.")
+        return value
+
+# 4. 9mobile (Etisalat) Serializer
 class EtisalatDataTopUpSerializer(serializers.ModelSerializer):
+    plan = serializers.CharField()
+
     class Meta:
         model = EtisalatDataTopUp
-        fields= ["plan", "billersCode", "phone_number"]
-        read_only_fields= ["id","request_id", "created_at"]
-        
+        fields = ["plan", "billersCode", "phone_number"]
+        read_only_fields = ["id", "request_id", "created_at"]
+
+    def validate_plan(self, value):
+        if value not in etisalat_dict:
+            raise serializers.ValidationError(f"'{value}' is not a valid 9mobile plan ID.")
+        return value
+        =
+
 class DSTVPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = DSTVPayment

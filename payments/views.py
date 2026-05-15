@@ -535,8 +535,8 @@ class GroupPaymentViews(APIView):
         elif payment_type == "data":
             if service_details.get("network") == "mtn":
                 with transaction.atomic():
-                    variation_code = mtn_dict[service_details.get("plan_id")][0]
-                    amount = mtn_dict[service_details.get("plan_id")][1]
+                    variation_code = mtn_dict[service_details.get("plan_id")]["variation_code"]
+                    amount = mtn_dict[service_details.get("plan_id")]["price"]
 
                     details = {
                         "request_id": request_id,
@@ -550,8 +550,8 @@ class GroupPaymentViews(APIView):
                 return subscription_response
             elif service_details.get("network") == "airtel":
                 with transaction.atomic():
-                    variation_code = airtel_dict[service_details.get("plan_id")][0]
-                    amount = airtel_dict[service_details.get("plan_id")][1]
+                    variation_code = airtel_dict[service_details.get("plan_id")]["variation_code"]
+                    amount = airtel_dict[service_details.get("plan_id")]["price"]
 
                     details = {
                         "request_id": request_id,
@@ -566,8 +566,8 @@ class GroupPaymentViews(APIView):
 
             elif service_details.get("network") == "glo":
                 with transaction.atomic():
-                    variation_code = glo_dict[service_details.get("plan_id")][0]
-                    amount = glo_dict[service_details.get("plan_id")][1]
+                    variation_code = glo_dict[service_details.get("plan_id")]["variation_code"]
+                    amount = glo_dict[service_details.get("plan_id")]["price"]
 
                     details = {
                         "request_id": request_id,
@@ -582,8 +582,8 @@ class GroupPaymentViews(APIView):
 
             elif service_details.get("network") == "etisalat":
                 with transaction.atomic():
-                    variation_code = etisalat_dict[service_details.get("plan_id")][0]
-                    amount = etisalat_dict[service_details.get("plan_id")][1]
+                    variation_code = etisalat_dict[service_details.get("plan_id")]["variation_code"]
+                    amount = etisalat_dict[service_details.get("plan_id")]["price"]
 
                     details = {
                         "request_id": request_id,
@@ -900,8 +900,8 @@ class MTNDataTopUpViews(APIView):
                 request_id = generate_reference_id()
                 serializer.save(request_id=request_id)
                 with transaction.atomic():
-                    amount = mtn_dict[serializer.data["plan"]][1]
-                    variation_code = mtn_dict[serializer.data["plan"]][0]
+                    amount = mtn_dict[serializer.data["plan"]]["price"]
+                    variation_code = mtn_dict[serializer.data["plan"]]["variation_code"]
                     data = {
                         "request_id": request_id,
                         "serviceID": "mtn-data",
@@ -1025,8 +1025,8 @@ class AirtelDataTopUpViews(APIView):
                 request_id = generate_reference_id()
                 serializer.save(request_id=request_id)
                 with transaction.atomic():
-                    amount = airtel_dict[serializer.data["plan"]][1]
-                    variation_code = airtel_dict[serializer.data["plan"]][0]
+                    amount = airtel_dict[serializer.data["plan"]]["price"]
+                    variation_code = airtel_dict[serializer.data["plan"]]["variation_code"]
                     data = {
                         "request_id": request_id,
                         "serviceID": "airtel-data",
@@ -1146,8 +1146,8 @@ class EtisalatDataTopUpViews(APIView):
                 request_id = generate_reference_id()
                 serializer.save(request_id=request_id)
                 with transaction.atomic():
-                    amount = etisalat_dict[serializer.data["plan"]][1]
-                    variation_code = etisalat_dict[serializer.data["plan"]][0]
+                    amount = etisalat_dict[serializer.data["plan"]]["price"]
+                    variation_code = etisalat_dict[serializer.data["plan"]]["variation_code"]
                     data = {
                         "request_id": request_id,
                         "serviceID": "etisalat-data",
@@ -1267,8 +1267,8 @@ class GloDataTopUpViews(APIView):
                 request_id = generate_reference_id()
                 serializer.save(request_id=request_id)
                 with transaction.atomic():
-                    amount = glo_dict[serializer.data["plan"]][1]
-                    variation_code = glo_dict[serializer.data["plan"]][0]
+                    amount = glo_dict[serializer.data["plan"]]["price"]
+                    variation_code = glo_dict[serializer.data["plan"]]["variation_code"]
                     data = {
                         "request_id": request_id,
                         "serviceID": "glo-data",
