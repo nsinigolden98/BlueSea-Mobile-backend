@@ -122,33 +122,107 @@ airtel_dict = {
 
 # Glo Dictionary refactored to use Frontend IDs as Keys
 glo_dict = {
-    # Daily / Weekly
+    # Daily / Weekly / Weekend
     "glo-daily-50": {"price": 50, "description": "40MB + 5MB Night - 1 Day", "variation_code": "glo-daily-50"},
     "glo-daily-100": {"price": 100, "description": "120MB + 5MB Night - 1 Day", "variation_code": "glo-daily-100"},
     "glo-2days-200": {"price": 200, "description": "250MB + 25MB Night - 2 Days", "variation_code": "glo-2days-200"},
-    "glo-special-500": {"price": 500, "description": "1GB + 1GB Night - 2 Days", "variation_code": "glo-special-500"},
-    
+    "glo-500mb-200-oneoff": {"price": 200, "description": "500MB 1 Day - N200 Oneoff", "variation_code": "glo-500mb-200-oneoff"},
+    "glo-1000mb-300-oneoff": {"price": 300, "description": "1GB 1 Day - N300 Oneoff", "variation_code": "glo-1000mb-300-oneoff"},
+    "glo-sunday-200": {"price": 200, "description": "875MB 1 Day - Weekend N200", "variation_code": "glo-sunday-200"},
+    "glo-weekend-500": {"price": 500, "description": "2.5GB 2 Days - Weekend N500", "variation_code": "glo-weekend-500"},
+    "glo-1000-7days": {"price": 1000, "description": "1.7GB + 2GB Night - N1000 - 7 Days", "variation_code": "glo-1000-7days"},
+    "glo-2000-7days": {"price": 2000, "description": "6.5GB + 2.5GB - N2000 - 7 Days", "variation_code": "glo-2000-7days"},
+    "glo-5000-7days": {"price": 5000, "description": "22GB + 2GB Night - N5000 - 7 Days", "variation_code": "glo-5000-7days"},
+
     # Monthly
     "glo-monthly-1000": {"price": 1000, "description": "1.1GB + 1.5GB Night - 30 Days", "variation_code": "glo-monthly-1000"},
     "glo-monthly-1500": {"price": 1500, "description": "2.2GB + 3GB Night - 30 Days", "variation_code": "glo-monthly-1500"},
     "glo-monthly-2000": {"price": 2000, "description": "3.25GB + 3GB Night - 30 Days", "variation_code": "glo-monthly-2000"},
     "glo-monthly-2500": {"price": 2500, "description": "4.25GB + 3GB Night - 30 Days", "variation_code": "glo-monthly-2500"},
     "glo-monthly-3000": {"price": 3000, "description": "8.5GB + 2GB Night - 30 Days", "variation_code": "glo-monthly-3000"},
+    "glo-monthly-4000": {"price": 4000, "description": "10.5GB + 2GB Night - N4000 - 30 Days", "variation_code": "glo-monthly-4000"},
     "glo-monthly-5000": {"price": 5000, "description": "14.5GB + 2.5GB Night - 30 Days", "variation_code": "glo-monthly-5000"},
+    "glo-monthly-8000": {"price": 8000, "description": "26GB + 2GB - N8,000 - 30 Days", "variation_code": "glo-monthly-8000"},
+    "glo-6000-30days": {"price": 6000, "description": "18.5GB + 2GB Night - N6000 - 30 Days", "variation_code": "glo-6000-30days"},
     "glo-monthly-10000": {"price": 10000, "description": "38GB + 4GB Night - 30 Days", "variation_code": "glo-monthly-10000"},
-    
-    # Data Guy (DG) / SME Plans
+    "glo-15000-30days": {"price": 15000, "description": "62GB + 2GB - N15,000 - 30 Days", "variation_code": "glo-15000-30days"},
+    "glo-20000-30days": {"price": 20000, "description": "105GB + 2GB - N20,000 - 30 Days", "variation_code": "glo-20000-30days"},
+
+    # Special Plans
+    "glo-special-500": {"price": 500, "description": "1GB + 1GB Night - 2 Days", "variation_code": "glo-special-500"},
+    "glo-special-1500": {"price": 1500, "description": "4GB + 2GB Night - N1,500 - 7 Days - Special", "variation_code": "glo-special-1500"},
+    "glo-750-14": {"price": 750, "description": "1.1GB 14 Days - N750", "variation_code": "glo-750-14"},
+    "glo-350-special-1day": {"price": 350, "description": "1GB 1 Day - Special N350", "variation_code": "glo-350-special-1day"},
+    "glo-600-special-2days": {"price": 600, "description": "1.55GB + 2GB Night - N600 - 2 Days - Special", "variation_code": "glo-600-special-2days"},
+    "glo-1000-special-2days": {"price": 1000, "description": "3.1GB + 2GB - N1000 - 2 Days - Special", "variation_code": "glo-1000-special-2days"},
+
+    # Data Guy (DG) Plans
     "glo-dg-295": {"price": 295, "description": "1GB - 3 days", "variation_code": "glo-dg-295"},
     "glo-dg-890": {"price": 890, "description": "3GB - 3 days", "variation_code": "glo-dg-890"},
+    "glo-dg-1485": {"price": 1485, "description": "5GB (Best Value) - 1,485 Naira - 3 days", "variation_code": "glo-dg-1485"},
+    "glo-dg-345": {"price": 345, "description": "1GB (Best Value) - 345 Naira - 7 days", "variation_code": "glo-dg-345"},
+    "glo-dg-1040": {"price": 1040, "description": "3GB (Best Value) - 1,040 Naira - 7 days", "variation_code": "glo-dg-1040"},
+    "glo-dg-1730": {"price": 1730, "description": "5GB (Best Value) - 1,730 Naira - 7 days", "variation_code": "glo-dg-1730"},
+    "glo-dg-350": {"price": 350, "description": "1GB (Best Value) - 350 Naira - 14 days Night plan", "variation_code": "glo-dg-350"},
+    "glo-dg-1040-14": {"price": 1040, "description": "3GB (Best Value) - 1,040 Naira - 14 days Night plan", "variation_code": "glo-dg-1040-14"},
+    "glo-dg-1730-14": {"price": 1730, "description": "5GB (Best Value) - 1,730 Naira - 14 days Night plan", "variation_code": "glo-dg-1730-14"},
+    "glo-dg-3460": {"price": 3460, "description": "10GB (Best Value) - 3,460 Naira - 14 days Night plan", "variation_code": "glo-dg-3460"},
+    "glo-dg-99": {"price": 99, "description": "200MB (Best Value) - 99 Naira - 14 days", "variation_code": "glo-dg-99"},
+    "glo-dg-250": {"price": 250, "description": "500MB (Best Value) - 250 Naira - 14 days", "variation_code": "glo-dg-250"},
+    "glo-dg-250-30": {"price": 250, "description": "500MB (Best Value) - N250 - 30 Days", "variation_code": "glo-dg-250-30"},
     "glo-dg-495": {"price": 495, "description": "1GB - 30 days", "variation_code": "glo-dg-495"},
     "glo-dg-990": {"price": 990, "description": "2GB - 30 days", "variation_code": "glo-dg-990"},
-    
+    "glo-dg-1485-30": {"price": 1485, "description": "3GB (Best Value) - 1,485 Naira - 30 days", "variation_code": "glo-dg-1485-30"},
+    "glo-dg-2475": {"price": 2475, "description": "5GB (Best Value) - 2,475 Naira - 30 days", "variation_code": "glo-dg-2475"},
+    "glo-dg-4950": {"price": 4950, "description": "10GB (Best Value) - 4,950 Naira - 30 days", "variation_code": "glo-dg-4950"},
+
     # Mega Plans
     "glo-mega-30000": {"price": 30000, "description": "165GB - 30 Days", "variation_code": "glo-mega-30000"},
+    "glo-mega-40000": {"price": 40000, "description": "220GB 30 Days - Mega N40000 Oneoff", "variation_code": "glo-mega-40000"},
     "glo-mega-50000": {"price": 50000, "description": "310GB - 60 Days", "variation_code": "glo-mega-50000"},
-    
+    "glo-mega-60000": {"price": 60000, "description": "355GB 90 Days - Mega N60000", "variation_code": "glo-mega-60000"},
+    "glo-mega-75000": {"price": 75000, "description": "475GB 90 Days - Mega N75000 Oneoff", "variation_code": "glo-mega-75000"},
+    "glo-25000-mega-30days": {"price": 25000, "description": "135GB 30 Days - Mega N25000 Oneoff", "variation_code": "glo-25000-mega-30days"},
+    "glo-yearly-mega": {"price": 150000, "description": "1000GB Yearly - Mega N150,000 Oneoff", "variation_code": "glo-yearly-mega"},
+
     # Always On
     "glo-always-on-2000": {"price": 2000, "description": "6.1GB - 15 Days", "variation_code": "glo-always-on-2000"},
+    "glo-always-on-3500": {"price": 3500, "description": "15GB (500MB per day) 30 Days - Always On N3500", "variation_code": "glo-always-on-3500"},
+    "glo-always-on-5000": {"price": 5000, "description": "30GB (1GB per day) 30 Days - Always On N5000", "variation_code": "glo-always-on-5000"},
+    "glo-always-on-7000": {"price": 7000, "description": "45GB (1.5 per day) 30 Days - Always On N7000", "variation_code": "glo-always-on-7000"},
+
+    # Campus Booster
+    "glo-campus-booster-100": {"price": 100, "description": "240MB + 5MB Night - N100 - 1 Day - Camp-Boost", "variation_code": "glo-campus-booster-100"},
+    "glo-campus-booster-200": {"price": 200, "description": "500MB + 25MB Night - N200 - 2 Days - Camp-Boost", "variation_code": "glo-campus-booster-200"},
+    "glo-campus-booster-500": {"price": 500, "description": "1.1GB + 1GB Night - N500 - 7 Days - Camp-Boost", "variation_code": "glo-campus-booster-500"},
+    "glo-campus-booster-1000": {"price": 1000, "description": "2.2GB + 2GB Night - N1000 - 30 Days - Camp-Boost", "variation_code": "glo-campus-booster-1000"},
+    "glo-campus-booster-2000": {"price": 2000, "description": "6.5GB + 3.5GB - N2,000 - 30 Days - Camp-Boost", "variation_code": "glo-campus-booster-2000"},
+    "glo-campus-booster-5000": {"price": 5000, "description": "29GB + 3GB Night - N5000 - 30 Days - Camp-Boost", "variation_code": "glo-campus-booster-5000"},
+
+    # TV Plans
+    "glo-tv-150": {"price": 150, "description": "Glo TV VOD 500 MB 3days Oneoff", "variation_code": "glo-tv-150"},
+    "glo-tv-450": {"price": 450, "description": "Glo TV VOD 2GB 7days Oneoff", "variation_code": "glo-tv-450"},
+    "glo-tv-1400": {"price": 1400, "description": "Glo TV VOD 6GB 30days", "variation_code": "glo-tv-1400"},
+    "glo-tv-900": {"price": 900, "description": "Glo TV Lite 2GB 7 Days", "variation_code": "glo-tv-900"},
+    "glo-tv-3200": {"price": 3200, "description": "Glo TV Max 6 GB 30 Days", "variation_code": "glo-tv-3200"},
+
+    # Social Plans
+    "glo-social-oneoff-100": {"price": 100, "description": "300MB - GloMyG N100 1 Day", "variation_code": "glo-social-oneoff-100"},
+    "glo-social-oneoff-300": {"price": 300, "description": "Glo MyG N300 1 GB 3 Days OneOff", "variation_code": "glo-social-oneoff-300"},
+    "glo-social-oneoff-500": {"price": 500, "description": "Glo MyG N500 1.5 GB 7 Days", "variation_code": "glo-social-oneoff-500"},
+    "glo-social-oneoff-1000": {"price": 1000, "description": "Glo MyG N1000 3.5 GB 30 Days", "variation_code": "glo-social-oneoff-1000"},
+    "glo-social-50-3days": {"price": 50, "description": "135MB 3 Days - Social Bundles N50", "variation_code": "glo-social-50-3days"},
+    "glo-special-100-7days": {"price": 100, "description": "335MB 7 Days - Social Bundles N100", "variation_code": "glo-special-100-7days"},
+    "glo-special-300-10days": {"price": 300, "description": "1.1GB 10 Days - Social Bundles N300", "variation_code": "glo-special-300-10days"},
+    "glo-special-500-15days": {"price": 500, "description": "1.8GB 15 Days - Social Bundles N500", "variation_code": "glo-special-500-15days"},
+
+    # Night Plans
+    "glo-night-60-1day": {"price": 60, "description": "350MB Night - N60", "variation_code": "glo-night-60-1day"},
+    "glo-night-120-1day": {"price": 120, "description": "750MB Night - N120", "variation_code": "glo-night-120-1day"},
+
+    # YouTube Plans
+    "glo-youtube-250": {"price": 250, "description": "1GB 1 Day - Youtube Special N250", "variation_code": "glo-youtube-250"},
+    "glo-youtube-600": {"price": 600, "description": "3GB 2 Days - Youtube Special N600", "variation_code": "glo-youtube-600"},
 }
 
 
