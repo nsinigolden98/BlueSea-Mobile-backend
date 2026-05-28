@@ -1837,76 +1837,101 @@ class AddEventScannerView(APIView):
     def post(self, request, event_id):
         user_email = request.data.get("user_email")
 
+        logger.info(f"Vendor {request.user.email} is attempting to add a scanner with email '{user_email}' to event ID {event_id}")
+
         if not user_email:
+            logger.warning(f"Add scanner failed: user_email parameter is missing (Vendor: {request.user.email})")
             return Response(
                 {"error": "user_email is required", "state": False},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
-            event = EventInfo.objects.get(id=event_id)
-        except EventInfo.DoesNotExist:
-            return Response(
-                {"error": "Event not found", "state": False},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            user_email_clean = user_email.strip()
 
-        # Verify user is vendor and owns this event
-        try:
-            vendor = TicketVendor.objects.get(user=request.user)
-            if event.vendor != vendor:
+            try:
+                event = EventInfo.objects.get(id=event_id)
+            except (EventInfo.DoesNotExist, ValueError) as e:
+                logger.warning(f"Add scanner failed: Event {event_id} not found or invalid ID. Error: {str(e)} (Vendor: {request.user.email})")
                 return Response(
-                    {
-                        "error": "You can only add scanners to your own events",
-                        "state": False,
-                    },
+                    {"error": "Event not found", "state": False},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # Verify user is vendor and owns this event
+            try:
+                vendor = TicketVendor.objects.get(user=request.user)
+                if event.vendor != vendor:
+                    logger.warning(f"Add scanner failed: User {request.user.email} is not the owner of event {event.event_title}")
+                    return Response(
+                        {
+                            "error": "You can only add scanners to your own events",
+                            "state": False,
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+            except TicketVendor.DoesNotExist:
+                logger.warning(f"Add scanner failed: User {request.user.email} is not a registered vendor")
+                return Response(
+                    {"error": "Only vendors can add scanners", "state": False},
                     status=status.HTTP_403_FORBIDDEN,
                 )
-        except TicketVendor.DoesNotExist:
-            return Response(
-                {"error": "Only vendors can add scanners", "state": False},
-                status=status.HTTP_403_FORBIDDEN,
-            )
 
-        # Get user to assign
-        try:
-            from accounts.models import Profile
+            # Get user to assign
+            try:
+                from accounts.models import Profile
 
-            scanner_user = Profile.objects.get(email=user_email)
-        except Profile.DoesNotExist:
-            return Response(
-                {"error": "User with this email not found", "state": False},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+                scanner_user = Profile.objects.get(email__iexact=user_email_clean)
+            except Profile.DoesNotExist:
+                logger.warning(f"Add scanner failed: User with email '{user_email_clean}' not found (Vendor: {request.user.email})")
+                return Response(
+                    {"error": "User with this email not found", "state": False},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
 
-        # Check if already assigned
-        if EventScanner.objects.filter(user=scanner_user, event=event).exists():
+            # Check if already assigned
+            if EventScanner.objects.filter(user=scanner_user, event=event).exists():
+                logger.info(f"Add scanner: User {scanner_user.email} is already assigned as scanner for event {event.event_title}")
+                return Response(
+                    {
+                        "error": "User is already assigned as scanner for this event",
+                        "state": False,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Create scanner assignment
+            scanner = EventScanner.objects.create(user=scanner_user, event=event)
+
+            # Update user role to 'scanner' if they are a regular 'user'
+            if scanner_user.role == "user":
+                scanner_user.role = "scanner"
+                scanner_user.save()
+                logger.info(f"Updated user {scanner_user.email} role from 'user' to 'scanner'")
+
+            logger.info(f"Successfully added {scanner_user.email} as scanner for event {event.event_title} (Vendor: {request.user.email})")
+
+            # TODO: Send notification to scanner
+            # send_scanner_assignment_notification(scanner_user, event)
+
             return Response(
                 {
-                    "error": "User is already assigned as scanner for this event",
-                    "state": False,
+                    "message": f"{scanner_user.email} added as scanner for {event.event_title}",
+                    "state": True,
+                    "scanner": {
+                        "email": scanner_user.email,
+                        "event": event.event_title,
+                        "assigned_at": scanner.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                    },
                 },
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_201_CREATED,
             )
-
-        # Create scanner assignment
-        scanner = EventScanner.objects.create(user=scanner_user, event=event)
-
-        # TODO: Send notification to scanner
-        # send_scanner_assignment_notification(scanner_user, event)
-
-        return Response(
-            {
-                "message": f"{scanner_user.email} added as scanner for {event.event_title}",
-                "state": True,
-                "scanner": {
-                    "email": scanner_user.email,
-                    "event": event.event_title,
-                    "assigned_at": scanner.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-                },
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        except Exception as e:
+            logger.error(f"Unexpected error in AddEventScannerView.post: {str(e)} (Vendor: {request.user.email}, Target: {user_email})", exc_info=True)
+            return Response(
+                {"error": "An unexpected error occurred while adding scanner", "state": False, "details": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 class VendorTicketsList(APIView):

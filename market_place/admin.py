@@ -55,6 +55,9 @@ class TicketVendorAdmin(admin.ModelAdmin):
             vendor.is_verified = True
             vendor.rejection_reason = None
             vendor.save()
+            if vendor.user and vendor.user.role == "user":
+                vendor.user.role = "vendor"
+                vendor.user.save()
             approved_count += 1
         self.message_user(request, f'Successfully approved {approved_count} vendor(s).', messages.SUCCESS)
     approve_vendors.short_description = 'Approve selected vendors'
@@ -136,7 +139,12 @@ class VendorKYCAdmin(admin.ModelAdmin):
     def approve_kyc(self, request, queryset):
         updated = queryset.update(status='approved', reviewed_at=timezone.now())
         vendor_ids = queryset.values_list('vendor_id', flat=True)
-        TicketVendor.objects.filter(id__in=vendor_ids).update(is_verified=True)
+        vendors = TicketVendor.objects.filter(id__in=vendor_ids)
+        vendors.update(is_verified=True)
+        for vendor in vendors:
+            if vendor.user and vendor.user.role == "user":
+                vendor.user.role = "vendor"
+                vendor.user.save()
         self.message_user(request, f'{updated} KYC application(s) approved.', messages.SUCCESS)
     approve_kyc.short_description = 'Approve selected KYC applications'
 
