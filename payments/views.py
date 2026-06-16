@@ -2002,7 +2002,7 @@ class WAECRegitrationViews(APIView):
                 data = {
                     "request_id": request_id,
                     "serviceID": "waec-registration",
-                    "variation_code": "waec-registraion",
+                    "variation_code": "waec-registration",
                     "quantity": 1,
                     "phone": serializer.data["phone_number"],
                 }
