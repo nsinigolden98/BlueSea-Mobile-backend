@@ -43,7 +43,6 @@ urlpatterns = [
         name="purchase-ticket",
     ),
     path("tickets/my/", MyTicketsView.as_view(), name="my-tickets"),
-    path("tickets/scan/", ScanTicketView.as_view(), name="scan-ticket"),
     path(
         "events/<uuid:event_id>/attendees/export/",
         ExportAttendeesView.as_view(),
