@@ -32,7 +32,8 @@ from .serializers import (
     GroupPaymentSerializer,
     Airtime2CashSerializer,
     ElectricityPaymentCustomerSerializer,
-    WithdrawalSerializer
+    WithdrawalRequestSerializer,
+    WithdrawalResponseSerializer,
 )
 
 from notifications.utils import (
@@ -2450,17 +2451,54 @@ class InternalTransferView(APIView):
 class WithdrawalView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Request a withdrawal",
+        description=(
+            "Debit the user's wallet and queue a withdrawal for manual "
+            "back-office payout. Requires the user's transaction PIN."
+        ),
+        request=WithdrawalRequestSerializer,
+        responses={
+            201: WithdrawalResponseSerializer,
+            400: OpenApiTypes.OBJECT,
+            500: OpenApiTypes.OBJECT,
+        },
+        tags=["Payments"],
+    )
     def post(self, request):
-        account_name = request.data.get("account_name")
-        account_number = request.data.get("account_number")
-        bank_code = request.data.get("bank_code")
-        bank_name = request.data.get("bank_name")
-        amount = int(request.data.get("amount"))
+        serializer = WithdrawalRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        account_name = data["account_name"]
+        account_number = data["account_number"]
+        bank_code = data["bank_code"]
+        bank_name = data["bank_name"]
+        amount = data["amount"]
+        transaction_pin = data["transaction_pin"]
+
+        if not request.user.pin_is_set:
+            return Response(
+                {"error": "Please set your transaction PIN first", "success": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not request.user.verify_transaction_pin(transaction_pin):
+            return Response(
+                {"error": "Invalid transaction PIN", "success": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user_wallet = request.user.wallet
+        if user_wallet.balance < amount:
+            return Response(
+                {"error": "Insufficient funds", "success": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             with transaction.atomic():
                 reference_id = generate_reference_id()
-                # Create withdrawal record
                 withdrawal = Withdrawal.objects.create(
                     user=request.user,
                     account_name=account_name,
@@ -2472,48 +2510,39 @@ class WithdrawalView(APIView):
                     status="pending",
                 )
 
-                user_wallet = request.user.wallet
-
-                if amount < 500:
-                    return Response(
-                        {"error": "Amount must be above 500", "success": False},
-                        status=status.HTTP_400_BAD_REQUEST,)             
-
-                if user_wallet.balance < amount:
-                    return Response(
-                    {"error": "Insufficient funds", "success": False},
-                    status=status.HTTP_400_BAD_REQUEST,
-                    )
-                
                 user_wallet.debit(
                     amount=amount,
-                    description=f"Transfer to {account_name}",
+                    description=f"Withdrawal to {account_name} ({account_number})",
                     reference=reference_id,
-                    )
+                )
 
-                # Send notification to sender
+                # Notify the user that the request was received
                 try:
                     send_notification(
                         user=request.user,
-                        title="Transfer Successful",
-                        message=f"₦{amount} transferred to {account_name}",
-                        notification_type="payment_success",
-                        email_subject="BlueSea - Transfer Successful",
+                        title="Withdrawal Request Received",
+                        message=(
+                            f"₦{amount} withdrawal to {account_name} "
+                            "received. It will be processed shortly."
+                        ),
+                        notification_type="payment",
+                        email_subject="BlueSea - Withdrawal Request Received",
                     )
                 except Exception as e:
-                    logger.error(f"Error sending notification: {str(e)}")
+                    logger.error(f"Error sending withdrawal notification: {str(e)}")
 
-                serializer = WithdrawalSerializer(withdrawal)
-                return Response(
+                response_serializer = WithdrawalResponseSerializer(
                     {
                         "state": True,
                         "message": "Withdrawal request submitted",
-                        "withdrawal": serializer.data,
-                    },
-                    status=status.HTTP_201_CREATED,
+                        "withdrawal": withdrawal,
+                    }
+                )
+                return Response(
+                    response_serializer.data, status=status.HTTP_201_CREATED
                 )
         except Exception as e:
-            logger.error(f"Error sending notification: {str(e)}")
+            logger.error(f"Error processing withdrawal: {str(e)}")
             return Response(
                 {"success": False, "error": f"Withdrawal failed: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,

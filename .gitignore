@@ -28,6 +28,7 @@ google_test.html
 
 
 venv/
+.venv/
 
 google.html
 
@@ -41,3 +42,6 @@ env
 /staticfiles/
 
 .gitignore
+.python-version
+pyproject.toml
+uv.lock

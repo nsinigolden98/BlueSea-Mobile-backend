@@ -40,3 +40,19 @@ class AddMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupportMessage
         fields = ["message"]
+
+
+class SupportTicketListResponse(serializers.Serializer):
+    count = serializers.IntegerField()
+    tickets = SupportTicketSerializer(many=True)
+
+
+class CreateTicketResponse(serializers.Serializer):
+    success = serializers.BooleanField()
+    message = serializers.CharField()
+    ticket = SupportTicketSerializer()
+
+
+class AddMessageResponse(serializers.Serializer):
+    success = serializers.BooleanField()
+    message = SupportMessageSerializer()
