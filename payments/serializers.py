@@ -138,7 +138,6 @@ class WithdrawalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Withdrawal
         fields = [
-            "id",
             "user",
             "account_name",
             "account_number",
@@ -151,7 +150,6 @@ class WithdrawalSerializer(serializers.ModelSerializer):
             "completed_at",
         ]
         read_only_fields = [
-            "id",
             "user",
             "status",
             "payment_reference",
