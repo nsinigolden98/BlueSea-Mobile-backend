@@ -138,6 +138,7 @@ class WithdrawalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Withdrawal
         fields = [
+            "id",
             "user",
             "account_name",
             "account_number",
