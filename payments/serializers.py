@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from decimal import Decimal
 from .models import (
     AirtimeTopUp,
     WAECRegitration,
@@ -157,3 +158,19 @@ class WithdrawalSerializer(serializers.ModelSerializer):
             "created_at",
             "completed_at",
         ]
+
+class WithdrawalRequestSerializer(serializers.Serializer):
+    account_name = serializers.CharField(max_length=100)
+    account_number = serializers.CharField(max_length=10)
+    bank_code = serializers.CharField(max_length=10)
+    bank_name = serializers.CharField(max_length=50)
+    amount = serializers.DecimalField(
+        max_digits=12, decimal_places=2, min_value=Decimal("500.00")
+    )
+    transaction_pin = serializers.CharField(write_only=True)
+
+
+class WithdrawalResponseSerializer(serializers.Serializer):
+    state = serializers.BooleanField()
+    message = serializers.CharField()
+    withdrawal = WithdrawalSerializer()
