@@ -10,7 +10,7 @@ __pycache__/
 debug.log
 
 # migration files
-# **/migrations/*.py
+**/migrations/*.py
 **/migrations/*.pyc
 **/migrations/__pycache__/*
 *.pyc
@@ -28,6 +28,7 @@ google_test.html
 
 
 venv/
+.venv/
 
 google.html
 
@@ -40,3 +41,6 @@ env
 # Static files
 /staticfiles/
 
+.python-version
+pyproject.toml
+uv.lock
