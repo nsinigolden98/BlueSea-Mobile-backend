@@ -36,7 +36,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG =  os.environ.get("DEBUG")
+DEBUG =  os.environ.get("DEBUG", 'False') == 'True'
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 
@@ -417,7 +417,7 @@ LOGGING = {
 # Set to True only if you are okay with ANY domain accessing your backend
 # (not recommended for production).
 
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS =  DEBUG
 
 # Use the specific URL/port of your frontend development server
 CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
