@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.contrib import messages
-from .models import WalletTransaction, FundWallet, Withdraw, AccountName
+from .models import WalletTransaction, FundWallet, AccountName
 
 
 def _status_badge(status):
@@ -93,31 +93,6 @@ class FundWalletAdmin(admin.ModelAdmin):
         formatted = f'{float(obj.amount):,.2f}'
         return format_html(
             '<span style="font-weight:600;color:#28a745;font-family:monospace;">+ &#x20A6;{}</span>',
-            formatted
-        )
-    amount_display.short_description = 'Amount'
-
-    def status_display(self, obj):
-        return _status_badge(obj.status)
-    status_display.short_description = 'Status'
-
-
-@admin.register(Withdraw)
-class WithdrawAdmin(admin.ModelAdmin):
-    list_display = [
-        'account_name', 'bank_name', 'account_number',
-        'amount_display', 'status_display', 'payment_reference', 'created_at'
-    ]
-    list_filter = ['status', 'created_at']
-    search_fields = ['account_name', 'account_number', 'payment_reference', 'bank_name']
-    readonly_fields = ['created_at']
-    date_hierarchy = 'created_at'
-    list_per_page = 30
-
-    def amount_display(self, obj):
-        formatted = f'{float(obj.amount):,.2f}'
-        return format_html(
-            '<span style="font-weight:600;color:#dc3545;font-family:monospace;">− &#x20A6;{}</span>',
             formatted
         )
     amount_display.short_description = 'Amount'

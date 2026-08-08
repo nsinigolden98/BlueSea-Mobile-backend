@@ -32,65 +32,6 @@ def checkout(payload):
         
 
 
-def initiate_transfer(account_number: str, bank_code: str,amount_ngn: float, reference: str, account_name: str = None, reason: str = "Withdrawal By Customer"):
-    url = f"{BASE_URL}/transferrecipient"
-    
-    payload = {
-        "type": "nuban",
-        "name": account_name or "Customer",
-        "account_number": account_number,
-        "bank_code": bank_code,
-        "currency": "NGN"
-    }
-    
-    response = requests.post(url, headers=HEADERS, json=payload)
-    
-    if response.status_code == 201:
-        data = response.json()
-        recipient_code = data['data']['recipient_code']
-
-        url = f"{BASE_URL}/transfer"
-    
-        payload = {
-        "source": "balance",        
-        "amount": int(amount_ngn * 100),  
-        "recipient": recipient_code,     
-        "reason": reason,          
-        "reference": reference,
-        "currency": "NGN"               
-        }
-    
-        response = requests.post(url, headers=HEADERS, json=payload)
-    
-        # if response.status_code in (200, 201):
-
-        #     url = f"{BASE_URL}/transfer/resolve"
-
-        #     payload = {
-        #         "reference": reference,
-        #         "pin": settings.PAYSTACK_PIN
-        #             }
-
-        #     response = requests.post(url, headers = HEADERS, json = payload)
-
-        if response.status_code == 200:
-            result = response.json()
-            return result
-
-            # else:
-            #     return False
-
-        else:
-            return response
-    else:
-        
-        return {"error" :"fail stsge 1", "state": True}
-
-   
-
-
-    
-
 def get_nigerian_banks():
     response = requests.get(
        url= f"{BASE_URL}/bank",

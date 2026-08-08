@@ -122,7 +122,6 @@ JAZZMIN_SETTINGS = {
         "wallet.Wallet": "fas fa-wallet",
         "transactions.WalletTransaction": "fas fa-exchange-alt",
         "transactions.FundWallet": "fas fa-arrow-circle-down",
-        "transactions.Withdraw": "fas fa-arrow-circle-up",
         "transactions.AccountName": "fas fa-university",
         "payments.AirtimeTopUp": "fas fa-phone",
         "payments.MTNDataTopUp": "fas fa-wifi",
