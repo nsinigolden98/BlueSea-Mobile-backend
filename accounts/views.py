@@ -66,11 +66,11 @@ class RegisterView(APIView):
             OpenApiExample(
                 "Registration Request",
                 value={
-                    "username": "john_doe",
+                    "surname": "Doe",
+                    "other_names": "John",
                     "email": "john@example.com",
+                    "phone": "08012345678",
                     "password": "SecurePassword123",
-                    "phone_number": "08012345678",
-                    "role": "user",
                 },
                 request_only=True,
             ),
@@ -312,7 +312,7 @@ class LoginView(TokenObtainPairView):
         examples=[
             OpenApiExample(
                 "Login Request",
-                value={"username": "john_doe", "password": "SecurePassword123"},
+                value={"email": "john@example.com", "password": "SecurePassword123"},
                 request_only=True,
             ),
             OpenApiExample(
@@ -322,8 +322,9 @@ class LoginView(TokenObtainPairView):
                     "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
                     "user": {
                         "id": 1,
-                        "username": "john_doe",
                         "email": "john@example.com",
+                        "role": "user",
+                        "email_verified": True,
                     },
                 },
                 response_only=True,
@@ -554,25 +555,20 @@ class AppleLoginView(APIView):
 class LogoutView(APIView):
     authentication_classes = [JWTAuthentication]
 
-    # @extend_schema(
-    #     summary="User logout",
-    #     description="Logout user by blacklisting their refresh token",
-    #     request=OpenApiTypes.OBJECT,
-    #     responses={
-    #         200: OpenApiTypes.OBJECT,
-    #         400: OpenApiTypes.OBJECT
-    #     },
-    #     examples=[
-    #         OpenApiExample(
-    #             'Logout Request',
-    #             value={
-    #                 "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc..."
-    #             },
-    #             request_only=True
-    #         )
-    #     ],
-    #     tags=['Authentication']
-    # )
+    @extend_schema(
+        summary="User logout",
+        description="Logout user by blacklisting their refresh token",
+        request=LogoutSerializer,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                "Logout Request",
+                value={"refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc..."},
+                request_only=True,
+            )
+        ],
+        tags=["Authentication"],
+    )
     def post(self, request):
         try:
             refresh_token = request.data.get("refresh_token")
@@ -728,7 +724,7 @@ class ResetUserPassword(APIView):
     @extend_schema(
         summary="Reset password",
         description="Reset user password using verified token",
-        request=OpenApiTypes.OBJECT,
+        request=ResetPasswordConfirmSerializer,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
         examples=[
             OpenApiExample(
@@ -832,8 +828,15 @@ class ResetUserPassword(APIView):
 @extend_schema(
     summary="Set transaction pin",
     description="Set a 4-digit transaction pin for wallet operation",
-    request=OpenApiTypes.OBJECT,
+    request=SetTransactionPinSerializer,
     responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+    examples=[
+        OpenApiExample(
+            "Set PIN Request",
+            value={"pin": "1234", "confirm_pin": "1234"},
+            request_only=True,
+        )
+    ],
     tags=["Authentication"],
 )
 @api_view(["POST"])
@@ -885,8 +888,15 @@ def set_transaction_pin(request):
 @extend_schema(
     summary="Change transaction pin",
     description="Change the existing transaction pin",
-    request=OpenApiTypes.OBJECT,
+    request=ChangeTransactionPinSerializer,
     responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+    examples=[
+        OpenApiExample(
+            "Change PIN Request",
+            value={"old_pin": "1234", "new_pin": "5678", "confirm_pin": "5678"},
+            request_only=True,
+        )
+    ],
     tags=["Authentication"],
 )
 @api_view(["POST"])
@@ -952,8 +962,15 @@ def change_transaction_pin(request):
 @extend_schema(
     summary="Verify transaction pin",
     description="Verify the user's transaction pin",
-    request=OpenApiTypes.OBJECT,
+    request=TransactionPinSerializer,
     responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+    examples=[
+        OpenApiExample(
+            "Verify PIN Request",
+            value={"pin": "1234"},
+            request_only=True,
+        )
+    ],
     tags=["Authentication"],
 )
 @api_view(["POST"])
@@ -1050,8 +1067,15 @@ def request_pin_reset(request):
 @extend_schema(
     summary="Verify PIN reset OTP",
     description="Verify OTP sent for transaction PIN reset",
-    request=OpenApiTypes.OBJECT,
+    request=VerifyPinResetOTPSerializer,
     responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+    examples=[
+        OpenApiExample(
+            "Verify OTP Request",
+            value={"otp": "123456"},
+            request_only=True,
+        )
+    ],
     tags=["Authentication"],
 )
 @api_view(["POST"])
@@ -1111,8 +1135,15 @@ def verify_pin_reset_otp(request):
 @extend_schema(
     summary="Reset transaction PIN",
     description="Reset transaction PIN with verified token",
-    request=OpenApiTypes.OBJECT,
+    request=NewTransactionPinSerializer,
     responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+    examples=[
+        OpenApiExample(
+            "Reset PIN Request",
+            value={"verification_token": "token", "new_pin": "5678", "confirm_pin": "5678"},
+            request_only=True,
+        )
+    ],
     tags=["Authentication"],
 )
 @api_view(["POST"])
@@ -1176,6 +1207,20 @@ def reset_transaction_pin(request):
 class LookupUserView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Lookup user by email",
+        description="Look up a user's public profile details by email",
+        request=UserLookupSerializer,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                "Lookup Request",
+                value={"email": "john@example.com"},
+                request_only=True,
+            )
+        ],
+        tags=["Authentication"],
+    )
     def post(self, request):
         email = request.data.get("email")
 

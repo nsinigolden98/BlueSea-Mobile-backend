@@ -69,3 +69,41 @@ class ResetPasswordSerializer(serializers.Serializer):
         user = Profile.objects.get(email=self.validated_data['email'])
         otp = get_random_string(6,'0123456789')
         return user, otp
+
+class LogoutSerializer(serializers.Serializer):
+    refresh_token = serializers.CharField(help_text="JWT refresh token to blacklist")
+
+
+class UserLookupSerializer(serializers.Serializer):
+    email = serializers.EmailField(help_text="Email of the user to look up")
+
+
+class TransactionPinSerializer(serializers.Serializer):
+    pin = serializers.CharField(help_text="4-digit transaction PIN")
+
+
+class SetTransactionPinSerializer(serializers.Serializer):
+    pin = serializers.CharField(help_text="4-digit transaction PIN")
+    confirm_pin = serializers.CharField(help_text="Confirm the transaction PIN")
+
+
+class ChangeTransactionPinSerializer(serializers.Serializer):
+    old_pin = serializers.CharField(help_text="Current 4-digit transaction PIN")
+    new_pin = serializers.CharField(help_text="New 4-digit transaction PIN")
+    confirm_pin = serializers.CharField(help_text="Confirm the new transaction PIN")
+
+
+class VerifyPinResetOTPSerializer(serializers.Serializer):
+    otp = serializers.CharField(help_text="OTP received via email")
+
+
+class NewTransactionPinSerializer(serializers.Serializer):
+    verification_token = serializers.CharField(help_text="Token from PIN reset OTP verification")
+    new_pin = serializers.CharField(help_text="New 4-digit transaction PIN")
+    confirm_pin = serializers.CharField(help_text="Confirm the new transaction PIN")
+
+
+class ResetPasswordConfirmSerializer(serializers.Serializer):
+    token = serializers.CharField(help_text="Signed token from OTP verification")
+    new_password = serializers.CharField(help_text="New password (min 8 characters)")
+    confirm_password = serializers.CharField(help_text="Confirm the new password")

@@ -269,6 +269,15 @@ REST_FRAMEWORK = {
 }
 
 
+SPECTACULAR_SETTINGS = {
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
+    "SERVE_AUTHENTICATION": [
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+}
+
+
 ROOT_URLCONF = "bluesea_mobile.urls"
 
 TEMPLATES = [
