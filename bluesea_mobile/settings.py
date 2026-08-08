@@ -456,7 +456,7 @@ CELERY_TIMEZONE = "Africa/Lagos"
 REDIS_LOCATION = os.environ.get("REDIS_LOCATION")
 
 
-if REDIS_LOCATION:
+if not DEBUG:
     CACHES = {
         "default": {
             "BACKEND": "django_redis.cache.RedisCache",
@@ -478,7 +478,7 @@ else:
     }
 
 # Session Configuration
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 SESSION_CACHE_ALIAS = "default"
 
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
