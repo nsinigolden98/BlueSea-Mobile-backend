@@ -34,9 +34,9 @@ def _fmt(amount):
 
 @admin.register(AirtimeTopUp)
 class AirtimeTopUpAdmin(admin.ModelAdmin):
-    list_display = ['phone_number', 'network_badge', 'amount_display', 'request_id', 'created_at']
+    list_display = ['user', 'phone_number', 'network_badge', 'amount_display', 'request_id', 'created_at']
     list_filter = ['network', 'created_at']
-    search_fields = ['phone_number', 'request_id']
+    search_fields = ['user__email', 'phone_number', 'request_id']
     readonly_fields = ['created_at']
     date_hierarchy = 'created_at'
     list_per_page = 30
@@ -54,9 +54,9 @@ class AirtimeTopUpAdmin(admin.ModelAdmin):
 
 
 class DataTopUpBase(admin.ModelAdmin):
-    list_display = ['phone_number', 'plan', 'billersCode', 'request_id', 'created_at']
+    list_display = ['user', 'phone_number', 'plan', 'billersCode', 'request_id', 'created_at']
     list_filter = ['created_at']
-    search_fields = ['phone_number', 'request_id', 'billersCode']
+    search_fields = ['user__email', 'phone_number', 'request_id', 'billersCode']
     readonly_fields = ['created_at']
     date_hierarchy = 'created_at'
     list_per_page = 30
@@ -84,9 +84,9 @@ class EtisalatDataTopUpAdmin(DataTopUpBase):
 
 @admin.register(DSTVPayment)
 class DSTVPaymentAdmin(admin.ModelAdmin):
-    list_display = ['billersCode', 'dstv_plan', 'subscription_type', 'phone_number', 'request_id', 'created_at']
+    list_display = ['user', 'billersCode', 'dstv_plan', 'subscription_type', 'phone_number', 'request_id', 'created_at']
     list_filter = ['subscription_type', 'created_at']
-    search_fields = ['billersCode', 'phone_number', 'request_id']
+    search_fields = ['user__email', 'billersCode', 'phone_number', 'request_id']
     readonly_fields = ['created_at']
     date_hierarchy = 'created_at'
     list_per_page = 30
@@ -94,9 +94,9 @@ class DSTVPaymentAdmin(admin.ModelAdmin):
 
 @admin.register(GOTVPayment)
 class GOTVPaymentAdmin(admin.ModelAdmin):
-    list_display = ['billersCode', 'gotv_plan', 'subscription_type', 'phone_number', 'request_id', 'created_at']
+    list_display = ['user', 'billersCode', 'gotv_plan', 'subscription_type', 'phone_number', 'request_id', 'created_at']
     list_filter = ['subscription_type', 'created_at']
-    search_fields = ['billersCode', 'phone_number', 'request_id']
+    search_fields = ['user__email', 'billersCode', 'phone_number', 'request_id']
     readonly_fields = ['created_at']
     date_hierarchy = 'created_at'
     list_per_page = 30
@@ -104,9 +104,9 @@ class GOTVPaymentAdmin(admin.ModelAdmin):
 
 @admin.register(StartimesPayment)
 class StartimesPaymentAdmin(admin.ModelAdmin):
-    list_display = ['billersCode', 'startimes_plan', 'phone_number', 'request_id', 'created_at']
+    list_display = ['user', 'billersCode', 'startimes_plan', 'phone_number', 'request_id', 'created_at']
     list_filter = ['created_at']
-    search_fields = ['billersCode', 'phone_number', 'request_id']
+    search_fields = ['user__email', 'billersCode', 'phone_number', 'request_id']
     readonly_fields = ['created_at']
     date_hierarchy = 'created_at'
     list_per_page = 30
@@ -114,9 +114,9 @@ class StartimesPaymentAdmin(admin.ModelAdmin):
 
 @admin.register(ShowMaxPayment)
 class ShowMaxPaymentAdmin(admin.ModelAdmin):
-    list_display = ['phone_number', 'showmax_plan', 'request_id', 'created_at']
+    list_display = ['user', 'phone_number', 'showmax_plan', 'request_id', 'created_at']
     list_filter = ['created_at']
-    search_fields = ['phone_number', 'request_id']
+    search_fields = ['user__email', 'phone_number', 'request_id']
     readonly_fields = ['created_at']
     date_hierarchy = 'created_at'
     list_per_page = 30
@@ -124,9 +124,9 @@ class ShowMaxPaymentAdmin(admin.ModelAdmin):
 
 @admin.register(ElectricityPayment)
 class ElectricityPaymentAdmin(admin.ModelAdmin):
-    list_display = ['billerCode', 'biller_name', 'meter_type_badge', 'amount_display', 'request_id', 'created_at']
+    list_display = ['user', 'billerCode', 'biller_name', 'meter_type_badge', 'amount_display', 'request_id', 'created_at']
     list_filter = ['biller_name', 'meter_type', 'created_at']
-    search_fields = ['billerCode', 'request_id']
+    search_fields = ['user__email', 'billerCode', 'request_id']
     readonly_fields = ['created_at']
     date_hierarchy = 'created_at'
     list_per_page = 30
@@ -154,8 +154,8 @@ class ElectricityPaymentAdmin(admin.ModelAdmin):
 
 @admin.register(WAECRegitration)
 class WAECRegistrationAdmin(admin.ModelAdmin):
-    list_display = ['phone_number', 'request_id', 'created_at']
-    search_fields = ['phone_number', 'request_id']
+    list_display = ['user', 'phone_number', 'request_id', 'created_at']
+    search_fields = ['user__email', 'phone_number', 'request_id']
     readonly_fields = ['created_at']
     date_hierarchy = 'created_at'
     list_per_page = 30
@@ -163,8 +163,8 @@ class WAECRegistrationAdmin(admin.ModelAdmin):
 
 @admin.register(WAECResultChecker)
 class WAECResultCheckerAdmin(admin.ModelAdmin):
-    list_display = ['phone_number', 'request_id', 'created_at']
-    search_fields = ['phone_number', 'request_id']
+    list_display = ['user', 'phone_number', 'request_id', 'created_at']
+    search_fields = ['user__email', 'phone_number', 'request_id']
     readonly_fields = ['created_at']
     date_hierarchy = 'created_at'
     list_per_page = 30
@@ -172,9 +172,9 @@ class WAECResultCheckerAdmin(admin.ModelAdmin):
 
 @admin.register(JAMBRegistration)
 class JAMBRegistrationAdmin(admin.ModelAdmin):
-    list_display = ['billerCode', 'exam_type', 'phone_number', 'request_id', 'created_at']
+    list_display = ['user', 'billerCode', 'exam_type', 'phone_number', 'request_id', 'created_at']
     list_filter = ['exam_type', 'created_at']
-    search_fields = ['billerCode', 'phone_number', 'request_id']
+    search_fields = ['user__email', 'billerCode', 'phone_number', 'request_id']
     readonly_fields = ['created_at']
     date_hierarchy = 'created_at'
     list_per_page = 30
@@ -182,9 +182,9 @@ class JAMBRegistrationAdmin(admin.ModelAdmin):
 
 @admin.register(Airtime2Cash)
 class Airtime2CashAdmin(admin.ModelAdmin):
-    list_display = ['phone_number', 'network_badge', 'amount_display', 'request_id', 'created_at']
+    list_display = ['user', 'phone_number', 'network_badge', 'amount_display', 'request_id', 'created_at']
     list_filter = ['network', 'created_at']
-    search_fields = ['phone_number', 'request_id']
+    search_fields = ['user__email', 'phone_number', 'request_id']
     readonly_fields = ['created_at']
     date_hierarchy = 'created_at'
     list_per_page = 30
@@ -203,9 +203,9 @@ class Airtime2CashAdmin(admin.ModelAdmin):
 
 @admin.register(ElectricityPaymentCustomers)
 class ElectricityPaymentCustomersAdmin(admin.ModelAdmin):
-    list_display = ['biller', 'meter_number', 'meter_type']
+    list_display = ['user', 'biller', 'meter_number', 'meter_type']
     list_filter = ['biller', 'meter_type']
-    search_fields = ['meter_number']
+    search_fields = ['user__email', 'meter_number']
     list_per_page = 30
 
 def _status_badge(status):

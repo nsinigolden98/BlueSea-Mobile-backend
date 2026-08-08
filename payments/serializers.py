@@ -24,80 +24,80 @@ from .models import (
 class AirtimeTopUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = AirtimeTopUp
-        fields= ["amount", "network", "phone_number"]
-        read_only_fields= ["id","request_id", "created_at"]
+        fields= ["user", "amount", "network", "phone_number"]
+        read_only_fields= ["user", "id","request_id", "created_at"]
 
 class MTNDataTopUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = MTNDataTopUp
-        fields= ["plan", "billersCode", "phone_number"]
-        read_only_fields= ["id","request_id", "created_at"]
+        fields= ["user", "plan", "billersCode", "phone_number"]
+        read_only_fields= ["user", "id","request_id", "created_at"]
         
 class AirtelDataTopUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = AirtelDataTopUp
-        fields= ["plan", "billersCode", "phone_number"]
-        read_only_fields= ["id","request_id", "created_at"]
+        fields= ["user", "plan", "billersCode", "phone_number"]
+        read_only_fields= ["user", "id","request_id", "created_at"]
 
 class GloDataTopUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = GloDataTopUp
-        fields= ["plan", "billersCode", "phone_number"]
-        read_only_fields= ["id","request_id", "created_at"]
+        fields= ["user", "plan", "billersCode", "phone_number"]
+        read_only_fields= ["user", "id","request_id", "created_at"]
         
 class EtisalatDataTopUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = EtisalatDataTopUp
-        fields= ["plan", "billersCode", "phone_number"]
-        read_only_fields= ["id","request_id", "created_at"]
+        fields= ["user", "plan", "billersCode", "phone_number"]
+        read_only_fields= ["user", "id","request_id", "created_at"]
         
 class DSTVPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = DSTVPayment
-        fields= ["billersCode","dstv_plan","subscription_type","phone_number"]
-        read_only_fields= ["id","request_id","created_at"]
+        fields= ["user", "billersCode","dstv_plan","subscription_type","phone_number"]
+        read_only_fields= ["user", "id","request_id","created_at"]
         
 class GOTVPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = GOTVPayment
-        fields= ["billersCode","gotv_plan","subscription_type","phone_number"]
-        read_only_fields= ["id","request_id","created_at"]
+        fields= ["user", "billersCode","gotv_plan","subscription_type","phone_number"]
+        read_only_fields= ["user", "id","request_id","created_at"]
 
 class StartimesPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = StartimesPayment
-        fields = ["billersCode","startimes_plan","phone_number"]
-        read_only_fields= ["id","request_id","created_at"]
+        fields = ["user", "billersCode","startimes_plan","phone_number"]
+        read_only_fields= ["user", "id","request_id","created_at"]
         
 class ShowMaxPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShowMaxPayment
-        fields= ["phone_number","showmax_plan"]
-        read_only_fields= ["id","request_id","created_at"]
+        fields= ["user", "phone_number","showmax_plan"]
+        read_only_fields= ["user", "id","request_id","created_at"]
         
 class ElectricityPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ElectricityPayment
-        fields= ["billerCode","amount","biller_name","meter_type"]
-        read_only_fields= ["id","request_id","created_at"]
+        fields= ["user", "billerCode","amount","biller_name","meter_type"]
+        read_only_fields= ["user", "id","request_id","created_at"]
         
 class WAECRegitrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = WAECRegitration
-        fields= ["phone_number"]
-        read_only_fields= ["id","request_id","created_at"] 
+        fields= ["user", "phone_number"]
+        read_only_fields= ["user", "id","request_id","created_at"] 
 
 class WAECResultCheckerSerializer(serializers.ModelSerializer):
     class Meta:
         model = WAECResultChecker
-        fields= ["phone_number"]
-        read_only_fields= ["id","request_id","created_at"] 
+        fields= ["user", "phone_number"]
+        read_only_fields= ["user", "id","request_id","created_at"] 
 
 class JAMBRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = JAMBRegistration
-        fields= ["billerCode","exam_type","phone_number"]
-        read_only_fields= ["id","request_id","created_at"] 
+        fields= ["user", "billerCode","exam_type","phone_number"]
+        read_only_fields= ["user", "id","request_id","created_at"] 
         
 
 class GroupPaymentContributionSerializer(serializers.ModelSerializer):
@@ -125,14 +125,14 @@ class GroupPaymentSerializer(serializers.ModelSerializer):
 class Airtime2CashSerializer(serializers.ModelSerializer):
     class Meta:
         model = Airtime2Cash
-        fields= ["amount", "network", "phone_number"]
-        read_only_fields= ["id","request_id", "created_at"]
+        fields= ["user", "amount", "network", "phone_number"]
+        read_only_fields= ["user", "id","request_id", "created_at"]
         
 class ElectricityPaymentCustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = ElectricityPaymentCustomers
-        fields = ['meter_type', 'meter_number', 'biller']
-        read_only_fields = ['id']
+        fields = ["user", 'meter_type', 'meter_number', 'biller']
+        read_only_fields = ["user", 'id']
 
 class WithdrawalSerializer(serializers.ModelSerializer):
     class Meta:

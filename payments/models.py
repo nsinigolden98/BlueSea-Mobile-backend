@@ -281,6 +281,7 @@ STARTIMES_PLANS = [
 ]
 
 class AirtimeTopUp(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="airtime_topups")
     amount = models.IntegerField()
     network = models.CharField(max_length=10, choices=NETWORK_TYPES)
     phone_number = models.CharField(max_length=11)
@@ -288,6 +289,7 @@ class AirtimeTopUp(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 class MTNDataTopUp(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="mtn_data_topups")
     plan = models.CharField(max_length=50, choices=MTN_PLANS)
     billersCode = models.CharField(max_length=20)
     phone_number = models.CharField(max_length=11)
@@ -295,6 +297,7 @@ class MTNDataTopUp(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 class AirtelDataTopUp(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="airtel_data_topups")
     plan = models.CharField(max_length=100, choices=AIRTEL_PLANS)
     billersCode = models.CharField(max_length=20)
     phone_number = models.CharField(max_length=11)
@@ -302,6 +305,7 @@ class AirtelDataTopUp(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 class GloDataTopUp(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="glo_data_topups")
     plan = models.CharField(max_length=100, choices=GLO_PLANS)
     billersCode = models.CharField(max_length=20)
     phone_number = models.CharField(max_length=11)
@@ -309,6 +313,7 @@ class GloDataTopUp(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 class EtisalatDataTopUp(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="etisalat_data_topups")
     plan = models.CharField(max_length=100, choices=ETISALAT_PLANS)
     billersCode = models.CharField(max_length=20)
     phone_number = models.CharField(max_length=11)
@@ -316,6 +321,7 @@ class EtisalatDataTopUp(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 class DSTVPayment(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="dstv_payments")
     billersCode = models.CharField(max_length=20)
     dstv_plan = models.CharField(max_length=100, choices=DSTV_PLANS)
     subscription_type = models.CharField(max_length=20, choices=SUB_TYPE)
@@ -324,6 +330,7 @@ class DSTVPayment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 class GOTVPayment(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="gotv_payments")
     billersCode = models.CharField(max_length=20)
     gotv_plan = models.CharField(max_length=100, choices=GOTV_PLANS)
     subscription_type = models.CharField(max_length=20, choices=SUB_TYPE)
@@ -332,6 +339,7 @@ class GOTVPayment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 class StartimesPayment(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="startimes_payments")
     billersCode = models.CharField(max_length=20)
     startimes_plan = models.CharField(max_length=100, choices=STARTIMES_PLANS)
     phone_number = models.CharField(max_length=11)
@@ -339,12 +347,14 @@ class StartimesPayment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 class ShowMaxPayment(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="showmax_payments")
     showmax_plan = models.CharField(max_length=100, choices=SHOWMAX_PLANS)
     phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 class ElectricityPayment(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="electricity_payments")
     billerCode = models.CharField(max_length=20)
     amount = models.IntegerField()
     biller_name = models.CharField(max_length=30, choices=BILLER_NAME)
@@ -353,16 +363,19 @@ class ElectricityPayment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 class WAECRegitration(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="waec_registrations")
     phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 class WAECResultChecker(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="waec_result_checks")
     phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 class JAMBRegistration(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="jamb_registrations")
     billerCode = models.CharField(max_length=30)
     exam_type = models.CharField(max_length=20, choices=EXAM_TYPES)
     phone_number = models.CharField(max_length=11)
@@ -418,6 +431,7 @@ class GroupPaymentContribution(models.Model):
         return f"{self.member.user.get_full_name()} - ₦{self.amount}"
 
 class Airtime2Cash(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="airtime2cash_records")
     amount = models.IntegerField()
     network = models.CharField(max_length=10, choices=NETWORK_TYPES)
     phone_number = models.CharField(max_length=11)
@@ -425,6 +439,7 @@ class Airtime2Cash(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 class ElectricityPaymentCustomers(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="electricity_customer_lookups")
     biller = models.CharField(max_length=30, choices=BILLER_NAME)
     meter_number = models.CharField(max_length=15)
     meter_type = models.CharField(max_length=20, choices=METER_TYPES)

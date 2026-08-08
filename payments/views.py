@@ -209,7 +209,7 @@ class Airtime2CashViews(APIView):
 
         if serializer.is_valid(raise_exception=True):
             request_id = generate_reference_id()
-            serializer.save(request_id=request_id)
+            serializer.save(request_id=request_id, user=request.user)
 
             with transaction.atomic():
                 amount = int(serializer.data["amount"])
@@ -778,7 +778,7 @@ class AirtimeTopUpViews(APIView):
 
             if serializer.is_valid(raise_exception=True):
                 request_id = generate_reference_id()
-                serializer.save(request_id=request_id)
+                serializer.save(request_id=request_id, user=request.user)
 
                 with transaction.atomic():
                     amount = int(serializer.data["amount"])
@@ -899,7 +899,7 @@ class MTNDataTopUpViews(APIView):
             serializer = MTNDataTopUpSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 request_id = generate_reference_id()
-                serializer.save(request_id=request_id)
+                serializer.save(request_id=request_id, user=request.user)
                 with transaction.atomic():
                     amount = mtn_dict[serializer.data["plan"]][1]
                     variation_code = mtn_dict[serializer.data["plan"]][0]
@@ -1024,7 +1024,7 @@ class AirtelDataTopUpViews(APIView):
             serializer = AirtelDataTopUpSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 request_id = generate_reference_id()
-                serializer.save(request_id=request_id)
+                serializer.save(request_id=request_id, user=request.user)
                 with transaction.atomic():
                     amount = airtel_dict[serializer.data["plan"]][1]
                     variation_code = airtel_dict[serializer.data["plan"]][0]
@@ -1145,7 +1145,7 @@ class EtisalatDataTopUpViews(APIView):
             serializer = EtisalatDataTopUpSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 request_id = generate_reference_id()
-                serializer.save(request_id=request_id)
+                serializer.save(request_id=request_id, user=request.user)
                 with transaction.atomic():
                     amount = etisalat_dict[serializer.data["plan"]][1]
                     variation_code = etisalat_dict[serializer.data["plan"]][0]
@@ -1266,7 +1266,7 @@ class GloDataTopUpViews(APIView):
             serializer = GloDataTopUpSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 request_id = generate_reference_id()
-                serializer.save(request_id=request_id)
+                serializer.save(request_id=request_id, user=request.user)
                 with transaction.atomic():
                     amount = glo_dict[serializer.data["plan"]][1]
                     variation_code = glo_dict[serializer.data["plan"]][0]
@@ -1390,7 +1390,7 @@ class DSTVPaymentViews(APIView):
             serializer = DSTVPaymentSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 request_id = generate_reference_id()
-                serializer.save(request_id=request_id)
+                serializer.save(request_id=request_id, user=request.user)
                 with transaction.atomic():
                     amount = dstv_dict[serializer.data["dstv_plan"]][1]
                     variation_code = dstv_dict[serializer.data["dstv_plan"]][0]
@@ -1514,7 +1514,7 @@ class GOTVPaymentViews(APIView):
             serializer = GOTVPaymentSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 request_id = generate_reference_id()
-                serializer.save(request_id=request_id)
+                serializer.save(request_id=request_id, user=request.user)
                 with transaction.atomic():
                     amount = gotv_dict[serializer.data["gotv_plan"]][1]
                     variation_code = gotv_dict[serializer.data["gotv_plan"]][0]
@@ -1638,7 +1638,7 @@ class StartimesPaymentViews(APIView):
             serializer = StartimesPaymentSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 request_id = generate_reference_id()
-                serializer.save(request_id=request_id)
+                serializer.save(request_id=request_id, user=request.user)
                 with transaction.atomic():
                     amount = startimes_dict[serializer.data["startimes_plan"]][1]
                     variation_code = startimes_dict[serializer.data["startimes_plan"]][
@@ -1764,7 +1764,7 @@ class ShowMaxPaymentViews(APIView):
             serializer = ShowMaxPaymentSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 request_id = generate_reference_id()
-                serializer.save(request_id=request_id)
+                serializer.save(request_id=request_id, user=request.user)
                 with transaction.atomic():
                     amount = showmax_dict[serializer.data["showmax_plan"]][1]
                     variation_code = showmax_dict[serializer.data["showmax_plan"]][0]
@@ -1887,7 +1887,7 @@ class ElectricityPaymentViews(APIView):
             serializer = ElectricityPaymentSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 request_id = generate_reference_id()
-                serializer.save(request_id=request_id)
+                serializer.save(request_id=request_id, user=request.user)
                 with transaction.atomic():
                     amount = int(serializer.data["amount"])
                     data = {
@@ -1997,7 +1997,7 @@ class WAECRegitrationViews(APIView):
         serializer = WAECRegitrationSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             request_id = generate_reference_id()
-            serializer.save(request_id=request_id)
+            serializer.save(request_id=request_id, user=request.user)
             with transaction.atomic():
                 amount = 14500
                 data = {
@@ -2104,7 +2104,7 @@ class WAECResultCheckerViews(APIView):
         serializer = WAECResultCheckerSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             request_id = generate_reference_id()
-            serializer.save(request_id=request_id)
+            serializer.save(request_id=request_id, user=request.user)
             with transaction.atomic():
                 amount = 950
                 data = {
@@ -2212,7 +2212,7 @@ class JAMBRegistrationViews(APIView):
 
         if serializer.is_valid(raise_exception=True):
             request_id = generate_reference_id()
-            serializer.save(request_id=request_id)
+            serializer.save(request_id=request_id, user=request.user)
 
             with transaction.atomic():
                 amount = 7700 if serializer.data["exam_type"] == "utme-mock" else 6200
@@ -2296,7 +2296,7 @@ class ElectricityPaymentCustomerViews(APIView):
         try:
             serializer = ElectricityPaymentCustomerSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                serializer.save()
+                serializer.save(user=request.user)
 
                 data = {
                     "billersCode": int(serializer.data["meter_number"]),
