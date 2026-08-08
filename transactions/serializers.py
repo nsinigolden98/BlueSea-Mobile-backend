@@ -1,5 +1,8 @@
 from rest_framework import serializers
 from .models import WalletTransaction, FundWallet, AccountName, Withdraw
+from decimal import Decimal
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 
 
 class WalletTransactionSerializer(serializers.ModelSerializer):
@@ -14,6 +17,7 @@ class WalletTransactionSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at']
     
+    @extend_schema_field(OpenApiTypes.STR)
     def get_formatted_amount(self, obj):
         return f"₦{obj.amount:,.2f}"
 
@@ -48,3 +52,19 @@ class AccountNameSerializer(serializers.ModelSerializer):
         model = AccountName
         fields = ['id', 'account_number', 'bank_code']
         read_only_fields =['id']
+
+
+class InitializeFundingSerializer(serializers.Serializer):
+    amount = serializers.DecimalField(
+        max_digits=12, decimal_places=2, min_value=Decimal("100.00"),
+        help_text="Amount to fund the wallet in NGN (minimum ₦100)",
+    )
+
+
+class WithdrawRequestSerializer(serializers.Serializer):
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    account_name = serializers.CharField(max_length=100)
+    account_number = serializers.CharField(max_length=10)
+    bank_name = serializers.CharField(max_length=50)
+    bank_code = serializers.CharField(max_length=10)
+    transaction_pin = serializers.CharField(write_only=True, max_length=6, help_text="6-digit transaction PIN")

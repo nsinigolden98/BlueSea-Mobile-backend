@@ -1,4 +1,5 @@
 from rest_framework import status
+from rest_framework import serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
@@ -6,7 +7,7 @@ import json
 from decimal import Decimal
 from rest_framework.views import APIView
 from .models import WalletTransaction, FundWallet, Withdraw
-from .serializers import WalletTransactionSerializer, WalletFundingSerializer, AccountNameSerializer, WithdrawSerializer
+from .serializers import WalletTransactionSerializer, WalletFundingSerializer, AccountNameSerializer, WithdrawSerializer, InitializeFundingSerializer, WithdrawRequestSerializer
 from wallet.models import Wallet
 from wallet.serializers import WalletSerializer
 import uuid
@@ -17,7 +18,7 @@ import hmac
 import hashlib
 import logging
 from django.db import transaction
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiExample, inline_serializer
 from drf_spectacular.types import OpenApiTypes
 from .pagination import WalletTransactionPagination 
 from notifications.utils import send_notification
@@ -35,7 +36,18 @@ class GetWalletTransaction(APIView):
     @extend_schema(
         summary="Get wallet transactions",
         description="Retrieve all wallet transactions for the authenticated user, paginated.",
-        responses={200: WalletTransactionSerializer(many=True), 404: OpenApiTypes.OBJECT},
+        responses={
+            200: inline_serializer(
+                "PaginatedWalletTransactions",
+                fields={
+                    "count": serializers.IntegerField(),
+                    "next": serializers.URLField(allow_null=True),
+                    "previous": serializers.URLField(allow_null=True),
+                    "results": WalletTransactionSerializer(many=True),
+                },
+            ),
+            404: OpenApiTypes.OBJECT,
+        },
         tags=['Wallet & Transactions']
     )
     def get(self, request):
@@ -67,8 +79,25 @@ class InitializeFunding(APIView):
     @extend_schema(
         summary="Initialize wallet funding",
         description="Initialize Paystack payment to fund user wallet (minimum: ₦100)",
-        request=OpenApiTypes.OBJECT,
+        request=InitializeFundingSerializer,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                "Funding Request",
+                value={"amount": "5000.00"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Success Response",
+                value={
+                    "success": True,
+                    "authorization_url": "https://checkout.paystack.com/xyz",
+                    "payment_reference": "BS-1234-abcd",
+                    "amount": "5000.00",
+                },
+                response_only=True,
+            ),
+        ],
         tags=['Wallet & Transactions']
     )
 
@@ -285,9 +314,10 @@ class PaymentWebhook(APIView):
 
         return hash == signature
 
+    @extend_schema(exclude=True)
     def post(self, request, *args, **kwargs):
         try:
-            logger.info("Received webhook payload: %s", request.body.decode('utf-8'))
+            # logger.info("Received webhook payload: %s", request.body.decode('utf-8'))
 
             # verify signature
             if not self.verify_signature(request):
@@ -296,7 +326,7 @@ class PaymentWebhook(APIView):
             
             data = json.loads(request.body)
             event = data.get('event')
-            logger.info("Processing webhook event: %s", event)
+            # logger.info("Processing webhook event: %s", event)
 
             # handle successful charge
             if event == 'charge.success':
@@ -305,8 +335,8 @@ class PaymentWebhook(APIView):
                 raw_amount = Decimal(str(payload.get('amount', '0')))
                 amount = raw_amount / Decimal('100')
 
-                logger.info("Processing successful charge - Reference: %s, Raw Amount: %s, Converted Amount: %s", 
-                          reference, raw_amount, amount)
+                # logger.info("Processing successful charge - Reference: %s, Raw Amount: %s, Converted Amount: %s", 
+                #           reference, raw_amount, amount)
 
                 try:
                     with transaction.atomic():
@@ -316,9 +346,9 @@ class PaymentWebhook(APIView):
                             status='PENDING'
                         )
                         
-                        logger.info("Found pending funding request: Amount: %s, User: %s", 
-                                  funding_request.amount, 
-                                  funding_request.user.email if funding_request.user else 'None')
+                        # logger.info("Found pending funding request: Amount: %s, User: %s", 
+                        #           funding_request.amount, 
+                        #           funding_request.user.email if funding_request.user else 'None')
 
                         # Get wallet with lock
                         try:
@@ -371,10 +401,10 @@ class PaymentWebhook(APIView):
                             funding_request.completed_at = timezone.now()
                             funding_request.save()
                             
-                            logger.info(
-                                "Wallet funded successfully. Old balance: %s, New balance: %s", 
-                                old_balance, wallet.balance
-                            )
+                            # logger.info(
+                            #     "Wallet funded successfully. Old balance: %s, New balance: %s", 
+                            #     old_balance, wallet.balance
+                            # )
 
                             try:
                                 send_notification(
@@ -395,7 +425,7 @@ class PaymentWebhook(APIView):
                             })
 
                         except Exception as e:
-                            logger.error("Error updating wallet: %s", str(e), exc_info=True)
+                            # logger.error("Error updating wallet: %s", str(e), exc_info=True)
                             funding_request.status = 'FAILED'
                             funding_request.save()
                             return Response({
@@ -404,7 +434,7 @@ class PaymentWebhook(APIView):
                             }, status=status.HTTP_400_BAD_REQUEST)
                     
                 except FundWallet.DoesNotExist:
-                    logger.error("Invalid payment reference: %s", reference)
+                    # logger.error("Invalid payment reference: %s", reference)
                     return Response({
                         "success": False, 
                         "error": "Invalid payment reference"
@@ -413,7 +443,7 @@ class PaymentWebhook(APIView):
             return Response({"success": True})
                 
         except Exception as e:
-            logger.error("Unexpected error in webhook handler: %s", str(e), exc_info=True)
+            # logger.error("Unexpected error in webhook handler: %s", str(e), exc_info=True)
             return Response({
                 "success": False, 
                 "error": str(e)
@@ -421,6 +451,35 @@ class PaymentWebhook(APIView):
 
 class AccountNameView(APIView):
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Resolve account name",
+        description="Verify a bank account number and retrieve the account holder's name via Paystack.",
+        request=AccountNameSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+        },
+        examples=[
+            OpenApiExample(
+                "Resolve Request",
+                value={"account_number": "0123456789", "bank_code": "058"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Success Response",
+                value={"success": True, "account_name": "JOHN DOE"},
+                response_only=True,
+            ),
+            OpenApiExample(
+                "Not Found Response",
+                value={"success": False, "message": "Could not resolve account name"},
+                response_only=True,
+            ),
+        ],
+        tags=['Wallet & Transactions']
+    )
     def post(self, request):
         serializer = AccountNameSerializer(data = request.data)
         if serializer.is_valid(raise_exception = True):
@@ -443,6 +502,46 @@ class AccountNameView(APIView):
 
 class WithdrawView(APIView):
     permission_classes =[IsAuthenticated]
+
+    @extend_schema(
+        summary="Withdraw funds",
+        description="Withdraw funds from the user's wallet to a bank account. Requires a valid transaction PIN.",
+        request=WithdrawRequestSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            500: OpenApiTypes.OBJECT,
+        },
+        examples=[
+            OpenApiExample(
+                "Withdraw Request",
+                value={
+                    "amount": "5000.00",
+                    "account_name": "JOHN DOE",
+                    "account_number": "0123456789",
+                    "bank_name": "GTBank",
+                    "bank_code": "058",
+                    "transaction_pin": "123456",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Paystack Transfer Response",
+                value={
+                    "status": True,
+                    "message": "Transfer requires OTP to continue",
+                    "data": {
+                        "reference": "BS-1234-abcd",
+                        "transfer_code": "TRF_xyz",
+                        "amount": 500000,
+                        "currency": "NGN",
+                    },
+                },
+                response_only=True,
+            ),
+        ],
+        tags=['Wallet & Transactions']
+    )
     def post(self, request):
 
         transaction_pin = request.data.get('transaction_pin')
