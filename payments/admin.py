@@ -287,7 +287,7 @@ class WithdrawalAdmin(admin.ModelAdmin):
                     withdrawal.user.wallet.credit(
                         amount=withdrawal.amount,
                         description=f'Refund for failed withdrawal {withdrawal.payment_reference}',
-                        reference=withdrawal.payment_reference,
+                        reference=f'{withdrawal.payment_reference}-REFUND',
                     )
                     refunded += 1
                     try:
