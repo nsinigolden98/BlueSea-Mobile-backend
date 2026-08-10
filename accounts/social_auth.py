@@ -24,7 +24,9 @@ class GoogleAuth:
         try:
             # Verify the token
             idinfo = id_token.verify_oauth2_token(
-                token, google_requests.Request(), settings.GOOGLE_CLIENT_ID
+                token, 
+                google_requests.Request(), 
+                audience=[settings.GOOGLE_CLIENT_ID,settings.GOOGLE_CLIENT_ID_APP]
             )
 
             # Verify the issuer
