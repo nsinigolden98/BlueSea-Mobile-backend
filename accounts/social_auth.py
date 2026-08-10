@@ -24,9 +24,7 @@ class GoogleAuth:
         try:
             # Verify the token
             idinfo = id_token.verify_oauth2_token(
-                token, 
-                google_requests.Request(), 
-                audience=[settings.GOOGLE_CLIENT_ID,settings.GOOGLE_CLIENT_ID_APP]
+                token, google_requests.Request(), settings.GOOGLE_CLIENT_ID
             )
 
             # Verify the issuer
@@ -69,36 +67,25 @@ class GoogleAuth:
             token_url = "https://oauth2.googleapis.com/token"
 
             # Exchange code for tokens
-            client_ids = [
-                settings.GOOGLE_CLIENT_ID,
-                getattr(settings, "GOOGLE_CLIENT_ID_APP", None),
-            ]
+            token_data = {
+                "code": authorization_code,
+                "client_id": settings.GOOGLE_CLIENT_ID,
+                "client_secret": getattr(settings, "GOOGLE_CLIENT_SECRET", None),
+                "redirect_uri": redirect_uri,
+                "grant_type": "authorization_code",
+            }
 
-            if not getattr(settings, "GOOGLE_CLIENT_SECRET", None):
+            if not token_data["client_secret"]:
                 logger.error("GOOGLE_CLIENT_SECRET is not configured")
                 return False, "Server configuration error"
 
-            token_response = None
-            for client_id in client_ids:
-                if not client_id:
-                    continue
-                token_data = {
-                    "code": authorization_code,
-                    "client_id": client_id,
-                    "client_secret": settings.GOOGLE_CLIENT_SECRET,
-                    "redirect_uri": redirect_uri,
-                    "grant_type": "authorization_code",
-                }
+            # Get access token
+            token_response = requests.post(token_url, data=token_data)
 
-                # Get access token
-                token_response = requests.post(token_url, data=token_data)
-                if token_response.status_code == 200:
-                    break
-
-            if token_response is None or token_response.status_code != 200:
-                if token_response is not None:
-                    logger.error(f"Token exchange failed: {token_response.text}")
+            if token_response.status_code != 200:
+                logger.error(f"Token exchange failed: {token_response.text}")
                 return False, "Failed to exchange authorization code"
+
             tokens = token_response.json()
             access_token = tokens.get("access_token")
             id_token_str = tokens.get("id_token")
@@ -109,7 +96,7 @@ class GoogleAuth:
                     idinfo = id_token.verify_oauth2_token(
                         id_token_str,
                         google_requests.Request(),
-                        audience=[settings.GOOGLE_CLIENT_ID,settings.GOOGLE_CLIENT_ID_APP]
+                        settings.GOOGLE_CLIENT_ID,
                     )
 
                     user_data = {

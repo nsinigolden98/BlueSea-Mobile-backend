@@ -491,7 +491,6 @@ SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 SESSION_CACHE_ALIAS = "default"
 
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_ID_APP = os.environ.get("GOOGLE_CLIENT_ID_APP")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
 APPLE_CLIENT_ID = os.environ.get("APPLE_CLIENT_ID")
 
