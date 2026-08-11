@@ -445,6 +445,20 @@ class UpdateGroupView(APIView):
 class JoinGroupView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Join a payment group",
+        description="Join a payment group using its join code",
+        request=OpenApiTypes.OBJECT,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT, 500: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                "Join a payment group",
+                value={"transaction_pin": "1234", "join_code": "ABC123"},
+                request_only=True,
+            )
+        ],
+        tags=["Group Payments"],
+    )
     def post(self, request):
         transaction_pin = request.data.get("transaction_pin")
 
@@ -553,6 +567,20 @@ class JoinGroupView(APIView):
 class LeaveGroupView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Leave a payment group",
+        description="Leave a payment group you are a member of (owners must cancel instead)",
+        request=OpenApiTypes.OBJECT,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 500: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                "Leave a payment group",
+                value={"group_id": "00000000-0000-0000-0000-000000000000"},
+                request_only=True,
+            )
+        ],
+        tags=["Group Payments"],
+    )
     def post(self, request):
         try:
             group_id = request.data.get("group_id")
@@ -604,6 +632,20 @@ class LeaveGroupView(APIView):
 class CancelGroupView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Cancel a payment group",
+        description="Cancel a payment group (owner only)",
+        request=OpenApiTypes.OBJECT,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 500: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                "Cancel a payment group",
+                value={"group_id": "00000000-0000-0000-0000-000000000000"},
+                request_only=True,
+            )
+        ],
+        tags=["Group Payments"],
+    )
     def post(self, request):
         try:
             group_id = request.data.get("group_id")

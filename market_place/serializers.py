@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 from .models import (
     EventInfo,
     TicketType,
@@ -88,12 +89,14 @@ class EventInfoSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "vendor", "is_approved", "ticket_types", "created_at"]
 
+    @extend_schema_field(serializers.IntegerField())
     def get_total_tickets(self, obj):
         """Calculate total tickets - use quantity for free events, sum of ticket_types for paid"""
         if obj.is_free:
             return obj.quantity or 0
         return sum(tt.quantity_available for tt in obj.ticket_types.all())
 
+    @extend_schema_field(serializers.IntegerField())
     def get_tickets_sold(self, obj):
         """Calculate tickets sold"""
         issued = obj.issued_tickets.exclude(status="canceled").count()
@@ -368,6 +371,7 @@ class IssuedTicketSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "qr_code", "status", "created_at"]
 
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_event_banner(self, obj):
         if obj.event.event_banner:
             request = self.context.get("request")
@@ -432,6 +436,7 @@ class TicketListSerializer(serializers.ModelSerializer):
             "canceled_at",
         ]
 
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_event_banner(self, obj):
         if obj.event.event_banner:
             request = self.context.get("request")
@@ -439,17 +444,30 @@ class TicketListSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.event.event_banner.url)
         return None
 
+    @extend_schema_field(serializers.CharField())
     def get_ticket_type_name(self, obj):
         """Return ticket type name or 'Free Entry'"""
         if obj.event.is_free or not obj.ticket_type:
             return "Free Entry"
         return obj.ticket_type.name
 
+    @extend_schema_field(serializers.CharField())
     def get_ticket_type_price(self, obj):
         """Return ticket price or '0.00' for free tickets"""
         if obj.event.is_free or not obj.ticket_type:
             return "0.00"
         return str(obj.ticket_type.price)
+
+
+class TicketActionStatusSerializer(serializers.Serializer):
+    allowed = serializers.BooleanField()
+    message = serializers.CharField()
+
+
+class RefundInfoSerializer(serializers.Serializer):
+    refund_amount = serializers.FloatField()
+    canceled_at = serializers.DateTimeField()
+    reason = serializers.CharField(allow_null=True)
 
 
 class TicketDetailSerializer(serializers.ModelSerializer):
@@ -493,6 +511,7 @@ class TicketDetailSerializer(serializers.ModelSerializer):
             "refund_info",
         ]
 
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_qr_code_base64(self, obj):
         if obj.qr_code_image:
             try:
@@ -503,6 +522,7 @@ class TicketDetailSerializer(serializers.ModelSerializer):
                 return None
         return None
 
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_qr_code_url(self, obj):
         if obj.qr_code_image:
             request = self.context.get("request")
@@ -511,14 +531,17 @@ class TicketDetailSerializer(serializers.ModelSerializer):
             return obj.qr_code_image.url
         return None
 
+    @extend_schema_field(TicketActionStatusSerializer())
     def get_can_transfer(self, obj):
         can_transfer, message = obj.can_transfer()
         return {"allowed": can_transfer, "message": message}
 
+    @extend_schema_field(TicketActionStatusSerializer())
     def get_can_cancel(self, obj):
         can_cancel, refund_amount, message = obj.can_cancel()
         return {"allowed": can_cancel, "message": message}
 
+    @extend_schema_field(RefundInfoSerializer(allow_null=True))
     def get_refund_info(self, obj):
         if obj.status == "canceled" and obj.refund_amount:
             return {

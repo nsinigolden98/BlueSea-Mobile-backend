@@ -21,11 +21,19 @@ from .models import Wallet
 from transactions.models import WalletTransaction, FundWallet
 from .serializers import WalletSerializer
 from transactions.serializers import WalletTransactionSerializer
+from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
 
 
 class WalletBalance(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Get wallet balance",
+        description="Return the user's wallet balance, locked balance and available balance as formatted naira strings.",
+        responses={200: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+        tags=["Wallet"],
+    )
     def get(self, request):
         try:
             wallet_user = Wallet.objects.get(user=request.user)

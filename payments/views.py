@@ -2292,6 +2292,17 @@ class JAMBRegistrationViews(APIView):
 class ElectricityPaymentCustomerViews(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Verify electricity customer",
+        description="Verify a prepaid/postpaid electricity customer by meter number",
+        request=ElectricityPaymentCustomerSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            500: OpenApiTypes.OBJECT,
+        },
+        tags=["Payments"],
+    )
     def post(self, request):
         try:
             serializer = ElectricityPaymentCustomerSerializer(data=request.data)
@@ -2327,6 +2338,29 @@ class ElectricityPaymentCustomerViews(APIView):
 class InternalTransferView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Transfer funds internally",
+        description="Transfer money from your wallet to another BlueSea user",
+        request=OpenApiTypes.OBJECT,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT,
+            500: OpenApiTypes.OBJECT,
+        },
+        examples=[
+            OpenApiExample(
+                "Internal Transfer",
+                value={
+                    "transaction_pin": "1234",
+                    "email": "recipient@example.com",
+                    "amount": "5000",
+                },
+                request_only=True,
+            )
+        ],
+        tags=["Payments"],
+    )
     def post(self, request):
         transaction_pin = request.data.get("transaction_pin")
         recipient_email = request.data.get("email")

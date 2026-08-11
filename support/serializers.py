@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 from .models import SupportTicket, SupportMessage
 
 
@@ -9,6 +10,7 @@ class SupportMessageSerializer(serializers.ModelSerializer):
         model = SupportMessage
         fields = ["id", "sender_name", "message", "is_admin", "created_at"]
 
+    @extend_schema_field(serializers.CharField())
     def get_sender_name(self, obj):
         return f"{obj.sender.surname} {obj.sender.other_names}"
 

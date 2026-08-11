@@ -4,15 +4,31 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .models import Notification
-from .serializers import NotificationSerializer
+from .serializers import NotificationSerializer, NotificationListResponse
 from .pagination import NotificationPagination
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 
 class NotificationListView(APIView):
     permission_classes = [IsAuthenticated]
     paginator = NotificationPagination()
 
+    @extend_schema(
+        summary="List notifications",
+        description="List the authenticated user's notifications, newest first.",
+        parameters=[
+            OpenApiParameter(
+                "is_read",
+                OpenApiTypes.BOOL,
+                required=False,
+                description="Filter by read status (true/false)",
+            )
+        ],
+        responses={200: NotificationListResponse},
+        tags=["Notifications"],
+    )
     def get(self, request):
         notifications = Notification.objects.filter(user=request.user).order_by(
             "-created_at"
@@ -40,6 +56,17 @@ class NotificationListView(APIView):
 class MarkNotificationAsReadView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Mark a notification as read",
+        parameters=[
+            OpenApiParameter(
+                "notification_id", OpenApiTypes.INT, OpenApiParameter.PATH
+            )
+        ],
+        request=None,
+        responses={200: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+        tags=["Notifications"],
+    )
     def post(self, request, notification_id):
         try:
             notification = Notification.objects.get(
@@ -64,6 +91,12 @@ class MarkNotificationAsReadView(APIView):
 class MarkAllNotificationsAsReadView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Mark all notifications as read",
+        request=None,
+        responses={200: OpenApiTypes.OBJECT},
+        tags=["Notifications"],
+    )
     def post(self, request):
         updated_count = Notification.objects.filter(
             user=request.user, is_read=False
@@ -78,6 +111,16 @@ class MarkAllNotificationsAsReadView(APIView):
 class DeleteNotificationView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Delete a notification",
+        parameters=[
+            OpenApiParameter(
+                "notification_id", OpenApiTypes.INT, OpenApiParameter.PATH
+            )
+        ],
+        responses={200: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+        tags=["Notifications"],
+    )
     def delete(self, request, notification_id):
         try:
             notification = Notification.objects.get(

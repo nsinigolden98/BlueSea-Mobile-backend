@@ -9,3 +9,10 @@ class NotificationSerializer(serializers.ModelSerializer):
             'is_read', 'created_at', 'read_at'
         ]
         read_only_fields = ['id', 'created_at', 'read_at']
+
+class NotificationListResponse(serializers.Serializer):
+    count = serializers.IntegerField()
+    next = serializers.CharField(allow_null=True)
+    previous = serializers.CharField(allow_null=True)
+    results = NotificationSerializer(many=True)
+    unread_count = serializers.IntegerField()
