@@ -5,13 +5,27 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from .models import Reward, RedemptionTransaction
-from .serializers import RewardSerializer
+from .serializers import (
+    RewardSerializer,
+    RewardListResponse,
+    RedemptionListResponse,
+)
+from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
 from bonus.models import BonusPoint
 
 
 class RewardListView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="List available rewards",
+        description="List rewards with available inventory",
+        request=None,
+        responses={200: RewardListResponse, 500: OpenApiTypes.OBJECT},
+        operation_id="loyalty_rewards_list",
+        tags=["Loyalty Market"],
+    )
     def get(self, request):
         rewards = Reward.objects.filter(inventory__gt=0).order_by("-created_at")
         serializer = RewardSerializer(rewards, many=True)
@@ -24,6 +38,14 @@ class RewardListView(APIView):
 class RewardDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Get reward details",
+        description="Retrieve a single reward by id",
+        request=None,
+        responses={200: RewardSerializer, 404: OpenApiTypes.OBJECT},
+        operation_id="loyalty_reward_detail",
+        tags=["Loyalty Market"],
+    )
     def get(self, request, reward_id):
         reward = get_object_or_404(Reward, id=reward_id)
         serializer = RewardSerializer(reward)
@@ -33,6 +55,17 @@ class RewardDetailView(APIView):
 class RedeemRewardView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Redeem a reward",
+        description="Redeem a reward using bonus points",
+        request=OpenApiTypes.OBJECT,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT,
+        },
+        tags=["Loyalty Market"],
+    )
     def post(self, request, reward_id):
         reward = get_object_or_404(Reward, id=reward_id)
 
@@ -99,6 +132,13 @@ class RedeemRewardView(APIView):
 class UserRedemptionsView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="List my redemptions",
+        description="List reward redemptions by the authenticated user",
+        request=None,
+        responses={200: RedemptionListResponse, 500: OpenApiTypes.OBJECT},
+        tags=["Loyalty Market"],
+    )
     def get(self, request):
         redemptions = RedemptionTransaction.objects.filter(
             user_id=request.user

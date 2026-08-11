@@ -295,6 +295,7 @@ class AutoTopUpCancelView(APIView):
     @extend_schema(
         summary="Cancel auto top-up",
         description="Cancel an auto top-up schedule and unlock the reserved funds",
+        request=None,
         responses={
             200: OpenApiTypes.OBJECT,
             400: OpenApiTypes.OBJECT,
@@ -367,6 +368,7 @@ class AutoTopUpReactivateView(APIView):
     @extend_schema(
         summary="Reactivate auto top-up",
         description="Reactivate a cancelled auto top-up. Funds will be locked again.",
+        request=OpenApiTypes.OBJECT,
         responses={
             200: OpenApiTypes.OBJECT,
             400: OpenApiTypes.OBJECT,

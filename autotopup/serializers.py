@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 from django.utils import timezone
 from .models import AutoTopUp, AutoTopUpHistory
 
@@ -19,6 +20,7 @@ class AutoTopUpSerializer(serializers.ModelSerializer):
             'failed_runs', 'created_at', 'updated_at', 'available_balance'
         ]
     
+    @extend_schema_field(serializers.CharField())
     def get_available_balance(self, obj):
         return str(obj.user.wallet.available_balance)
     
