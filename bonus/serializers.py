@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 from .models import BonusPoint, BonusHistory, BonusCampaign, Referral
 
 
@@ -55,6 +56,7 @@ class BonusCampaignSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
     
+    @extend_schema_field(serializers.BooleanField())
     def get_is_running(self, obj):
         return obj.is_running()
 
@@ -73,7 +75,14 @@ class ReferralSerializer(serializers.ModelSerializer):
             'created_at', 'completed_at'
         ]
         read_only_fields = [
-            'id','status', 'status_display', 'count',
+            'id', 'status', 'status_display', 'referral_code',
             'bonus_awarded', 'first_transaction_completed', 
             'created_at', 'completed_at'
         ]
+
+
+class ReferralListResponse(serializers.Serializer):
+    success = serializers.BooleanField()
+    data = ReferralSerializer(many=True)
+    referral_count = serializers.IntegerField()
+    completed_count = serializers.IntegerField()

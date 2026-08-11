@@ -13,6 +13,7 @@ from .serializers import (
     # RedeemPointsSerializer,
     BonusCampaignSerializer,
     ReferralSerializer,
+    ReferralListResponse,
 )
 from .utils import (
     redeem_points,
@@ -21,7 +22,7 @@ from .utils import (
     award_signup_bonus,
 )
 import logging
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 
 logger = logging.getLogger(__name__)
@@ -182,6 +183,7 @@ class ClaimDailyLoginView(APIView):
     @extend_schema(
         summary="Claim daily login bonus",
         description="Claim daily login bonus points (once per day)",
+        request=None,
         responses={
             200: OpenApiTypes.OBJECT,
             400: OpenApiTypes.OBJECT,
@@ -263,6 +265,12 @@ class ActiveCampaignsView(APIView):
 class ReferralView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Get my referrals",
+        description="List users referred by the authenticated user with counts",
+        responses={200: ReferralListResponse, 500: OpenApiTypes.OBJECT},
+        tags=["Bonus & Rewards"],
+    )
     def get(self, request):
         referrals = Referral.objects.filter(referrer=request.user)
         referral_count = referrals.count()
@@ -279,6 +287,24 @@ class ReferralView(APIView):
             status=status.HTTP_200_OK,
         )
 
+    @extend_schema(
+        summary="Apply a referral code",
+        description="Apply a referral code to earn signup bonus points and record the referral",
+        request=OpenApiTypes.OBJECT,
+        responses={
+            201: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            500: OpenApiTypes.OBJECT,
+        },
+        examples=[
+            OpenApiExample(
+                "Apply Referral Code",
+                value={"referral_code": "ABC123"},
+                request_only=True,
+            )
+        ],
+        tags=["Bonus & Rewards"],
+    )
     def post(self, request):
         try:
             referral_code = request.data.get("referral_code")
@@ -316,7 +342,7 @@ class ReferralView(APIView):
                 referrer=referrer,
                 referred_user=request.user,
                 referral_code=referral_code,
-                status="completed",
+                status="pending",
             )
 
             # Award signup bonus to the referred user
@@ -327,7 +353,11 @@ class ReferralView(APIView):
             return Response(
                 {
                     "success": True,
-                    "message": "Referral applied successfully. You received 20 bonus points!",
+                    "message": (
+                        "Referral applied successfully. You received 20 bonus points!"
+                        if signup_bonus is not None
+                        else "Referral applied successfully."
+                    ),
                     "data": serializer.data,
                     "signup_bonus_awarded": signup_bonus is not None,
                 },
