@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 from .serializers import (
     EventInfoSerializer,
+    VendorSerializer,
     CreateEventSerializer,
     PurchaseTicketSerializer,
     IssuedTicketSerializer,
@@ -14,6 +15,8 @@ from .serializers import (
     TicketDetailSerializer,
     TransferTicketSerializer,
     CancelTicketSerializer,
+    VerifyAccountNameSerializer,
+    EventWithdrawalRequestSerializer,
 )
 from .models import EventInfo, TicketType, IssuedTicket, TicketVendor, EventScanner
 import logging
@@ -55,7 +58,7 @@ class CreateEventView(APIView):
             400: OpenApiTypes.OBJECT,
             403: OpenApiTypes.OBJECT,
         },
-        tags=["Ticketing"],
+        tags=["Events"],
     )
     def post(self, request):
         user = request.user
@@ -189,6 +192,17 @@ class CreateTicketVendor(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
+    @extend_schema(
+        summary="Create ticket vendor account",
+        description="Create a ticket vendor account for KYC review. Requires an authenticated user with a transaction PIN set. Use multipart/form-data with the required document uploads (id_document, proof_of_address).",
+        request=VendorSerializer,
+        responses={
+            201: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            500: OpenApiTypes.OBJECT,
+        },
+        tags=["Vendors"],
+    )
     def post(self, request):
         logger.info(f"Vendor creation request initiated by user {request.user.id}")
         logger.debug(f"Request data keys: {list(request.data.keys())}")
@@ -396,7 +410,7 @@ class VendorStatusView(APIView):
         summary="Get vendor verification status",
         description="Check the current verification status of your vendor profile",
         responses={200: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
-        tags=["Ticketing"],
+        tags=["Vendors"],
     )
     def get(self, request):
         try:
@@ -440,7 +454,7 @@ class EventListView(APIView):
             )
         ],
         responses={200: EventInfoSerializer(many=True)},
-        tags=["Ticketing"],
+        tags=["Events"],
     )
     def get(self, request):
         # Base query: only approved events
@@ -469,7 +483,7 @@ class EventDetailView(APIView):
             )
         ],
         responses={200: EventInfoSerializer, 404: OpenApiTypes.OBJECT},
-        tags=["Ticketing"],
+        tags=["Events"],
     )
     def get(self, request, event_id):
         event = get_object_or_404(EventInfo, id=event_id, is_approved=True)
@@ -480,6 +494,17 @@ class EventDetailView(APIView):
 class EventPublicView(APIView):
     permission_classes = []  # No authentication required
 
+    @extend_schema(
+        summary="Get public event details",
+        description="Retrieve details of an approved event without authentication.",
+        parameters=[
+            OpenApiParameter(
+                name="event_id", type=OpenApiTypes.UUID, location=OpenApiParameter.PATH
+            )
+        ],
+        responses={200: EventInfoSerializer, 404: OpenApiTypes.OBJECT},
+        tags=["Events"],
+    )
     def get(self, request, event_id):
         # Only return approved events
         event = get_object_or_404(EventInfo, id=event_id, is_approved=True)
@@ -507,7 +532,7 @@ class PurchaseTicketView(APIView):
             400: OpenApiTypes.OBJECT,
             404: OpenApiTypes.OBJECT,
         },
-        tags=["Ticketing"],
+        tags=["Tickets"],
     )
     def post(self, request, event_id):
         """Purchase tickets for a specific event"""
@@ -796,7 +821,7 @@ class MyTicketsView(APIView):
         summary="Get my tickets",
         description="Retrieve all tickets purchased by or assigned to the authenticated user",
         responses={200: IssuedTicketSerializer(many=True)},
-        tags=["Ticketing"],
+        tags=["Tickets"],
     )
     def get(self, request):
         user = request.user
@@ -848,7 +873,7 @@ class ScanTicketView(APIView):
             403: OpenApiTypes.OBJECT,
             404: OpenApiTypes.OBJECT,
         },
-        tags=["Marketplace"],
+        tags=["Scanner"],
     )
     def post(self, request):
         qr_data = request.data.get("qr_data")
@@ -1109,7 +1134,7 @@ class ExportAttendeesView(APIView):
             403: OpenApiTypes.OBJECT,
             404: OpenApiTypes.OBJECT,
         },
-        tags=["Ticketing"],
+        tags=["Events"],
     )
     def get(self, request, event_id):
         user = request.user
@@ -1212,7 +1237,7 @@ class TicketListView(APIView):
             )
         ],
         responses={200: TicketListSerializer(many=True)},
-        tags=["Ticketing"],
+        tags=["Tickets"],
     )
     def get(self, request):
         """Get all tickets owned by the current user (by owner_email, not purchaser)"""
@@ -1237,36 +1262,6 @@ class TicketListView(APIView):
         )
 
 
-class TicketDetailView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    @extend_schema(
-        summary="Get ticket details",
-        description="Retrieve detailed information for a specific ticket including QR code",
-        responses={200: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
-        tags=["Marketplace"],
-    )
-    def get(self, request, ticket_id):
-        try:
-            ticket = IssuedTicket.objects.select_related(
-                "event", "ticket_type", "purchased_by", "scanned_by"
-            ).get(id=ticket_id, purchased_by=request.user)
-
-            from .serializers import TicketDetailSerializer
-
-            serializer = TicketDetailSerializer(ticket)
-
-            return Response(
-                {"state": True, "ticket": serializer.data}, status=status.HTTP_200_OK
-            )
-
-        except IssuedTicket.DoesNotExist:
-            return Response(
-                {"error": "Ticket not found", "state": False},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-
 class MyTicketsListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1283,7 +1278,7 @@ class MyTicketsListView(APIView):
             )
         ],
         responses={200: TicketListSerializer(many=True)},
-        tags=["Ticketing"],
+        tags=["Tickets"],
     )
     def get(self, request):
         """Get tickets owned by current user with stats"""
@@ -1330,7 +1325,7 @@ class TicketDetailView(APIView):
             403: OpenApiTypes.OBJECT,
             404: OpenApiTypes.OBJECT,
         },
-        tags=["Ticketing"],
+        tags=["Tickets"],
     )
     def get(self, request, ticket_id):
         """Get single ticket details - only if you're the current owner"""
@@ -1380,7 +1375,7 @@ class TransferTicketView(APIView):
             403: OpenApiTypes.OBJECT,
             404: OpenApiTypes.OBJECT,
         },
-        tags=["Ticketing"],
+        tags=["Tickets"],
     )
     def post(self, request, ticket_id):
         """Transfer a ticket to another person"""
@@ -1495,7 +1490,7 @@ class CancelTicketView(APIView):
             403: OpenApiTypes.OBJECT,
             404: OpenApiTypes.OBJECT,
         },
-        tags=["Ticketing"],
+        tags=["Tickets"],
     )
     def post(self, request, ticket_id):
         """Cancel a ticket and process refund"""
@@ -1631,7 +1626,7 @@ class ScannerDashboardView(APIView):
             403: OpenApiTypes.OBJECT,
             404: OpenApiTypes.OBJECT,
         },
-        tags=["Marketplace"],
+        tags=["Scanner"],
     )
     def get(self, request, event_id):
         try:
@@ -1730,7 +1725,7 @@ class MyScannerAssignmentsView(APIView):
         summary="Get my scanner assignments",
         description="Retrieve all events the authenticated user is assigned to scan",
         responses={200: OpenApiTypes.OBJECT},
-        tags=["Marketplace"],
+        tags=["Scanner"],
     )
     def get(self, request):
         # Get events user is assigned to scan
@@ -1832,7 +1827,7 @@ class AddEventScannerView(APIView):
             400: OpenApiTypes.OBJECT,
             403: OpenApiTypes.OBJECT,
         },
-        tags=["Marketplace"],
+        tags=["Scanner"],
     )
     def post(self, request, event_id):
         user_email = request.data.get("user_email")
@@ -1971,7 +1966,7 @@ class VendorTicketsList(APIView):
             403: OpenApiTypes.OBJECT,
             404: OpenApiTypes.OBJECT,
         },
-        tags=["Ticketing"],
+        tags=["Vendors"],
     )
     def get(self, request):
         """Get all tickets from vendor's events"""
@@ -2053,6 +2048,17 @@ class VendorTicketsList(APIView):
 class VerifyAccountNameView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Verify bank account name",
+        description="Verify the account name for a Nigerian bank account using the account number and bank code.",
+        request=VerifyAccountNameSerializer,
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT,
+        },
+        tags=["Withdrawal"],
+    )
     def post(self, request):
         from transactions.paystack import get_account_name
 
@@ -2074,6 +2080,18 @@ class VerifyAccountNameView(APIView):
 class EventWithdrawalView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Withdraw event earnings",
+        description="Withdraw available earnings from an event to the vendor's wallet. 90% is credited, 10% platform fee is deducted.",
+        request=EventWithdrawalRequestSerializer,
+        responses={
+            201: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT,
+        },
+        tags=["Withdrawal"],
+    )
     def post(self, request):
         from .models import EventWithdrawal
         from .serializers import EventWithdrawalSerializer
@@ -2180,6 +2198,22 @@ class EventWithdrawalView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
+    @extend_schema(
+        summary="Get event withdrawal history",
+        description="List all withdrawals for an event owned by the authenticated vendor, with totals summary.",
+        parameters=[
+            OpenApiParameter(
+                name="event_id", type=OpenApiTypes.UUID, location=OpenApiParameter.QUERY
+            )
+        ],
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT,
+        },
+        tags=["Withdrawal"],
+    )
     def get(self, request):
         from .models import EventWithdrawal
         from .serializers import EventWithdrawalSerializer

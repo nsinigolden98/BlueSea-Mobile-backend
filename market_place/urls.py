@@ -13,7 +13,6 @@ from .views import (
     VerifyAccountNameView,
     EventWithdrawalView,
 )
-from .admin_views import reject_vendors_with_reason
 from .views import (
     TicketListView,
     TicketDetailView,

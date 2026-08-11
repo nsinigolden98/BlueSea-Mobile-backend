@@ -576,3 +576,16 @@ class EventWithdrawalSerializer(serializers.ModelSerializer):
             "created_at",
             "completed_at",
         ]
+
+
+class VerifyAccountNameSerializer(serializers.Serializer):
+    """Request serializer for verifying a bank account name"""
+
+    account_number = serializers.CharField(help_text="NUBAN account number to verify")
+    bank_code = serializers.CharField(help_text="Bank code (e.g. 044 for Access Bank)")
+
+
+class EventWithdrawalRequestSerializer(serializers.Serializer):
+    """Request serializer for event earnings withdrawal"""
+
+    event_id = serializers.UUIDField(help_text="ID of the event to withdraw from")
