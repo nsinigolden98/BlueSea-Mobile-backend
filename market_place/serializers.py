@@ -235,6 +235,13 @@ class PurchaseTicketSerializer(serializers.Serializer):
         allow_empty=True,
         help_text="List of attendees. Leave empty to use your own details.",
     )
+    affiliate_username = serializers.CharField(
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        max_length=30,
+        help_text="Affiliate username if the buyer came through an affiliate link.",
+    )
 
     def validate(self, data):
         request = self.context.get("request")

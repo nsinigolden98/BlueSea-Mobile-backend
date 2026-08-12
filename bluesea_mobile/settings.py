@@ -47,7 +47,7 @@ SILKY_META = True
 SILKY_MAX_REQUEST_BODY_SIZE = 1 * 1024 * 1024
 SILKY_MAX_RESPONSE_BODY_SIZE = 1 * 1024 * 1024
 SILKY_MAX_RECORDED_REQUESTS = 10**4
-DEBUG =  os.environ.get("DEBUG", 'False') == 'True'
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 
@@ -238,6 +238,7 @@ INSTALLED_APPS = [
     "autotopup",
     "loyalty_market",
     "support",
+    "affiliate",
 ]
 
 MIDDLEWARE = [
@@ -274,6 +275,20 @@ SPECTACULAR_SETTINGS = {
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
+    "ENUM_NAME_OVERRIDES": {
+        "AffiliateProfileStatusEnum": [
+            ("pending", "Pending"),
+            ("approved", "Approved"),
+            ("rejected", "Rejected"),
+        ],
+        "AffiliateSaleStatusEnum": [
+            ("pending", "Pending"),
+            ("success", "Success"),
+            ("payable", "Payable"),
+            ("paid", "Paid"),
+            ("revoked", "Revoked"),
+        ],
+    },
 }
 
 
@@ -409,7 +424,7 @@ PAYSTACK_PUBLIC_KEY = os.environ.get("PAYSTACK_PUBLIC_KEY")
 
 
 LOGGING = {
-    "version": 1,                   
+    "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
@@ -448,7 +463,7 @@ LOGGING = {
 # Set to True only if you are okay with ANY domain accessing your backend
 # (not recommended for production).
 
-CORS_ALLOW_ALL_ORIGINS =  DEBUG
+CORS_ALLOW_ALL_ORIGINS = DEBUG
 
 # Use the specific URL/port of your frontend development server
 CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
@@ -509,6 +524,10 @@ TIME_ZONE = "Africa/Lagos"
 
 # Watch .env file
 from django.utils.autoreload import autoreload_started
+
+
 def watch_env(sender, **kwargs):
-    sender.extra_files.add(BASE_DIR / '.env')
+    sender.extra_files.add(BASE_DIR / ".env")
+
+
 autoreload_started.connect(watch_env)

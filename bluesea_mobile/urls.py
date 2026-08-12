@@ -29,4 +29,5 @@ urlpatterns = [
     path("user_preference/", include("user_preference.urls")),
     path("autotopup/", include("autotopup.urls")),
     path("support/", include("support.urls")),
+    path("affiliate/", include("affiliate.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
