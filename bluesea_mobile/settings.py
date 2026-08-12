@@ -403,6 +403,9 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
+# Base URL of the backend, used to build absolute URLs for static assets
+SITE_URL =  os.environ.get("LOCAL_URL").rstrip("/") if DEBUG  else os.environ.get("SITE_URL").rstrip("/")
+
 
 STORAGES = {
     "default": {

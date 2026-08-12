@@ -1,3 +1,4 @@
+{% load email_static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -15,7 +16,7 @@
 
       <!-- Logo and Branding -->
       <div style="display: flex; justify-content: center; align-items: center;">
-        <img src="http://test.bluesea.com/static/logo.png" width="50" alt="BlueSea Logo" style="margin-right: 10px;">
+        <img src="{% email_static 'accounts/images/logo.jpeg'%}" width="50" alt="BlueSea Logo" style="margin-right: 10px;">
         <h1 style="font-weight: 700; color: #190C01; font-size: 35.36px; text-align: center; margin: 20px 0;">
           BlueSea
         </h1>
@@ -41,7 +42,7 @@
         </p>
 
         <div style="text-align: center; margin: 30px 0;">
-          <a href="https://bluesea.com/login" style="background: #267bfb; color: #fff; padding: 12px 40px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: 600;">
+          <a href="https://blueseamobile.com.ng/login" style="background: #267bfb; color: #fff; padding: 12px 40px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: 600;">
             Login Now
           </a>
         </div>

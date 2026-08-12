@@ -1,3 +1,4 @@
+{% load email_static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -20,7 +21,7 @@
 
       <!-- Logo and Branding -->
       <div style="display: flex; justify-content: center; align-items: center;">
-        <img src="http://test.bluesea.com/static/logo.png" width="50" alt="BlueSea Logo" style="margin-right: 10px;">
+        <img src="{% email_static 'accounts/images/logo.jpeg'%}" width="50" alt="BlueSea Logo" style="margin-right: 10px;">
         <h1 class="logo-word" style="font-weight: 700; color: #190C01; font-size: 35.36px; text-align: center; margin: 20px 0;">
           BlueSea
         </h1>
@@ -81,19 +82,19 @@
       <!-- Social Icons -->
       <div class="socials" style="display: flex; justify-content: center; margin-top: 40px; gap: 15px;">
         <a href="#" style="text-decoration: none;">
-          <img src="http://test.bluesea.com/static/tiktok.png" width="24" alt="TikTok">
+          <img src="{% email_static 'accounts/images/tk.png'%}" width="24" alt="TikTok">
         </a>
         <a href="#" style="text-decoration: none;">
-          <img src="http://test.bluesea.com/static/insta.png" width="24" alt="Instagram">
+          <img src="{% email_static 'accounts/images/inst.jpeg'%}" width="24" alt="Instagram">
         </a>
         <a href="#" style="text-decoration: none;">
-          <img src="http://test.bluesea.com/static/fb.png" width="24" alt="Facebook">
+          <img src="{% email_static 'accounts/images/fb.jpeg'%}" width="24" alt="Facebook">
         </a>
         <a href="#" style="text-decoration: none;">
-          <img src="http://test.bluesea.com/static/twt.png" width="24" alt="Twitter">
+          <img src="{% email_static 'accounts/images/x.png'%}" width="24" alt="Twitter">
         </a>
         <a href="#" style="text-decoration: none;">
-          <img src="http://test.bluesea.com/static/in.png" width="24" alt="LinkedIn">
+          <img src="{% email_static 'accounts/images/link.png'%}" width="24" alt="LinkedIn">
         </a>
       </div>
 
@@ -103,7 +104,7 @@
           <strong>BlueSea Technology</strong>
         </p>
         <p style="font-size: 12px; color: #999; line-height: 18px; margin: 5px 0;">
-          Covenant, Uyo, Akwa Ibom State, Nigeria
+           Uyo, Akwa Ibom State, Nigeria
         </p>
         <p style="font-size: 12px; color: #999; margin: 10px 0;">
           &copy; {{ current_year|default:"2025" }} BlueSea Technology. All rights reserved.
