@@ -22,6 +22,7 @@ class SupportTicketListView(APIView):
     @extend_schema(
         summary="List my support tickets",
         description="Retrieve all support tickets belonging to the authenticated user.",
+        operation_id="support_tickets_list",
         responses={200: SupportTicketListResponse},
         tags=["Support"],
     )
@@ -38,6 +39,7 @@ class SupportTicketListView(APIView):
     @extend_schema(
         summary="Create a support ticket",
         description="Create a new support ticket with an initial message for the authenticated user.",
+        operation_id="support_ticket_create",
         request=CreateTicketSerializer,
         responses={201: CreateTicketResponse, 400: OpenApiTypes.OBJECT},
         tags=["Support"],
@@ -71,6 +73,7 @@ class SupportTicketDetailView(APIView):
     @extend_schema(
         summary="Get support ticket detail",
         description="Retrieve a single support ticket with its message thread for the authenticated user.",
+        operation_id="support_ticket_retrieve",
         responses={200: SupportTicketSerializer, 404: OpenApiTypes.OBJECT},
         tags=["Support"],
     )
@@ -87,6 +90,7 @@ class SupportTicketDetailView(APIView):
     @extend_schema(
         summary="Add a message to a support ticket",
         description="Append a message to an existing support ticket owned by the authenticated user.",
+        operation_id="support_ticket_add_message",
         request=AddMessageSerializer,
         responses={
             201: AddMessageResponse,

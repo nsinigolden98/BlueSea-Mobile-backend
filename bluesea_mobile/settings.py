@@ -288,6 +288,26 @@ SPECTACULAR_SETTINGS = {
             ("paid", "Paid"),
             ("revoked", "Revoked"),
         ],
+        "IssuedTicketStatusEnum": [
+            ("upcoming", "Upcoming"),
+            ("used", "Used"),
+            ("expired", "Expired"),
+            ("canceled", "Canceled"),
+        ],
+        "ElectricityBillerEnum": [
+            ("ikeja-electric", "ikeja-electric"),
+            ("eko-electric", "eko-electric"),
+            ("kano-electric", "kano-electric"),
+            ("portharcourt-electric", "portharcourt-electric"),
+            ("jos-electric", "jos-electric"),
+            ("ibadan-electric", "ibadan-electric"),
+            ("kaduna-electric", "kaduna-electric"),
+            ("abuja-electric", "abuja-electric"),
+            ("enugu-electric", "enugu-electric"),
+            ("benin-electric", "benin-electric"),
+            ("aba-electric", "aba-electric"),
+            ("yola-electric", "yola-electric"),
+        ],
     },
 }
 
