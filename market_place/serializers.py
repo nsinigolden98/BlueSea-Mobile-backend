@@ -239,7 +239,7 @@ class PurchaseTicketSerializer(serializers.Serializer):
         required=False,
         allow_null=True,
         allow_blank=True,
-        max_length=30,
+        max_length=13,
         help_text="Affiliate username if the buyer came through an affiliate link.",
     )
 

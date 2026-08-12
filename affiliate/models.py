@@ -17,7 +17,7 @@ class AffiliateProfile(models.Model):
         related_name="affiliate_profile",
     )
     affiliate_name = models.CharField(
-        max_length=30,
+        max_length=13,
         unique=True,
         validators=[
             RegexValidator(

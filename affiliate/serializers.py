@@ -10,7 +10,7 @@ name_validator = RegexValidator(
 
 
 class AffiliateApplySerializer(serializers.Serializer):
-    affiliate_name = serializers.CharField(max_length=30, validators=[name_validator])
+    affiliate_name = serializers.CharField(max_length=13, validators=[name_validator])
     facebook = serializers.URLField(required=False, allow_null=True, allow_blank=True)
     instagram = serializers.URLField(required=False, allow_null=True, allow_blank=True)
     twitter = serializers.URLField(required=False, allow_null=True, allow_blank=True)
