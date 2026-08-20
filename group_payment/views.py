@@ -14,7 +14,7 @@ class CreateGroupView(APIView):
 
     @extend_schema(
         summary="Create a new group",
-        description="Create a payment group and automatically become the owner",
+        description="Create a payment group; the caller becomes owner. Requires JWT and a set transaction PIN.",
         request=OpenApiTypes.OBJECT,
         responses={201: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
         examples=[
@@ -25,7 +25,8 @@ class CreateGroupView(APIView):
                     "description": "Group for family bill payments",
                 },
                 request_only=True,
-            )
+            ),
+            OpenApiExample("Response Example", value={'description': 'Family bills', 'id': '3fa85f64-5717-4562-b3fc-2c963f66afa6', 'join_code': 'ABC123', 'name': 'Family Group', 'owner': 1, 'status': 'active'}, response_only=True),
         ],
         tags=["Group Payments"],
     )
@@ -175,7 +176,7 @@ class AddGroupMemberView(APIView):
 
     @extend_schema(
         summary="Add member to group",
-        description="Add a user to a group (only owner/admin can do this)",
+        description="Invite/add a user to a group. Requires JWT and owner/admin role.",
         request=OpenApiTypes.OBJECT,
         responses={200: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT},
         examples=[
@@ -187,7 +188,8 @@ class AddGroupMemberView(APIView):
                     "role": "member",
                 },
                 request_only=True,
-            )
+            ),
+            OpenApiExample("Response Example", value={'member': {'email': 'member@example.com', 'id': 1, 'role': 'member'}, 'message': 'member@example.com added to group. Member can now join with group code', 'success': True}, response_only=True),
         ],
         tags=["Group Payments"],
     )
@@ -261,9 +263,12 @@ class ListMyGroupsView(APIView):
 
     @extend_schema(
         summary="List my groups",
-        description="Get all groups the authenticated user belongs to",
+        description="List all groups the authenticated user belongs to. Requires JWT.",
         responses={200: OpenApiTypes.OBJECT},
         tags=["Group Payments"],
+        examples=[
+            OpenApiExample("Response Example", value=[{'current_amount': '0', 'id': '3fa85f64-5717-4562-b3fc-2c963f66afa6', 'member_count': 3, 'name': 'Family Group', 'status': 'active', 'target_amount': '10000'}], response_only=True),
+        ],
     )
     def get(self, request):
         try:
@@ -323,9 +328,12 @@ class GroupDetailsView(APIView):
 
     @extend_schema(
         summary="Get group details",
-        description="Get detailed information about a group including all members",
+        description="Get detailed info about a group including its members. Requires JWT and group membership.",
         responses={200: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
         tags=["Group Payments"],
+        examples=[
+            OpenApiExample("Response Example", value={'group': {'current_amount': '0', 'id': '3fa85f64-5717-4562-b3fc-2c963f66afa6', 'join_code': 'ABC123', 'member_count': 3, 'members': [{'email': 'a@b.com', 'id': 1, 'name': 'A B', 'role': 'owner'}], 'name': 'Family Group', 'total_amount': '10000'}, 'success': True}, response_only=True),
+        ],
     )
     def get(self, request, group_id):
         try:
@@ -397,10 +405,13 @@ class UpdateGroupView(APIView):
 
     @extend_schema(
         summary="Update group details",
-        description="Update group sub_number (only owner can do this)",
+        description="Update group details (e.g. sub_number). Requires JWT and owner role.",
         request=OpenApiTypes.OBJECT,
         responses={200: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT},
         tags=["Group Payments"],
+        examples=[
+            OpenApiExample("Response Example", value={'group': {'id': '3fa85f64-5717-4562-b3fc-2c963f66afa6', 'name': 'Family Group', 'sub_number': '2'}, 'message': 'Group updated successfully', 'success': True}, response_only=True),
+        ],
     )
     def patch(self, request, group_id):
         try:
@@ -447,7 +458,7 @@ class JoinGroupView(APIView):
 
     @extend_schema(
         summary="Join a payment group",
-        description="Join a payment group using its join code",
+        description="Join a group using its join code. Requires JWT, transaction PIN, and an invitation.",
         request=OpenApiTypes.OBJECT,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT, 500: OpenApiTypes.OBJECT},
         examples=[
@@ -455,7 +466,8 @@ class JoinGroupView(APIView):
                 "Join a payment group",
                 value={"transaction_pin": "1234", "join_code": "ABC123"},
                 request_only=True,
-            )
+            ),
+            OpenApiExample("Response Example", value={'group': {'id': '3fa85f64-5717-4562-b3fc-2c963f66afa6', 'join_code': 'ABC123', 'name': 'Family Group'}, 'message': "Successfully joined group 'Family Group'", 'success': True}, response_only=True),
         ],
         tags=["Group Payments"],
     )
@@ -569,7 +581,7 @@ class LeaveGroupView(APIView):
 
     @extend_schema(
         summary="Leave a payment group",
-        description="Leave a payment group you are a member of (owners must cancel instead)",
+        description="Leave a group you belong to (owners must cancel instead). Requires JWT.",
         request=OpenApiTypes.OBJECT,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 500: OpenApiTypes.OBJECT},
         examples=[
@@ -577,7 +589,8 @@ class LeaveGroupView(APIView):
                 "Leave a payment group",
                 value={"group_id": "00000000-0000-0000-0000-000000000000"},
                 request_only=True,
-            )
+            ),
+            OpenApiExample("Response Example", value={'message': 'Successfully left the group', 'success': True}, response_only=True),
         ],
         tags=["Group Payments"],
     )
@@ -634,7 +647,7 @@ class CancelGroupView(APIView):
 
     @extend_schema(
         summary="Cancel a payment group",
-        description="Cancel a payment group (owner only)",
+        description="Cancel a group (owner only). Requires JWT.",
         request=OpenApiTypes.OBJECT,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 500: OpenApiTypes.OBJECT},
         examples=[
@@ -642,7 +655,8 @@ class CancelGroupView(APIView):
                 "Cancel a payment group",
                 value={"group_id": "00000000-0000-0000-0000-000000000000"},
                 request_only=True,
-            )
+            ),
+            OpenApiExample("Response Example", value={'message': 'Group cancelled successfully', 'success': True}, response_only=True),
         ],
         tags=["Group Payments"],
     )

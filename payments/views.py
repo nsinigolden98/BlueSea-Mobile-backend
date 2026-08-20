@@ -56,9 +56,6 @@ from .vtpass import (
     get_customer,
     get_receipt,
 )
-from .vtuafrica import (
-    top_up2,
-)
 
 from bluesea_mobile.utils import InsufficientFundsException, VTUAPIException
 from bonus.utils import (
@@ -141,9 +138,6 @@ def get_payment_description(
     )
 
 
-VTU_AFRICA_APIKEY = ""
-
-
 def process_payment(request, amount, service_data, service_name, description=None):
     """
     Helper function to process payments consistently.
@@ -199,10 +193,27 @@ class Airtime2CashViews(APIView):
 
     @extend_schema(
         summary="Convert airtime to cash",
-        description="Convert airtime to wallet balance",
+        description="Convert airtime to wallet cash balance. Requires JWT; validates PIN and wallet.",
         request=Airtime2CashSerializer,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
         tags=["Payments"],
+        examples=[
+            OpenApiExample(
+                "Request Example",
+                value={"amount": 100, "network": "mtn", "phone_number": "08012345678"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "message": "Airtime converted to wallet balance",
+                    "request_id": "20260820ABCD1234",
+                    "response_description": "TRANSACTION SUCCESSFUL",
+                    "state": True,
+                },
+                response_only=True,
+            ),
+        ],
     )
     def post(self, request):
         serializer = Airtime2CashSerializer(data=request.data)
@@ -273,7 +284,7 @@ class GroupPaymentViews(APIView):
 
     @extend_schema(
         summary="Create group payment",
-        description="Initiate a group payment for services like airtime, data, electricity, etc.",
+        description="Initiate a payment on behalf of a group (airtime, data, electricity, etc.). Requires JWT and group-admin role; splits the total across members per split_type. Wallet debited on success.",
         request=OpenApiTypes.OBJECT,
         responses={
             200: OpenApiTypes.OBJECT,
@@ -295,7 +306,29 @@ class GroupPaymentViews(APIView):
                     "split_type": "equal",
                 },
                 request_only=True,
-            )
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "contributions": [],
+                    "created_at": "2026-08-20T00:00:00Z",
+                    "group": 1,
+                    "group_name": "Family Group",
+                    "id": 1,
+                    "initiated_by": 1,
+                    "initiated_by_name": "Jane Doe",
+                    "payment_type": "airtime",
+                    "service_details": {
+                        "network": "mtn",
+                        "phone_number": "08012345678",
+                    },
+                    "status": "completed",
+                    "total_amount": "1000.00",
+                    "updated_at": "2026-08-20T00:00:00Z",
+                    "vtu_reference": "VTU-20260820ABCD",
+                },
+                response_only=True,
+            ),
         ],
         tags=["Payments"],
     )
@@ -656,11 +689,11 @@ class GroupPaymentViews(APIView):
 
         elif payment_type == "waec-registration":
             with transaction.atomic():
-                waec_reg_amount = 14500
+                waec_reg_amount = 37500
                 details = {
                     "request_id": request_id,
                     "serviceID": "waec-registration",
-                    "variation_code": "waec-registration",
+                    "variation_code": "waec-registraion",
                     "quantity": 1,
                     "phone": service_details.get("phone_number"),
                 }
@@ -669,7 +702,7 @@ class GroupPaymentViews(APIView):
 
         elif payment_type == "waec-result":
             with transaction.atomic():
-                waec_result_amount = 950
+                waec_result_amount = 5350
                 details = {
                     "request_id": request_id,
                     "serviceID": "waec",
@@ -686,7 +719,7 @@ class GroupPaymentHistory(APIView):
 
     @extend_schema(
         summary="Get group payment history",
-        description="Retrieve payment history for a specific group or all user's groups",
+        description="List group payment history for a specific group (via group_id query param) or all groups the user belongs to. Requires JWT.",
         parameters=[
             OpenApiParameter(
                 name="group_id",
@@ -698,6 +731,23 @@ class GroupPaymentHistory(APIView):
         ],
         responses={200: GroupPaymentSerializer(many=True)},
         tags=["Payments"],
+        examples=[
+            OpenApiExample(
+                "Response Example",
+                value=[
+                    {
+                        "created_at": "2026-08-20T00:00:00Z",
+                        "group": 1,
+                        "group_name": "Family Group",
+                        "id": 1,
+                        "payment_type": "airtime",
+                        "status": "completed",
+                        "total_amount": "1000.00",
+                    }
+                ],
+                response_only=True,
+            ),
+        ],
     )
     def get(self, request):
         group_id = request.query_params.get("group_id")
@@ -733,7 +783,7 @@ class AirtimeTopUpViews(APIView):
 
     @extend_schema(
         summary="Purchase airtime",
-        description="Buy airtime for a phone number",
+        description="Purchase airtime for a phone number on a network. Requires a JWT bearer token; debited from the user wallet on success.",
         request=AirtimeTopUpSerializer,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
         examples=[
@@ -745,7 +795,18 @@ class AirtimeTopUpViews(APIView):
                     "amount": "100",
                 },
                 request_only=True,
-            )
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "amount": "100",
+                    "message": "Transaction successful",
+                    "request_id": "20260820ABCD1234",
+                    "response_description": "TRANSACTION SUCCESSFUL",
+                    "state": True,
+                },
+                response_only=True,
+            ),
         ],
         tags=["Payments"],
     )
@@ -866,10 +927,32 @@ class MTNDataTopUpViews(APIView):
 
     @extend_schema(
         summary="Purchase MTN data",
-        description="Buy MTN data bundle",
+        description="Purchase an MTN data plan. Requires JWT; wallet is debited on success. `plan` must be one of the MTN data plan names; `billersCode` is the recipient phone number.",
         request=MTNDataTopUpSerializer,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
         tags=["Payments"],
+        examples=[
+            OpenApiExample(
+                "Request Example",
+                value={
+                    "billersCode": "08012345678",
+                    "phone_number": "08012345678",
+                    "plan": "110MB Daily Plan (1 Day) - N100",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "amount": "100",
+                    "message": "Transaction successful",
+                    "request_id": "20260820ABCD1234",
+                    "response_description": "TRANSACTION SUCCESSFUL",
+                    "state": True,
+                },
+                response_only=True,
+            ),
+        ],
     )
     def post(self, request):
         transaction_pin = request.data.get("transaction_pin")
@@ -991,10 +1074,32 @@ class AirtelDataTopUpViews(APIView):
 
     @extend_schema(
         summary="Purchase Airtel data",
-        description="Buy Airtel data bundle",
+        description="Purchase an Airtel data plan. Requires JWT; wallet is debited on success.",
         request=AirtelDataTopUpSerializer,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
         tags=["Payments"],
+        examples=[
+            OpenApiExample(
+                "Request Example",
+                value={
+                    "billersCode": "08012345678",
+                    "phone_number": "08012345678",
+                    "plan": "250MB Night Plan (12 - 5 AM) - 50 Naira  - 1Day",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "amount": "50",
+                    "message": "Transaction successful",
+                    "request_id": "20260820ABCD1234",
+                    "response_description": "TRANSACTION SUCCESSFUL",
+                    "state": True,
+                },
+                response_only=True,
+            ),
+        ],
     )
     def post(self, request):
         transaction_pin = request.data.get("transaction_pin")
@@ -1112,10 +1217,32 @@ class EtisalatDataTopUpViews(APIView):
 
     @extend_schema(
         summary="Purchase 9Mobile data",
-        description="Buy 9Mobile data bundle",
+        description="Purchase a 9mobile/etisalat data plan. Requires JWT; wallet is debited on success.",
         request=EtisalatDataTopUpSerializer,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
         tags=["Payments"],
+        examples=[
+            OpenApiExample(
+                "Request Example",
+                value={
+                    "billersCode": "08012345678",
+                    "phone_number": "08012345678",
+                    "plan": "9mobile 100mb SME plan",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "amount": "100",
+                    "message": "Transaction successful",
+                    "request_id": "20260820ABCD1234",
+                    "response_description": "TRANSACTION SUCCESSFUL",
+                    "state": True,
+                },
+                response_only=True,
+            ),
+        ],
     )
     def post(self, request):
         transaction_pin = request.data.get("transaction_pin")
@@ -1233,10 +1360,32 @@ class GloDataTopUpViews(APIView):
 
     @extend_schema(
         summary="Purchase Glo data",
-        description="Buy Glo data bundle",
+        description="Purchase a GLO data plan. Requires JWT; wallet is debited on success.",
         request=GloDataTopUpSerializer,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
         tags=["Payments"],
+        examples=[
+            OpenApiExample(
+                "Request Example",
+                value={
+                    "billersCode": "08012345678",
+                    "phone_number": "08012345678",
+                    "plan": "120MB + 5MB Night - N100 - 1 Day",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "amount": "100",
+                    "message": "Transaction successful",
+                    "request_id": "20260820ABCD1234",
+                    "response_description": "TRANSACTION SUCCESSFUL",
+                    "state": True,
+                },
+                response_only=True,
+            ),
+        ],
     )
     def post(self, request):
         transaction_pin = request.data.get("transaction_pin")
@@ -1357,10 +1506,33 @@ class DSTVPaymentViews(APIView):
 
     @extend_schema(
         summary="Pay for DSTV subscription",
-        description="Purchase DSTV subscription plan",
+        description="Pay a DStv subscription. Requires JWT; wallet debited on success. `subscription_type` is change or renew; `billersCode` is the smartcard number.",
         request=DSTVPaymentSerializer,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
         tags=["Payments"],
+        examples=[
+            OpenApiExample(
+                "Request Example",
+                value={
+                    "billersCode": "1234567890",
+                    "dstv_plan": "DStv Padi N4,400",
+                    "phone_number": "08012345678",
+                    "subscription_type": "renew",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "amount": "4400",
+                    "message": "Transaction successful",
+                    "request_id": "20260820ABCD1234",
+                    "response_description": "TRANSACTION SUCCESSFUL",
+                    "state": True,
+                },
+                response_only=True,
+            ),
+        ],
     )
     def post(self, request):
         transaction_pin = request.data.get("transaction_pin")
@@ -1481,10 +1653,33 @@ class GOTVPaymentViews(APIView):
 
     @extend_schema(
         summary="Pay for GOTV subscription",
-        description="Purchase GOTV subscription plan",
+        description="Pay a GOtv subscription. Requires JWT; wallet debited on success.",
         request=GOTVPaymentSerializer,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
         tags=["Payments"],
+        examples=[
+            OpenApiExample(
+                "Request Example",
+                value={
+                    "billersCode": "1234567890",
+                    "gotv_plan": "GOtv Max N8,500",
+                    "phone_number": "08012345678",
+                    "subscription_type": "renew",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "amount": "8500",
+                    "message": "Transaction successful",
+                    "request_id": "20260820ABCD1234",
+                    "response_description": "TRANSACTION SUCCESSFUL",
+                    "state": True,
+                },
+                response_only=True,
+            ),
+        ],
     )
     def post(self, request):
         transaction_pin = request.data.get("transaction_pin")
@@ -1550,7 +1745,7 @@ class GOTVPaymentViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description= desc["full"],
+                            description=desc["full"],
                             reference=request_id,
                         )
 
@@ -1605,10 +1800,32 @@ class StartimesPaymentViews(APIView):
 
     @extend_schema(
         summary="Pay for Startimes subscription",
-        description="Purchase Startimes subscription plan",
+        description="Pay a Startimes subscription. Requires JWT; wallet debited on success.",
         request=StartimesPaymentSerializer,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
         tags=["Payments"],
+        examples=[
+            OpenApiExample(
+                "Request Example",
+                value={
+                    "billersCode": "1234567890",
+                    "phone_number": "08012345678",
+                    "startimes_plan": "Nova (Dish) - 2100 Naira - 1 Month",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "amount": "2100",
+                    "message": "Transaction successful",
+                    "request_id": "20260820ABCD1234",
+                    "response_description": "TRANSACTION SUCCESSFUL",
+                    "state": True,
+                },
+                response_only=True,
+            ),
+        ],
     )
     def post(self, request):
         transaction_pin = request.data.get("transaction_pin")
@@ -1676,7 +1893,7 @@ class StartimesPaymentViews(APIView):
                         )
                         user_wallet.debit(
                             amount=amount,
-                            description= desc["full"] ,
+                            description=desc["full"],
                             reference=request_id,
                         )
 
@@ -1731,10 +1948,31 @@ class ShowMaxPaymentViews(APIView):
 
     @extend_schema(
         summary="Pay for ShowMax subscription",
-        description="Purchase ShowMax subscription plan",
+        description="Pay a ShowMax subscription. Requires JWT; wallet debited on success.",
         request=ShowMaxPaymentSerializer,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
         tags=["Payments"],
+        examples=[
+            OpenApiExample(
+                "Request Example",
+                value={
+                    "phone_number": "08012345678",
+                    "showmax_plan": "Full - N8,400 - 3 Months",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "amount": "8400",
+                    "message": "Transaction successful",
+                    "request_id": "20260820ABCD1234",
+                    "response_description": "TRANSACTION SUCCESSFUL",
+                    "state": True,
+                },
+                response_only=True,
+            ),
+        ],
     )
     def post(self, request):
         transaction_pin = request.data.get("transaction_pin")
@@ -1854,10 +2092,33 @@ class ElectricityPaymentViews(APIView):
 
     @extend_schema(
         summary="Pay electricity bill",
-        description="Purchase electricity/power units",
+        description="Pay an electricity bill for a disco (biller). Requires JWT; wallet debited on success. `biller_name` must be one of the supported disco names; `meter_type` is prepaid or postpaid.",
         request=ElectricityPaymentSerializer,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
         tags=["Payments"],
+        examples=[
+            OpenApiExample(
+                "Request Example",
+                value={
+                    "amount": 5000,
+                    "billerCode": "1234567890",
+                    "biller_name": "ikeja-electric",
+                    "meter_type": "prepaid",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "amount": "5000",
+                    "message": "Transaction successful",
+                    "request_id": "20260820ABCD1234",
+                    "response_description": "TRANSACTION SUCCESSFUL",
+                    "state": True,
+                },
+                response_only=True,
+            ),
+        ],
     )
     def post(self, request):
         transaction_pin = request.data.get("transaction_pin")
@@ -1969,10 +2230,27 @@ class WAECRegitrationViews(APIView):
 
     @extend_schema(
         summary="WAEC registration",
-        description="Register for WAEC examination",
+        description="Register for WAEC (WASSCE PIN for Private Candidates). Requires JWT; wallet debited at N37,500.",
         request=WAECRegitrationSerializer,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
         tags=["Payments"],
+        examples=[
+            OpenApiExample(
+                "Request Example",
+                value={"phone_number": "08012345678"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "message": "Transaction successful",
+                    "request_id": "20260820ABCD1234",
+                    "response_description": "TRANSACTION SUCCESSFUL",
+                    "state": True,
+                },
+                response_only=True,
+            ),
+        ],
     )
     def post(self, request):
         transaction_pin = request.data.get("transaction_pin")
@@ -1999,11 +2277,11 @@ class WAECRegitrationViews(APIView):
             request_id = generate_reference_id()
             serializer.save(request_id=request_id, user=request.user)
             with transaction.atomic():
-                amount = 14500
+                amount = 37500
                 data = {
                     "request_id": request_id,
                     "serviceID": "waec-registration",
-                    "variation_code": "waec-registration",
+                    "variation_code": "waec-registraion",
                     "quantity": 1,
                     "phone": serializer.data["phone_number"],
                 }
@@ -2027,7 +2305,7 @@ class WAECRegitrationViews(APIView):
                     )
                     user_wallet.debit(
                         amount=amount,
-                        description=f'{desc["full"]} {registration_response.get("purchased_code")}',
+                        description=f"{desc['full']} {registration_response.get('purchased_code')}",
                         reference=request_id,
                     )
 
@@ -2076,10 +2354,27 @@ class WAECResultCheckerViews(APIView):
 
     @extend_schema(
         summary="Purchase WAEC result checker",
-        description="Buy WAEC result checker PIN",
+        description="Purchase a WAEC result checker. Requires JWT; wallet debited at N5,350.",
         request=WAECResultCheckerSerializer,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
         tags=["Payments"],
+        examples=[
+            OpenApiExample(
+                "Request Example",
+                value={"phone_number": "08012345678"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "message": "Transaction successful",
+                    "request_id": "20260820ABCD1234",
+                    "response_description": "TRANSACTION SUCCESSFUL",
+                    "state": True,
+                },
+                response_only=True,
+            ),
+        ],
     )
     def post(self, request):
         transaction_pin = request.data.get("transaction_pin")
@@ -2106,7 +2401,7 @@ class WAECResultCheckerViews(APIView):
             request_id = generate_reference_id()
             serializer.save(request_id=request_id, user=request.user)
             with transaction.atomic():
-                amount = 950
+                amount = 5350
                 data = {
                     "request_id": request_id,
                     "serviceID": "waec",
@@ -2134,7 +2429,7 @@ class WAECResultCheckerViews(APIView):
                     )
                     user_wallet.debit(
                         amount=amount,
-                        description=f'{desc["full"]} {registration_response.get("purchased_code")}',
+                        description=f"{desc['full']} {registration_response.get('purchased_code')}",
                         reference=request_id,
                     )
 
@@ -2183,10 +2478,31 @@ class JAMBRegistrationViews(APIView):
 
     @extend_schema(
         summary="JAMB registration",
-        description="Register for JAMB examination",
+        description="Register for JAMB (UTME). Requires JWT; wallet debited on success. `exam_type` is utme-mock or utme-no-mock.",
         request=JAMBRegistrationSerializer,
         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
         tags=["Payments"],
+        examples=[
+            OpenApiExample(
+                "Request Example",
+                value={
+                    "billerCode": "1234567890",
+                    "exam_type": "utme-no-mock",
+                    "phone_number": "08012345678",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "message": "Transaction successful",
+                    "request_id": "20260820ABCD1234",
+                    "response_description": "TRANSACTION SUCCESSFUL",
+                    "state": True,
+                },
+                response_only=True,
+            ),
+        ],
     )
     def post(self, request):
         transaction_pin = request.data.get("transaction_pin")
@@ -2245,7 +2561,7 @@ class JAMBRegistrationViews(APIView):
                     )
                     user_wallet.debit(
                         amount=amount,
-                        description=f'{desc["full"]} {jamb_registration_response.get("purchased_code")}',
+                        description=f"{desc['full']} {jamb_registration_response.get('purchased_code')}",
                         reference=request_id,
                     )
 
@@ -2294,7 +2610,7 @@ class ElectricityPaymentCustomerViews(APIView):
 
     @extend_schema(
         summary="Verify electricity customer",
-        description="Verify a prepaid/postpaid electricity customer by meter number",
+        description="Verify an electricity meter/customer for a disco before payment. Requires JWT.",
         request=ElectricityPaymentCustomerSerializer,
         responses={
             200: OpenApiTypes.OBJECT,
@@ -2302,6 +2618,26 @@ class ElectricityPaymentCustomerViews(APIView):
             500: OpenApiTypes.OBJECT,
         },
         tags=["Payments"],
+        examples=[
+            OpenApiExample(
+                "Request Example",
+                value={
+                    "biller": "ikeja-electric",
+                    "meter_number": "1234567890",
+                    "meter_type": "prepaid",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "data": {"address": "123 Allen Ave, Ikeja", "name": "JOHN DOE"},
+                    "message": "Customer verified",
+                    "state": True,
+                },
+                response_only=True,
+            ),
+        ],
     )
     def post(self, request):
         try:
@@ -2340,7 +2676,7 @@ class InternalTransferView(APIView):
 
     @extend_schema(
         summary="Transfer funds internally",
-        description="Transfer money from your wallet to another BlueSea user",
+        description="Transfer wallet funds to another BlueSea user by email. Requires JWT and transaction PIN.",
         request=OpenApiTypes.OBJECT,
         responses={
             200: OpenApiTypes.OBJECT,
@@ -2357,7 +2693,17 @@ class InternalTransferView(APIView):
                     "amount": "5000",
                 },
                 request_only=True,
-            )
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "amount": "5000",
+                    "message": "Transfer successful",
+                    "recipient": "recipient@example.com",
+                    "state": True,
+                },
+                response_only=True,
+            ),
         ],
         tags=["Payments"],
     )
@@ -2487,10 +2833,7 @@ class WithdrawalView(APIView):
 
     @extend_schema(
         summary="Request a withdrawal",
-        description=(
-            "Debit the user's wallet and queue a withdrawal for manual "
-            "back-office payout. Requires the user's transaction PIN."
-        ),
+        description="Withdraw wallet funds to a bank account. Requires JWT and transaction PIN; validates PIN, bank details, and minimum amount (N500). Returns a withdrawal record (status pending).",
         request=WithdrawalRequestSerializer,
         responses={
             201: WithdrawalResponseSerializer,
@@ -2498,6 +2841,40 @@ class WithdrawalView(APIView):
             500: OpenApiTypes.OBJECT,
         },
         tags=["Payments"],
+        examples=[
+            OpenApiExample(
+                "Request Example",
+                value={
+                    "account_name": "John Doe",
+                    "account_number": "0123456789",
+                    "amount": "5000.00",
+                    "bank_code": "058",
+                    "bank_name": "GTBank",
+                    "transaction_pin": "1234",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "message": "Withdrawal initiated successfully",
+                    "state": True,
+                    "withdrawal": {
+                        "account_name": "John Doe",
+                        "account_number": "0123456789",
+                        "amount": "5000.00",
+                        "bank_code": "058",
+                        "bank_name": "GTBank",
+                        "completed_at": None,
+                        "created_at": "2026-08-20T00:00:00Z",
+                        "id": 1,
+                        "payment_reference": "WD-20260820ABCD",
+                        "status": "pending",
+                    },
+                },
+                response_only=True,
+            ),
+        ],
     )
     def post(self, request):
         serializer = WithdrawalRequestSerializer(data=request.data)
