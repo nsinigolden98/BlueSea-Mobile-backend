@@ -18,6 +18,7 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             "pin_is_set",
             "image",
             "referral_code",
+            "created_on",
         ]
 
 
@@ -26,4 +27,29 @@ class UpdateUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UpdateUserModel
-        fields = ["image", "phone"]
+        fields = [
+            "image",
+            "phone",
+            "date_of_birth",
+            "country",
+            "state",
+            "city",
+            "street_address",
+            "landmark",
+            "postal_code",
+        ]
+
+
+class UserPreferenceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UpdateUserModel
+        fields = [
+            "image",
+            "date_of_birth",
+            "country",
+            "state",
+            "city",
+            "street_address",
+            "landmark",
+            "postal_code",
+        ]
