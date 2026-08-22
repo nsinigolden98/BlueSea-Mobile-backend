@@ -10,8 +10,14 @@ from .models import UpdateUserModel
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 from accounts.models import Profile
-from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiExample,
+    OpenApiParameter,
+    inline_serializer,
+)
 from drf_spectacular.types import OpenApiTypes
+from rest_framework import serializers
 
 
 class CurrentUserView(APIView):
@@ -21,8 +27,54 @@ class CurrentUserView(APIView):
 
     @extend_schema(
         summary="Get current user profile",
-        description="Return the authenticated user's profile details",
-        responses={200: CurrentUserSerializer},
+        description=(
+            "Return the authenticated user's profile details, "
+            "including saved preferences"
+        ),
+        responses={
+            200: inline_serializer(
+                name="CurrentUserWithPreference",
+                fields={
+                    "id": serializers.IntegerField(),
+                    "other_names": serializers.CharField(),
+                    "email": serializers.EmailField(),
+                    "phone": serializers.CharField(allow_null=True),
+                    "surname": serializers.CharField(allow_null=True),
+                    "pin_is_set": serializers.BooleanField(),
+                    "image": serializers.URLField(allow_null=True, required=False),
+                    "referral_code": serializers.CharField(allow_null=True),
+                    "created_on": serializers.DateTimeField(),
+                    "preference": UserPreferenceSerializer(),
+                },
+            )
+        },
+        examples=[
+            OpenApiExample(
+                "Success Response",
+                value={
+                    "id": 1,
+                    "other_names": "John",
+                    "email": "user@example.com",
+                    "phone": "08012345678",
+                    "surname": "Doe",
+                    "pin_is_set": True,
+                    "image": "http://example.com/media/profiles/photo.jpg",
+                    "referral_code": "REF123",
+                    "created_on": "2026-01-01T12:00:00Z",
+                    "preference": {
+                        "image": "http://example.com/media/profiles/photo.jpg",
+                        "date_of_birth": "1990-01-01",
+                        "country": "Nigeria",
+                        "state": "Lagos",
+                        "city": "Ikeja",
+                        "street_address": "123 Main St",
+                        "landmark": "Near Plaza",
+                        "postal_code": "100001",
+                    },
+                },
+                response_only=True,
+            ),
+        ],
         tags=["User Profile"],
     )
     def get(self, request):
