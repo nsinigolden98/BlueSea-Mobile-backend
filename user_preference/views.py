@@ -1,7 +1,12 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .serializers import CurrentUserSerializer, UpdateUserSerializer
+from .serializers import (
+    CurrentUserSerializer,
+    UpdateUserSerializer,
+    UserPreferenceSerializer,
+)
+from .models import UpdateUserModel
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 from accounts.models import Profile
@@ -22,11 +27,20 @@ class CurrentUserView(APIView):
     )
     def get(self, request):
         serializer = CurrentUserSerializer(request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        data = dict(serializer.data)
+
+        preference, _ = UpdateUserModel.objects.get_or_create(user=request.user)
+        data["preference"] = UserPreferenceSerializer(preference).data
+
+        return Response(data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="Update current user profile",
-        description="Update the user's phone number and/or profile image (multipart/form-data)",
+        description=(
+            "Update the user's phone number and/or profile fields "
+            "(date_of_birth, country, state, city, street_address, landmark, "
+            "postal_code) and/or profile image (multipart/form-data)"
+        ),
         request=UpdateUserSerializer,
         responses={
             200: OpenApiTypes.OBJECT,
@@ -35,7 +49,17 @@ class CurrentUserView(APIView):
         examples=[
             OpenApiExample(
                 "Update Request",
-                value={"phone": "08012345678", "image": "<binary file>"},
+                value={
+                    "phone": "08012345678",
+                    "image": "<binary file>",
+                    "country": "Nigeria",
+                    "state": "Lagos",
+                    "city": "Ikeja",
+                    "street_address": "123 Main St",
+                    "landmark": "Near Plaza",
+                    "postal_code": "100001",
+                    "date_of_birth": "1990-01-01",
+                },
                 request_only=True,
             ),
             OpenApiExample(
@@ -44,6 +68,15 @@ class CurrentUserView(APIView):
                     "message": "Profile updated successfully",
                     "phone": "08012345678",
                     "image": "http://example.com/media/profiles/photo.jpg",
+                    "preference": {
+                        "country": "Nigeria",
+                        "state": "Lagos",
+                        "city": "Ikeja",
+                        "street_address": "123 Main St",
+                        "landmark": "Near Plaza",
+                        "postal_code": "100001",
+                        "date_of_birth": "1990-01-01",
+                    },
                 },
                 response_only=True,
             ),
@@ -59,19 +92,18 @@ class CurrentUserView(APIView):
             user.phone = phone
             user.save()
 
-        # Handle image update (uses UpdateUserSerializer)
-        image_data = {k: v for k, v in request.data.items() if k == "image"}
-
-        if image_data:
-            serializer = UpdateUserSerializer(user, data=image_data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
+        # Update preference fields on UpdateUserModel
+        preference, _ = UpdateUserModel.objects.get_or_create(user=user)
+        serializer = UpdateUserSerializer(preference, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
 
         return Response(
             {
                 "message": "Profile updated successfully",
                 "phone": user.phone,
                 "image": user.image.url if user.image else None,
+                "preference": UserPreferenceSerializer(preference).data,
             },
             status=status.HTTP_200_OK,
         )
@@ -82,7 +114,12 @@ class CheckUsers(APIView):
         summary="Check user verification status",
         description="Check whether a user with the given email exists and is verified",
         parameters=[
-            OpenApiParameter(name="email", location=OpenApiParameter.PATH, required=True, description="Email of the user to check"),
+            OpenApiParameter(
+                name="email",
+                location=OpenApiParameter.PATH,
+                required=True,
+                description="Email of the user to check",
+            ),
         ],
         responses={
             200: OpenApiTypes.OBJECT,
