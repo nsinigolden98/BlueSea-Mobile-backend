@@ -317,7 +317,7 @@ ROOT_URLCONF = "bluesea_mobile.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -404,7 +404,11 @@ STATIC_URL = "static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Base URL of the backend, used to build absolute URLs for static assets
-SITE_URL =  os.environ.get("LOCAL_URL").rstrip("/") if DEBUG  else os.environ.get("SITE_URL").rstrip("/")
+SITE_URL = (
+    os.environ.get("LOCAL_URL").rstrip("/")
+    if DEBUG
+    else os.environ.get("SITE_URL").rstrip("/")
+)
 
 
 STORAGES = {
