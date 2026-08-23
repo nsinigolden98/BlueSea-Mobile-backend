@@ -63,6 +63,8 @@ class CurrentUserView(APIView):
                     "created_on": "2026-01-01T12:00:00Z",
                     "preference": {
                         "image": "http://example.com/media/profiles/photo.jpg",
+                        "nickname": "Johnny",
+                        "gender": "male",
                         "date_of_birth": "1990-01-01",
                         "country": "Nigeria",
                         "state": "Lagos",
@@ -90,8 +92,9 @@ class CurrentUserView(APIView):
         summary="Update current user profile",
         description=(
             "Update the user's phone number and/or profile fields "
-            "(date_of_birth, country, state, city, street_address, landmark, "
-            "postal_code) and/or profile image (multipart/form-data)"
+            "(nickname, gender, date_of_birth, country, state, city, "
+            "street_address, landmark, postal_code) and/or profile image "
+            "(multipart/form-data)"
         ),
         request=UpdateUserSerializer,
         responses={
@@ -104,6 +107,8 @@ class CurrentUserView(APIView):
                 value={
                     "phone": "08012345678",
                     "image": "<binary file>",
+                    "nickname": "Johnny",
+                    "gender": "male",
                     "country": "Nigeria",
                     "state": "Lagos",
                     "city": "Ikeja",
@@ -121,6 +126,8 @@ class CurrentUserView(APIView):
                     "phone": "08012345678",
                     "image": "http://example.com/media/profiles/photo.jpg",
                     "preference": {
+                        "nickname": "Johnny",
+                        "gender": "male",
                         "country": "Nigeria",
                         "state": "Lagos",
                         "city": "Ikeja",

@@ -8,6 +8,8 @@ from .models import UpdateUserModel
 class UpdateUserModelAdmin(admin.ModelAdmin):
     list_display = [
         "user",
+        "nickname",
+        "gender",
         "image_thumbnail",
         "date_of_birth",
         "country",
@@ -15,10 +17,11 @@ class UpdateUserModelAdmin(admin.ModelAdmin):
         "city",
         "postal_code",
     ]
-    list_filter = ["country", "state", "city"]
+    list_filter = ["gender", "country", "state", "city"]
     search_fields = [
         "user__email",
         "user__phone",
+        "nickname",
         "country",
         "state",
         "city",
@@ -30,7 +33,7 @@ class UpdateUserModelAdmin(admin.ModelAdmin):
     fieldsets = (
         ("User", {"fields": ("user",)}),
         ("Profile Image", {"fields": ("image", "image_preview")}),
-        ("Personal Info", {"fields": ("date_of_birth",)}),
+        ("Personal Info", {"fields": ("nickname", "gender", "date_of_birth")}),
         (
             "Address",
             {
