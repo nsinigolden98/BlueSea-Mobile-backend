@@ -16,6 +16,7 @@ class UpdateUserModelAdmin(admin.ModelAdmin):
         "state",
         "city",
         "postal_code",
+        "updated_on",
     ]
     list_filter = ["gender", "country", "state", "city"]
     search_fields = [
@@ -29,11 +30,14 @@ class UpdateUserModelAdmin(admin.ModelAdmin):
         "street_address",
         "landmark",
     ]
-    readonly_fields = ["user", "image_preview"]
+    readonly_fields = ["user", "image_preview", "updated_on"]
     fieldsets = (
         ("User", {"fields": ("user",)}),
         ("Profile Image", {"fields": ("image", "image_preview")}),
-        ("Personal Info", {"fields": ("nickname", "gender", "date_of_birth")}),
+        (
+            "Personal Info",
+            {"fields": ("nickname", "gender", "date_of_birth", "updated_on")},
+        ),
         (
             "Address",
             {
