@@ -1,0 +1,17 @@
+{% extends "errors/base_error.html" %}
+
+{% block code %}403{% endblock %}
+{% block heading %}Access denied{% endblock %}
+{% block illustration %}
+<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle cx="60" cy="60" r="54" stroke="#203ae3" stroke-width="4"/>
+    <rect x="42" y="54" width="36" height="30" rx="6" stroke="#203ae3" stroke-width="4"/>
+    <path d="M50 54 v-8 a10 10 0 0 1 20 0 v8" stroke="#203ae3" stroke-width="4"/>
+    <circle cx="60" cy="68" r="4" fill="#203ae3"/>
+    <path d="M60 72 v6" stroke="#203ae3" stroke-width="4" stroke-linecap="round"/>
+</svg>
+{% endblock %}
+{% block message %}
+You don&rsquo;t have permission to access this page.
+{% if request.path %}Requested path: <code>{{ request.path }}</code>{% endif %}
+{% endblock %}

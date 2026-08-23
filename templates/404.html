@@ -1,0 +1,16 @@
+{% extends "errors/base_error.html" %}
+
+{% block code %}404{% endblock %}
+{% block heading %}Page not found{% endblock %}
+{% block illustration %}
+<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle cx="60" cy="60" r="54" stroke="#203ae3" stroke-width="4"/>
+    <path d="M42 42 L78 78 M78 42 L42 78" stroke="#203ae3" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="60" cy="60" r="20" fill="#eef1fb"/>
+    <path d="M53 60 h14" stroke="#203ae3" stroke-width="4" stroke-linecap="round"/>
+</svg>
+{% endblock %}
+{% block message %}
+The page you are looking for doesn&rsquo;t exist or may have moved.
+{% if request.path %}Requested path: <code>{{ request.path }}</code>{% endif %}
+{% endblock %}
