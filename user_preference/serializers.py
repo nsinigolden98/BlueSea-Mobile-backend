@@ -39,6 +39,7 @@ class UpdateUserSerializer(serializers.ModelSerializer):
             "street_address",
             "landmark",
             "postal_code",
+            "updated_on",
         ]
 
 
@@ -56,4 +57,5 @@ class UserPreferenceSerializer(serializers.ModelSerializer):
             "street_address",
             "landmark",
             "postal_code",
+            "updated_on",
         ]
