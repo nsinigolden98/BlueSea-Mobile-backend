@@ -1,0 +1,17 @@
+{% extends "errors/base_error.html" %}
+
+{% block code %}500{% endblock %}
+{% block heading %}Something went wrong{% endblock %}
+{% block illustration %}
+<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle cx="60" cy="60" r="54" stroke="#203ae3" stroke-width="4"/>
+    <path d="M44 46 h32 a4 4 0 0 1 4 4 v22 a4 4 0 0 1 -4 4 h-22 l-12 10 v-10 h-0 a4 4 0 0 1 -4 -4 v-22 a4 4 0 0 1 4 -4 z"
+          stroke="#203ae3" stroke-width="4" stroke-linejoin="round"/>
+    <circle cx="52" cy="62" r="3.5" fill="#203ae3"/>
+    <circle cx="68" cy="62" r="3.5" fill="#203ae3"/>
+    <path d="M50 74 q10 8 20 0" stroke="#203ae3" stroke-width="4" stroke-linecap="round"/>
+</svg>
+{% endblock %}
+{% block message %}
+We&rsquo;re sorry, but something went wrong on our end. Please try again in a few moments.
+{% endblock %}
