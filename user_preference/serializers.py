@@ -30,6 +30,8 @@ class UpdateUserSerializer(serializers.ModelSerializer):
         fields = [
             "image",
             "phone",
+            "nickname",
+            "gender",
             "date_of_birth",
             "country",
             "state",
@@ -45,6 +47,8 @@ class UserPreferenceSerializer(serializers.ModelSerializer):
         model = UpdateUserModel
         fields = [
             "image",
+            "nickname",
+            "gender",
             "date_of_birth",
             "country",
             "state",
