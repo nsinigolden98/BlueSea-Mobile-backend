@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import SupportTicket, SupportMessage
+from .models import SupportTicket, SupportMessage, SupportAttachment
 
 
 def notify_admin_reply(message):
@@ -17,6 +17,13 @@ def notify_admin_reply(message):
         notification_type="info",
         email_subject="BlueSea Mobile - Support Reply",
     )
+
+
+class SupportAttachmentInline(admin.TabularInline):
+    model = SupportAttachment
+    extra = 0
+    can_delete = True
+    readonly_fields = ["uploaded_at"]
 
 
 class SupportMessageInline(admin.TabularInline):
@@ -62,3 +69,10 @@ class SupportMessageAdmin(admin.ModelAdmin):
     list_filter = ["is_admin"]
     search_fields = ["message", "sender__email"]
     readonly_fields = ["sender", "is_admin", "created_at"]
+    inlines = [SupportAttachmentInline]
+
+
+@admin.register(SupportAttachment)
+class SupportAttachmentAdmin(admin.ModelAdmin):
+    list_display = ["id", "message", "uploaded_at"]
+    readonly_fields = ["uploaded_at"]

@@ -1,10 +1,11 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status
 from drf_spectacular.utils import extend_schema
 from drf_spectacular.types import OpenApiTypes
-from .models import SupportTicket, SupportMessage
+from .models import SupportTicket, SupportMessage, SupportAttachment
 from .serializers import (
     SupportTicketSerializer,
     CreateTicketSerializer,
@@ -16,8 +17,14 @@ from .serializers import (
 )
 
 
+def create_attachments(message, images):
+    for image in images:
+        SupportAttachment.objects.create(message=message, image=image)
+
+
 class SupportTicketListView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     @extend_schema(
         summary="List my support tickets",
@@ -30,7 +37,9 @@ class SupportTicketListView(APIView):
         tickets = SupportTicket.objects.filter(user=request.user).order_by(
             "-created_at"
         )
-        serializer = SupportTicketSerializer(tickets, many=True)
+        serializer = SupportTicketSerializer(
+            tickets, many=True, context={"request": request}
+        )
         return Response(
             {"count": tickets.count(), "tickets": serializer.data},
             status=status.HTTP_200_OK,
@@ -49,16 +58,21 @@ class SupportTicketListView(APIView):
         if serializer.is_valid():
             ticket = serializer.save(user=request.user)
             # Create initial message
-            SupportMessage.objects.create(
+            message = SupportMessage.objects.create(
                 ticket=ticket,
                 sender=request.user,
                 message=serializer.validated_data["description"],
             )
+            images = request.FILES.getlist("images")
+            if images:
+                create_attachments(message, images)
             return Response(
                 {
                     "success": True,
                     "message": "Support ticket created successfully",
-                    "ticket": SupportTicketSerializer(ticket).data,
+                    "ticket": SupportTicketSerializer(
+                        ticket, context={"request": request}
+                    ).data,
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -69,6 +83,7 @@ class SupportTicketListView(APIView):
 
 class SupportTicketDetailView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     @extend_schema(
         summary="Get support ticket detail",
@@ -80,7 +95,7 @@ class SupportTicketDetailView(APIView):
     def get(self, request, ticket_id):
         try:
             ticket = SupportTicket.objects.get(id=ticket_id, user=request.user)
-            serializer = SupportTicketSerializer(ticket)
+            serializer = SupportTicketSerializer(ticket, context={"request": request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except SupportTicket.DoesNotExist:
             return Response(
@@ -109,10 +124,15 @@ class SupportTicketDetailView(APIView):
                     sender=request.user,
                     message=serializer.validated_data["message"],
                 )
+                images = request.FILES.getlist("images")
+                if images:
+                    create_attachments(message, images)
                 return Response(
                     {
                         "success": True,
-                        "message": SupportMessageSerializer(message).data,
+                        "message": SupportMessageSerializer(
+                            message, context={"request": request}
+                        ).data,
                     },
                     status=status.HTTP_201_CREATED,
                 )

@@ -44,3 +44,14 @@ class SupportMessage(models.Model):
 
     def __str__(self):
         return f"Message on Ticket #{self.ticket.id}"
+
+
+class SupportAttachment(models.Model):
+    message = models.ForeignKey(
+        SupportMessage, on_delete=models.CASCADE, related_name="attachments"
+    )
+    image = models.ImageField(upload_to="support_attachments/%Y/%m/%d/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Attachment #{self.id} on Message #{self.message.id}"
