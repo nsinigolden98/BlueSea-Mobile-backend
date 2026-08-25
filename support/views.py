@@ -35,14 +35,7 @@ class SupportTicketListView(APIView):
         ),
         operation_id="support_tickets_list",
         responses={200: SupportTicketListResponse},
-        tags=[
-            {
-                "name": "Support",
-                "description": "Customer support tickets, threaded messages, and "
-                "image attachments. Requires JWT authentication; users can only "
-                "access their own tickets.",
-            }
-        ],
+        tags=["Support"],
         examples=[
             OpenApiExample(
                 "Ticket list",
@@ -98,14 +91,7 @@ class SupportTicketListView(APIView):
         operation_id="support_ticket_create",
         request=CreateTicketSerializer,
         responses={201: CreateTicketResponse, 400: OpenApiTypes.OBJECT},
-        tags=[
-            {
-                "name": "Support",
-                "description": "Customer support tickets, threaded messages, and "
-                "image attachments. Requires JWT authentication; users can only "
-                "access their own tickets.",
-            }
-        ],
+        tags=["Support"],
         examples=[
             OpenApiExample(
                 "Create ticket",
@@ -193,14 +179,7 @@ class SupportTicketDetailView(APIView):
         ),
         operation_id="support_ticket_retrieve",
         responses={200: SupportTicketSerializer, 404: OpenApiTypes.OBJECT},
-        tags=[
-            {
-                "name": "Support",
-                "description": "Customer support tickets, threaded messages, and "
-                "image attachments. Requires JWT authentication; users can only "
-                "access their own tickets.",
-            }
-        ],
+        tags=["Support"],
         examples=[
             OpenApiExample(
                 "Not found",
@@ -236,14 +215,7 @@ class SupportTicketDetailView(APIView):
             400: OpenApiTypes.OBJECT,
             404: OpenApiTypes.OBJECT,
         },
-        tags=[
-            {
-                "name": "Support",
-                "description": "Customer support tickets, threaded messages, and "
-                "image attachments. Requires JWT authentication; users can only "
-                "access their own tickets.",
-            }
-        ],
+        tags=["Support"],
         examples=[
             OpenApiExample(
                 "Add message",

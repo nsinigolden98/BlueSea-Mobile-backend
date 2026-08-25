@@ -274,8 +274,29 @@ PIN_MAX_ATTEMPTS = int(os.environ.get("PIN_MAX_ATTEMPTS", "5"))
 PIN_LOCKOUT_MINUTES = int(os.environ.get("PIN_LOCKOUT_MINUTES", "15"))
 
 
+def _inject_support_tag(result, generator, request, public):
+    for path in result.get("paths", {}).values():
+        for op in path.values():
+            if isinstance(op, dict) and isinstance(op.get("tags"), list):
+                op["tags"] = [
+                    t["name"] if isinstance(t, dict) else t for t in op["tags"]
+                ]
+    tags = result.setdefault("tags", [])
+    if not any(isinstance(t, dict) and t.get("name") == "Support" for t in tags):
+        tags.append(
+            {
+                "name": "Support",
+                "description": "Customer support tickets, threaded messages, and "
+                "image attachments. Requires JWT authentication; users can only "
+                "access their own tickets.",
+            }
+        )
+    return result
+
+
 SPECTACULAR_SETTINGS = {
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
+    "POSTPROCESSING_HOOKS": ["bluesea_mobile.settings._inject_support_tag"],
     "SERVE_AUTHENTICATION": [
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
