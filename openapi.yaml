@@ -7090,10 +7090,10 @@ components:
           description: Number of tickets (1-10)
         transaction_pin:
           type: string
+          writeOnly: true
           nullable: true
-          description: Transaction PIN (required only for paid events)
-          maxLength: 6
-          minLength: 4
+          description: RSA-OAEP encrypted transaction PIN (base64)
+          maxLength: 512
         attendees:
           type: array
           items:

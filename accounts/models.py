@@ -8,8 +8,11 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth.hashers import make_password, check_password
 import secrets
 
+
 def generate_referal_code():
     return secrets.token_hex(3).upper()
+
+
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -24,15 +27,15 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         return self.create_user(email, password, **extra_fields)
-    
+
 
 class Profile(AbstractUser):
     email = models.EmailField(max_length=300, unique=True)
     surname = models.CharField(max_length=100, blank=True)
-    other_names = models.CharField(max_length=100,blank=True)
+    other_names = models.CharField(max_length=100, blank=True)
     phone = models.CharField(max_length=200, null=True, blank=True)
-    image = models.ImageField(upload_to='profiles/', null=True, blank=True)
-    verification_code = models.CharField(null=True,max_length=100)
+    image = models.ImageField(upload_to="profiles/", null=True, blank=True)
+    verification_code = models.CharField(null=True, max_length=100)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
@@ -40,8 +43,12 @@ class Profile(AbstractUser):
     email_verified = models.BooleanField(default=False)
     transaction_pin = models.CharField(max_length=255, null=True, blank=True)
     pin_is_set = models.BooleanField(default=False)
+    pin_failed_attempts = models.PositiveIntegerField(default=0)
+    pin_locked_until = models.DateTimeField(null=True, blank=True)
     created_on = models.DateTimeField(auto_now_add=True)
-    referral_code = models.CharField(max_length=6, default=generate_referal_code, unique=True)
+    referral_code = models.CharField(
+        max_length=6, default=generate_referal_code, unique=True
+    )
 
     objects = UserManager()
 
@@ -59,21 +66,34 @@ class Profile(AbstractUser):
 
     def get_full_name(self):
         return f"{self.surname}, {self.other_names}"
-    
+
     def set_transaction_pin(self, pin):
-        self.transaction_pin = make_password(str(pin))
+        from .crypto import decrypt_pin
+
+        plain = decrypt_pin(pin)
+        self.transaction_pin = make_password(plain)
         self.pin_is_set = True
+        self.pin_failed_attempts = 0
+        self.pin_locked_until = None
         self.save()
 
     def verify_transaction_pin(self, pin):
-        if not self.pin_is_set or self.transaction_pin:
-            return check_password(str(pin), self.transaction_pin)
+        from .crypto import decrypt_pin, PinDecryptionError
+
+        if not self.pin_is_set or not self.transaction_pin:
+            return False
+        try:
+            plain = decrypt_pin(pin)
+        except PinDecryptionError:
+            return False
+        return check_password(plain, self.transaction_pin)
+
 
 # @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 # def create_auth_token(sender, instance= None, created=False, **kwargs):
 #     if created:
 #         Token.objects.create(user=instance)
-        # Wallet.objects.create(user=instance)
+# Wallet.objects.create(user=instance)
 
 
 class EmailVerification(models.Model):
@@ -90,10 +110,9 @@ class ResetPassword(models.Model):
     otp = models.IntegerField()
     timestamp = models.DateTimeField(default=timezone.now)
 
-
     def __str__(self) -> str:
         return self.profile.email
-    
+
 
 class ResetPasswordValuationToken(models.Model):
     reset_token = models.CharField(max_length=200)

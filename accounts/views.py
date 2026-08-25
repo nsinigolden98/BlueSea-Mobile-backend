@@ -32,6 +32,8 @@ from .models import (
 )
 from .social_auth import GoogleAuth, AppleAuth, get_or_create_social_user
 from .social_serializers import GoogleLoginSerializer, AppleLoginSerializer
+from .crypto import decrypt_pin, PinDecryptionError
+from .pin_security import verify_pin_with_lockout
 import logging
 from .serializers import *
 import os
@@ -852,13 +854,22 @@ def set_transaction_pin(request):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if len(pin) != 4 or not pin.isdigit():
+        try:
+            plain_pin = decrypt_pin(pin)
+            plain_confirm = decrypt_pin(confirm_pin)
+        except PinDecryptionError:
+            return Response(
+                {"message": "Invalid transaction pin format", "state": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(plain_pin) != 4 or not plain_pin.isdigit():
             return Response(
                 {"message": "Pin must be a 4-digit number", "state": False},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if pin != confirm_pin:
+        if plain_pin != plain_confirm:
             return Response(
                 {"message": "Pin and confirm pin do not match", "state": False},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -923,19 +934,38 @@ def change_transaction_pin(request):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not request.user.verify_transaction_pin(old_pin):
+        pin_result = verify_pin_with_lockout(request.user, old_pin)
+        if pin_result.locked:
+            retry_min = int(pin_result.retry_after // 60) + 1
+            return Response(
+                {
+                    "message": f"Too many attempts. Try again in {retry_min} minutes.",
+                    "state": False,
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        if not pin_result.ok:
             return Response(
                 {"message": "Old pin is incorrect", "state": False},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if len(new_pin) != 4 or not new_pin.isdigit():
+        try:
+            plain_new = decrypt_pin(new_pin)
+            plain_confirm = decrypt_pin(confirm_pin)
+        except PinDecryptionError:
+            return Response(
+                {"message": "Invalid transaction pin format", "state": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(plain_new) != 4 or not plain_new.isdigit():
             return Response(
                 {"message": "New pin must be a 4-digit number", "state": False},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if new_pin != confirm_pin:
+        if plain_new != plain_confirm:
             return Response(
                 {
                     "success": False,
@@ -992,16 +1022,25 @@ def verify_pin(request):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if request.user.verify_transaction_pin(pin):
+        pin_result = verify_pin_with_lockout(request.user, pin)
+        if pin_result.locked:
+            retry_min = int(pin_result.retry_after // 60) + 1
+            return Response(
+                {
+                    "message": f"Too many attempts. Try again in {retry_min} minutes.",
+                    "state": False,
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        if pin_result.ok:
             return Response(
                 {"message": "Transaction pin verified successfully", "state": True},
                 status=status.HTTP_200_OK,
             )
-        else:
-            return Response(
-                {"message": "Invalid transaction pin", "state": False},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        return Response(
+            {"message": "Invalid transaction pin", "state": False},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     except Exception as e:
         logger.error(f"Verify transaction pin error: {str(e)}")
@@ -1140,7 +1179,11 @@ def verify_pin_reset_otp(request):
     examples=[
         OpenApiExample(
             "Reset PIN Request",
-            value={"verification_token": "token", "new_pin": "5678", "confirm_pin": "5678"},
+            value={
+                "verification_token": "token",
+                "new_pin": "5678",
+                "confirm_pin": "5678",
+            },
             request_only=True,
         )
     ],
@@ -1172,13 +1215,22 @@ def reset_transaction_pin(request):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if len(new_pin) != 4 or not new_pin.isdigit():
+        try:
+            plain_new = decrypt_pin(new_pin)
+            plain_confirm = decrypt_pin(confirm_pin)
+        except PinDecryptionError:
+            return Response(
+                {"message": "Invalid transaction pin format", "state": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(plain_new) != 4 or not plain_new.isdigit():
             return Response(
                 {"message": "PIN must be a 4-digit number", "state": False},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if new_pin != confirm_pin:
+        if plain_new != plain_confirm:
             return Response(
                 {"message": "PINs do not match", "state": False},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -1211,7 +1263,11 @@ class LookupUserView(APIView):
         summary="Lookup user by email",
         description="Look up a user's public profile details by email",
         request=UserLookupSerializer,
-        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT,
+        },
         examples=[
             OpenApiExample(
                 "Lookup Request",
@@ -1236,7 +1292,7 @@ class LookupUserView(APIView):
                 {
                     "found": True,
                     "email": user.email,
-                    "name": f'{user.other_names} {user.surname}',
+                    "name": f"{user.other_names} {user.surname}",
                     "image": user.image.url if user.image else None,
                 }
             )

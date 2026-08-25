@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from .models import Group, GroupMember
+from accounts.pin_security import verify_pin_with_lockout
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 
@@ -26,7 +27,18 @@ class CreateGroupView(APIView):
                 },
                 request_only=True,
             ),
-            OpenApiExample("Response Example", value={'description': 'Family bills', 'id': '3fa85f64-5717-4562-b3fc-2c963f66afa6', 'join_code': 'ABC123', 'name': 'Family Group', 'owner': 1, 'status': 'active'}, response_only=True),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "description": "Family bills",
+                    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "join_code": "ABC123",
+                    "name": "Family Group",
+                    "owner": 1,
+                    "status": "active",
+                },
+                response_only=True,
+            ),
         ],
         tags=["Group Payments"],
     )
@@ -45,7 +57,14 @@ class CreateGroupView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not request.user.verify_transaction_pin(transaction_pin):
+        pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+        if pin_result.locked:
+            retry_min = int(pin_result.retry_after // 60) + 1
+            return Response(
+                {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        if not pin_result.ok:
             return Response(
                 {"error": "Invalid transaction PIN"}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -189,7 +208,19 @@ class AddGroupMemberView(APIView):
                 },
                 request_only=True,
             ),
-            OpenApiExample("Response Example", value={'member': {'email': 'member@example.com', 'id': 1, 'role': 'member'}, 'message': 'member@example.com added to group. Member can now join with group code', 'success': True}, response_only=True),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "member": {
+                        "email": "member@example.com",
+                        "id": 1,
+                        "role": "member",
+                    },
+                    "message": "member@example.com added to group. Member can now join with group code",
+                    "success": True,
+                },
+                response_only=True,
+            ),
         ],
         tags=["Group Payments"],
     )
@@ -267,7 +298,20 @@ class ListMyGroupsView(APIView):
         responses={200: OpenApiTypes.OBJECT},
         tags=["Group Payments"],
         examples=[
-            OpenApiExample("Response Example", value=[{'current_amount': '0', 'id': '3fa85f64-5717-4562-b3fc-2c963f66afa6', 'member_count': 3, 'name': 'Family Group', 'status': 'active', 'target_amount': '10000'}], response_only=True),
+            OpenApiExample(
+                "Response Example",
+                value=[
+                    {
+                        "current_amount": "0",
+                        "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                        "member_count": 3,
+                        "name": "Family Group",
+                        "status": "active",
+                        "target_amount": "10000",
+                    }
+                ],
+                response_only=True,
+            ),
         ],
     )
     def get(self, request):
@@ -332,7 +376,29 @@ class GroupDetailsView(APIView):
         responses={200: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
         tags=["Group Payments"],
         examples=[
-            OpenApiExample("Response Example", value={'group': {'current_amount': '0', 'id': '3fa85f64-5717-4562-b3fc-2c963f66afa6', 'join_code': 'ABC123', 'member_count': 3, 'members': [{'email': 'a@b.com', 'id': 1, 'name': 'A B', 'role': 'owner'}], 'name': 'Family Group', 'total_amount': '10000'}, 'success': True}, response_only=True),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "group": {
+                        "current_amount": "0",
+                        "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                        "join_code": "ABC123",
+                        "member_count": 3,
+                        "members": [
+                            {
+                                "email": "a@b.com",
+                                "id": 1,
+                                "name": "A B",
+                                "role": "owner",
+                            }
+                        ],
+                        "name": "Family Group",
+                        "total_amount": "10000",
+                    },
+                    "success": True,
+                },
+                response_only=True,
+            ),
         ],
     )
     def get(self, request, group_id):
@@ -410,7 +476,19 @@ class UpdateGroupView(APIView):
         responses={200: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT},
         tags=["Group Payments"],
         examples=[
-            OpenApiExample("Response Example", value={'group': {'id': '3fa85f64-5717-4562-b3fc-2c963f66afa6', 'name': 'Family Group', 'sub_number': '2'}, 'message': 'Group updated successfully', 'success': True}, response_only=True),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "group": {
+                        "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                        "name": "Family Group",
+                        "sub_number": "2",
+                    },
+                    "message": "Group updated successfully",
+                    "success": True,
+                },
+                response_only=True,
+            ),
         ],
     )
     def patch(self, request, group_id):
@@ -460,14 +538,32 @@ class JoinGroupView(APIView):
         summary="Join a payment group",
         description="Join a group using its join code. Requires JWT, transaction PIN, and an invitation.",
         request=OpenApiTypes.OBJECT,
-        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT, 500: OpenApiTypes.OBJECT},
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT,
+            500: OpenApiTypes.OBJECT,
+        },
         examples=[
             OpenApiExample(
                 "Join a payment group",
                 value={"transaction_pin": "1234", "join_code": "ABC123"},
                 request_only=True,
             ),
-            OpenApiExample("Response Example", value={'group': {'id': '3fa85f64-5717-4562-b3fc-2c963f66afa6', 'join_code': 'ABC123', 'name': 'Family Group'}, 'message': "Successfully joined group 'Family Group'", 'success': True}, response_only=True),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "group": {
+                        "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                        "join_code": "ABC123",
+                        "name": "Family Group",
+                    },
+                    "message": "Successfully joined group 'Family Group'",
+                    "success": True,
+                },
+                response_only=True,
+            ),
         ],
         tags=["Group Payments"],
     )
@@ -486,7 +582,14 @@ class JoinGroupView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not request.user.verify_transaction_pin(transaction_pin):
+        pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+        if pin_result.locked:
+            retry_min = int(pin_result.retry_after // 60) + 1
+            return Response(
+                {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        if not pin_result.ok:
             return Response(
                 {"error": "Invalid transaction PIN"}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -583,14 +686,22 @@ class LeaveGroupView(APIView):
         summary="Leave a payment group",
         description="Leave a group you belong to (owners must cancel instead). Requires JWT.",
         request=OpenApiTypes.OBJECT,
-        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 500: OpenApiTypes.OBJECT},
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            500: OpenApiTypes.OBJECT,
+        },
         examples=[
             OpenApiExample(
                 "Leave a payment group",
                 value={"group_id": "00000000-0000-0000-0000-000000000000"},
                 request_only=True,
             ),
-            OpenApiExample("Response Example", value={'message': 'Successfully left the group', 'success': True}, response_only=True),
+            OpenApiExample(
+                "Response Example",
+                value={"message": "Successfully left the group", "success": True},
+                response_only=True,
+            ),
         ],
         tags=["Group Payments"],
     )
@@ -649,14 +760,23 @@ class CancelGroupView(APIView):
         summary="Cancel a payment group",
         description="Cancel a group (owner only). Requires JWT.",
         request=OpenApiTypes.OBJECT,
-        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 500: OpenApiTypes.OBJECT},
+        responses={
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT,
+            500: OpenApiTypes.OBJECT,
+        },
         examples=[
             OpenApiExample(
                 "Cancel a payment group",
                 value={"group_id": "00000000-0000-0000-0000-000000000000"},
                 request_only=True,
             ),
-            OpenApiExample("Response Example", value={'message': 'Group cancelled successfully', 'success': True}, response_only=True),
+            OpenApiExample(
+                "Response Example",
+                value={"message": "Group cancelled successfully", "success": True},
+                response_only=True,
+            ),
         ],
         tags=["Group Payments"],
     )
