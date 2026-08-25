@@ -281,16 +281,26 @@ def _inject_support_tag(result, generator, request, public):
                 op["tags"] = [
                     t["name"] if isinstance(t, dict) else t for t in op["tags"]
                 ]
-    tags = result.setdefault("tags", [])
-    if not any(isinstance(t, dict) and t.get("name") == "Support" for t in tags):
-        tags.append(
-            {
-                "name": "Support",
-                "description": "Customer support tickets, threaded messages, and "
-                "image attachments. Requires JWT authentication; users can only "
-                "access their own tickets.",
-            }
-        )
+    # Build a complete, alphabetically-sorted root tags list so the docs
+    # sidebar is ordered (Support is no longer forced first).
+    seen = {}
+    for path_item in result.get("paths", {}).values():
+        if not isinstance(path_item, dict):
+            continue
+        for op in path_item.values():
+            if not isinstance(op, dict):
+                continue
+            for t in op.get("tags", []) or []:
+                name = t["name"] if isinstance(t, dict) else t
+                if name not in seen:
+                    seen[name] = {"name": name}
+    seen["Support"] = {
+        "name": "Support",
+        "description": "Customer support tickets, threaded messages, and "
+        "image attachments. Requires JWT authentication; users can only "
+        "access their own tickets.",
+    }
+    result["tags"] = [seen[k] for k in sorted(seen)]
 
     # Sort paths alphabetically for readable documentation.
     if isinstance(result.get("paths"), dict):
