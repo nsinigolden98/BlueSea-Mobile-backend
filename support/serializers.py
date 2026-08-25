@@ -1,6 +1,12 @@
 from rest_framework import serializers
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from .models import SupportTicket, SupportMessage, SupportAttachment
+
+
+@extend_schema_field(OpenApiTypes.BINARY)
+class BinaryImageField(serializers.ImageField):
+    pass
 
 
 class SupportAttachmentSerializer(serializers.ModelSerializer):
@@ -58,7 +64,7 @@ class SupportTicketSerializer(serializers.ModelSerializer):
 
 class CreateTicketSerializer(serializers.ModelSerializer):
     images = serializers.ListField(
-        child=serializers.ImageField(), required=False, write_only=True
+        child=BinaryImageField(), required=False, write_only=True
     )
 
     class Meta:
@@ -72,7 +78,7 @@ class CreateTicketSerializer(serializers.ModelSerializer):
 
 class AddMessageSerializer(serializers.ModelSerializer):
     images = serializers.ListField(
-        child=serializers.ImageField(), required=False, write_only=True
+        child=BinaryImageField(), required=False, write_only=True
     )
 
     class Meta:

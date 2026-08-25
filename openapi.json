@@ -4260,10 +4260,14 @@ paths:
   /support/:
     get:
       operationId: support_tickets_list
-      description: Retrieve all support tickets belonging to the authenticated user.
+      description: Retrieve all support tickets belonging to the authenticated user,
+        including their full message threads and any image attachments. Attachment
+        image URLs are absolute and point to the uploaded file.
       summary: List my support tickets
       tags:
-      - Support
+      - name: Support
+        description: Customer support tickets, threaded messages, and image attachments.
+          Requires JWT authentication; users can only access their own tickets.
       security:
       - jwtAuth: []
       responses:
@@ -4272,14 +4276,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SupportTicketListResponse'
+              examples:
+                TicketList:
+                  value:
+                    count: 1
+                    tickets:
+                    - id: 1
+                      subject: Cannot withdraw funds
+                      description: Withdrawal fails with error 500.
+                      status: open
+                      priority: high
+                      created_at: '2026-08-25T10:00:00Z'
+                      updated_at: '2026-08-25T10:05:00Z'
+                      messages:
+                      - id: 1
+                        sender_name: John Doe
+                        message: Withdrawal fails with error 500.
+                        is_admin: false
+                        created_at: '2026-08-25T10:00:00Z'
+                        attachments: []
+                  summary: List of the user's tickets
           description: ''
     post:
       operationId: support_ticket_create
-      description: Create a new support ticket with an initial message for the authenticated
-        user.
+      description: Create a new support ticket for the authenticated user. The provided
+        `description` becomes the ticket's first message. Optional `images` is an
+        array of image files (multipart/form-data) attached to that first message.
+        Only the ticket owner can later view or reply to the ticket.
       summary: Create a support ticket
       tags:
-      - Support
+      - name: Support
+        description: Customer support tickets, threaded messages, and image attachments.
+          Requires JWT authentication; users can only access their own tickets.
       requestBody:
         content:
           multipart/form-data:
@@ -4297,6 +4325,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateTicketResponse'
+              examples:
+                Created:
+                  value:
+                    success: true
+                    message: Support ticket created successfully
+                    ticket:
+                      id: 1
+                      subject: Cannot withdraw funds
+                      description: Withdrawal fails with error 500.
+                      status: open
+                      priority: high
+                      created_at: '2026-08-25T10:00:00Z'
+                      updated_at: '2026-08-25T10:00:00Z'
+                      messages:
+                      - id: 1
+                        sender_name: John Doe
+                        message: Withdrawal fails with error 500.
+                        is_admin: false
+                        created_at: '2026-08-25T10:00:00Z'
+                        attachments: []
+                  summary: 201 response
           description: ''
         '400':
           content:
@@ -4308,8 +4357,9 @@ paths:
   /support/{ticket_id}/:
     get:
       operationId: support_ticket_retrieve
-      description: Retrieve a single support ticket with its message thread for the
-        authenticated user.
+      description: Retrieve a single support ticket with its full message thread and
+        image attachments for the authenticated user. Returns 404 if the ticket does
+        not exist or is not owned by the user.
       summary: Get support ticket detail
       parameters:
       - in: path
@@ -4318,7 +4368,9 @@ paths:
           type: integer
         required: true
       tags:
-      - Support
+      - name: Support
+        description: Customer support tickets, threaded messages, and image attachments.
+          Requires JWT authentication; users can only access their own tickets.
       security:
       - jwtAuth: []
       responses:
@@ -4334,11 +4386,18 @@ paths:
               schema:
                 type: object
                 additionalProperties: {}
+              examples:
+                NotFound:
+                  value:
+                    error: Ticket not found
+                  summary: 404 when ticket is missing or not owned
           description: ''
     post:
       operationId: support_ticket_add_message
       description: Append a message to an existing support ticket owned by the authenticated
-        user.
+        user. Optional `images` is an array of image files (multipart/form-data) attached
+        to the new message. Returns 404 if the ticket does not exist or is not owned
+        by the user.
       summary: Add a message to a support ticket
       parameters:
       - in: path
@@ -4347,7 +4406,9 @@ paths:
           type: integer
         required: true
       tags:
-      - Support
+      - name: Support
+        description: Customer support tickets, threaded messages, and image attachments.
+          Requires JWT authentication; users can only access their own tickets.
       requestBody:
         content:
           multipart/form-data:
@@ -4365,6 +4426,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AddMessageResponse'
+              examples:
+                Added:
+                  value:
+                    success: true
+                    message:
+                      id: 2
+                      sender_name: John Doe
+                      message: Here is the screenshot of the error.
+                      is_admin: false
+                      created_at: '2026-08-25T10:10:00Z'
+                      attachments:
+                      - id: 1
+                        image: https://api.bluesea.app/media/support_attachments/2026/08/25/err.png
+                        uploaded_at: '2026-08-25T10:10:00Z'
+                  summary: 201 response
           description: ''
         '400':
           content:
@@ -4711,7 +4787,7 @@ components:
           type: array
           items:
             type: string
-            format: uri
+            format: binary
           writeOnly: true
       required:
       - message
@@ -5739,7 +5815,7 @@ components:
           type: array
           items:
             type: string
-            format: uri
+            format: binary
           writeOnly: true
       required:
       - description
