@@ -8456,6 +8456,23 @@ components:
       scheme: bearer
       bearerFormat: JWT
 tags:
+- name: Affiliate
+- name: Authentication
+- name: Auto Top-Up
+- name: Bonus & Rewards
+- name: Events
+- name: Group Payments
+- name: Loyalty Market
+- name: Notifications
+- name: Payments
+- name: Scanner
 - name: Support
   description: Customer support tickets, threaded messages, and image attachments.
     Requires JWT authentication; users can only access their own tickets.
+- name: Tickets
+- name: User Profile
+- name: Vendors
+- name: Wallet
+- name: Wallet & Transactions
+- name: Withdrawal
+- name: schema
