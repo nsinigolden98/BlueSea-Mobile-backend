@@ -4282,13 +4282,10 @@ paths:
       - Support
       requestBody:
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/CreateTicket'
           application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CreateTicket'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/CreateTicket'
         required: true
@@ -4353,13 +4350,10 @@ paths:
       - Support
       requestBody:
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/AddMessage'
           application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AddMessage'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/AddMessage'
         required: true
@@ -4571,7 +4565,8 @@ paths:
   /user_preference/user/:
     get:
       operationId: user_preference_user_retrieve
-      description: Return the authenticated user's profile details
+      description: Return the authenticated user's profile details, including saved
+        preferences
       summary: Get current user profile
       tags:
       - User Profile
@@ -4582,11 +4577,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CurrentUser'
+                $ref: '#/components/schemas/CurrentUserWithPreference'
+              examples:
+                SuccessResponse:
+                  value:
+                    id: 1
+                    other_names: John
+                    email: user@example.com
+                    phone: 08012345678
+                    surname: Doe
+                    pin_is_set: true
+                    image: http://example.com/media/profiles/photo.jpg
+                    referral_code: REF123
+                    created_on: '2026-01-01T12:00:00Z'
+                    preference:
+                      image: http://example.com/media/profiles/photo.jpg
+                      nickname: Johnny
+                      gender: male
+                      date_of_birth: '1990-01-01'
+                      country: Nigeria
+                      state: Lagos
+                      city: Ikeja
+                      street_address: 123 Main St
+                      landmark: Near Plaza
+                      postal_code: '100001'
+                      updated_on: '2026-01-01T12:00:00Z'
+                  summary: Success Response
           description: ''
     patch:
       operationId: user_preference_user_partial_update
-      description: Update the user's phone number and/or profile image (multipart/form-data)
+      description: Update the user's phone number and/or profile fields (nickname,
+        gender, date_of_birth, country, state, city, street_address, landmark, postal_code)
+        and/or profile image (multipart/form-data)
       summary: Update current user profile
       tags:
       - User Profile
@@ -4613,6 +4635,17 @@ paths:
                     message: Profile updated successfully
                     phone: 08012345678
                     image: http://example.com/media/profiles/photo.jpg
+                    preference:
+                      nickname: Johnny
+                      gender: male
+                      country: Nigeria
+                      state: Lagos
+                      city: Ikeja
+                      street_address: 123 Main St
+                      landmark: Near Plaza
+                      postal_code: '100001'
+                      date_of_birth: '1990-01-01'
+                      updated_on: '2026-01-01T12:00:00Z'
                   summary: Success Response
           description: ''
         '400':
@@ -4674,6 +4707,12 @@ components:
       properties:
         message:
           type: string
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+          writeOnly: true
       required:
       - message
     AddMessageResponse:
@@ -5696,6 +5735,12 @@ components:
           type: string
         priority:
           $ref: '#/components/schemas/PriorityEnum'
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+          writeOnly: true
       required:
       - description
       - subject
@@ -5712,26 +5757,22 @@ components:
       - message
       - success
       - ticket
-    CurrentUser:
+    CurrentUserWithPreference:
       type: object
       properties:
         id:
           type: integer
-          readOnly: true
         other_names:
           type: string
-          maxLength: 100
         email:
           type: string
           format: email
-          maxLength: 300
         phone:
           type: string
           nullable: true
-          maxLength: 200
         surname:
           type: string
-          maxLength: 100
+          nullable: true
         pin_is_set:
           type: boolean
         image:
@@ -5740,10 +5781,22 @@ components:
           nullable: true
         referral_code:
           type: string
-          maxLength: 6
+          nullable: true
+        created_on:
+          type: string
+          format: date-time
+        preference:
+          $ref: '#/components/schemas/UserPreference'
       required:
+      - created_on
       - email
       - id
+      - other_names
+      - phone
+      - pin_is_set
+      - preference
+      - referral_code
+      - surname
     DSTVPayment:
       type: object
       properties:
@@ -6133,6 +6186,16 @@ components:
       - phone_number
       - subscription_type
       - user
+    GenderEnum:
+      enum:
+      - male
+      - female
+      - others
+      type: string
+      description: |-
+        * `male` - Male
+        * `female` - Female
+        * `others` - Others
     GloDataTopUp:
       type: object
       properties:
@@ -6939,6 +7002,48 @@ components:
           nullable: true
         phone:
           type: string
+        nickname:
+          type: string
+          nullable: true
+          maxLength: 50
+        gender:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+        country:
+          type: string
+          nullable: true
+          maxLength: 50
+        state:
+          type: string
+          nullable: true
+          maxLength: 20
+        city:
+          type: string
+          nullable: true
+          maxLength: 20
+        street_address:
+          type: string
+          nullable: true
+          maxLength: 100
+        landmark:
+          type: string
+          nullable: true
+          maxLength: 50
+        postal_code:
+          type: string
+          nullable: true
+          maxLength: 10
+        updated_on:
+          type: string
+          format: date-time
+          readOnly: true
     PaymentTypeEnum:
       enum:
       - airtime
@@ -7393,6 +7498,25 @@ components:
       description: |-
         * `change` - change
         * `renew` - renew
+    SupportAttachment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        image:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        uploaded_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - image
+      - uploaded_at
     SupportMessage:
       type: object
       properties:
@@ -7410,7 +7534,13 @@ components:
           type: string
           format: date-time
           readOnly: true
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupportAttachment'
+          readOnly: true
       required:
+      - attachments
       - created_at
       - id
       - message
@@ -7746,6 +7876,57 @@ components:
           description: Email of the user to look up
       required:
       - email
+    UserPreference:
+      type: object
+      properties:
+        image:
+          type: string
+          format: uri
+          nullable: true
+        nickname:
+          type: string
+          nullable: true
+          maxLength: 50
+        gender:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+        country:
+          type: string
+          nullable: true
+          maxLength: 50
+        state:
+          type: string
+          nullable: true
+          maxLength: 20
+        city:
+          type: string
+          nullable: true
+          maxLength: 20
+        street_address:
+          type: string
+          nullable: true
+          maxLength: 100
+        landmark:
+          type: string
+          nullable: true
+          maxLength: 50
+        postal_code:
+          type: string
+          nullable: true
+          maxLength: 10
+        updated_on:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - updated_on
     Vendor:
       type: object
       description: Serializer for vendor basic info
