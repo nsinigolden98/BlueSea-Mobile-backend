@@ -291,6 +291,29 @@ def _inject_support_tag(result, generator, request, public):
                 "access their own tickets.",
             }
         )
+
+    # Sort paths alphabetically for readable documentation.
+    if isinstance(result.get("paths"), dict):
+        result["paths"] = dict(sorted(result["paths"].items()))
+
+    # Support attachment endpoints: document only multipart/form-data
+    # (images cannot be sent as urlencoded/json), keeping images as binary.
+    for path_key, path_item in result.get("paths", {}).items():
+        if not (isinstance(path_key, str) and path_key.startswith("/support")):
+            continue
+        if not isinstance(path_item, dict):
+            continue
+        for op in path_item.values():
+            if not isinstance(op, dict):
+                continue
+            if op.get("operationId") not in (
+                "support_ticket_create",
+                "support_ticket_add_message",
+            ):
+                continue
+            body = op.get("requestBody")
+            if isinstance(body, dict) and isinstance(body.get("content"), dict):
+                body["content"].pop("application/x-www-form-urlencoded", None)
     return result
 
 
