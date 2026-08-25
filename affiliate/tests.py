@@ -9,10 +9,13 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import Profile
+from accounts.crypto import encrypt_pin
 from market_place.models import EventInfo, IssuedTicket, TicketType, TicketVendor
 from wallet.models import Wallet
 
 from .models import AffiliateLink, AffiliateProfile, AffiliateSale
+
+enc = encrypt_pin
 
 BLANK_GIF = (
     b"\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00"
@@ -95,7 +98,7 @@ class AffiliateFlowTestCase(APITestCase):
             "other@example.com", "08010000004", "Other", "User"
         )
 
-        self.buyer_user.set_transaction_pin("1234")
+        self.buyer_user.set_transaction_pin(enc("1234"))
 
     def _make_user(self, email, phone, surname, other_names):
         user = Profile.objects.create_user(
@@ -165,7 +168,7 @@ class AffiliateFlowTestCase(APITestCase):
             {
                 "ticket_type": "Regular",
                 "quantity": 2,
-                "transaction_pin": "1234",
+                "transaction_pin": enc("1234"),
                 "affiliate_username": "smokeaff",
             },
             format="json",
@@ -219,7 +222,7 @@ class AffiliateFlowTestCase(APITestCase):
             {
                 "ticket_type": "Regular",
                 "quantity": 1,
-                "transaction_pin": "1234",
+                "transaction_pin": enc("1234"),
                 "affiliate_username": "smokeaff",
             },
             format="json",
@@ -236,7 +239,7 @@ class AffiliateFlowTestCase(APITestCase):
         self.assertIsNotNone(ticket)
         cancel = self.client.post(
             reverse("cancel-ticket", kwargs={"ticket_id": ticket.id}),
-            {"reason": "changed my mind", "transaction_pin": "1234"},
+            {"reason": "changed my mind", "transaction_pin": enc("1234")},
             format="json",
         )
         self.assertEqual(cancel.status_code, status.HTTP_200_OK)

@@ -225,9 +225,9 @@ class PurchaseTicketSerializer(serializers.Serializer):
         required=False,
         allow_null=True,
         allow_blank=True,
-        min_length=4,
-        max_length=6,
-        help_text="Transaction PIN (required only for paid events)",
+        max_length=512,
+        write_only=True,
+        help_text="RSA-OAEP encrypted transaction PIN (base64)",
     )
     attendees = serializers.ListField(
         child=AttendeeSerializer(),
@@ -577,9 +577,9 @@ class CancelTicketSerializer(serializers.Serializer):
     transaction_pin = serializers.CharField(
         required=False,
         allow_blank=True,
-        min_length=4,
-        max_length=6,
-        help_text="Transaction PIN (required for paid tickets only)",
+        max_length=512,
+        write_only=True,
+        help_text="RSA-OAEP encrypted transaction PIN (base64)",
     )
 
 

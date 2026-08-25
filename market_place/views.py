@@ -37,6 +37,7 @@ import base64
 from django.core.files.base import ContentFile
 from rest_framework.throttling import UserRateThrottle
 from accounts.models import Profile
+from accounts.pin_security import verify_pin_with_lockout
 from django.db import models
 from datetime import datetime
 
@@ -707,7 +708,14 @@ class PurchaseTicketView(APIView):
         #     }, status=status.HTTP_404_NOT_FOUND)
 
         # Verify transaction PIN
-        if not request.user.verify_transaction_pin(transaction_pin):
+        pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+        if pin_result.locked:
+            retry_min = int(pin_result.retry_after // 60) + 1
+            return Response(
+                {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        if not pin_result.ok:
             return Response(
                 {"error": "Invalid transaction PIN", "state": False},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -1569,7 +1577,14 @@ class CancelTicketView(APIView):
                 )
 
             # Verify PIN - request.user IS the Profile, no need for Profile.objects.get()
-            if not request.user.verify_transaction_pin(transaction_pin):
+            pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+            if pin_result.locked:
+                retry_min = int(pin_result.retry_after // 60) + 1
+                return Response(
+                    {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            if not pin_result.ok:
                 return Response(
                     {"error": "Invalid transaction PIN", "state": False},
                     status=status.HTTP_400_BAD_REQUEST,

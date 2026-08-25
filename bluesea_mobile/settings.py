@@ -268,6 +268,11 @@ REST_FRAMEWORK = {
     },
 }
 
+# Transaction PIN security
+PIN_RSA_PRIVATE_KEY = os.environ.get("PIN_RSA_PRIVATE_KEY", "")
+PIN_MAX_ATTEMPTS = int(os.environ.get("PIN_MAX_ATTEMPTS", "5"))
+PIN_LOCKOUT_MINUTES = int(os.environ.get("PIN_LOCKOUT_MINUTES", "15"))
+
 
 SPECTACULAR_SETTINGS = {
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],

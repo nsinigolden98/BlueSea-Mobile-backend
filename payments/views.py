@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
+from accounts.pin_security import verify_pin_with_lockout
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -347,7 +348,14 @@ class GroupPaymentViews(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not request.user.verify_transaction_pin(transaction_pin):
+        pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+        if pin_result.locked:
+            retry_min = int(pin_result.retry_after // 60) + 1
+            return Response(
+                {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        if not pin_result.ok:
             return Response(
                 {"error": "Invalid transaction PIN"}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -829,7 +837,14 @@ class AirtimeTopUpViews(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if not request.user.verify_transaction_pin(transaction_pin):
+            pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+            if pin_result.locked:
+                retry_min = int(pin_result.retry_after // 60) + 1
+                return Response(
+                    {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            if not pin_result.ok:
                 return Response(
                     {"error": "Invalid transaction PIN", "success": False},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -973,7 +988,14 @@ class MTNDataTopUpViews(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if not request.user.verify_transaction_pin(transaction_pin):
+            pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+            if pin_result.locked:
+                retry_min = int(pin_result.retry_after // 60) + 1
+                return Response(
+                    {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            if not pin_result.ok:
                 return Response(
                     {"error": "Invalid transaction PIN", "success": False},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -1120,7 +1142,14 @@ class AirtelDataTopUpViews(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if not request.user.verify_transaction_pin(transaction_pin):
+            pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+            if pin_result.locked:
+                retry_min = int(pin_result.retry_after // 60) + 1
+                return Response(
+                    {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            if not pin_result.ok:
                 return Response(
                     {"error": "Invalid transaction PIN", "success": False},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -1263,7 +1292,14 @@ class EtisalatDataTopUpViews(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if not request.user.verify_transaction_pin(transaction_pin):
+            pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+            if pin_result.locked:
+                retry_min = int(pin_result.retry_after // 60) + 1
+                return Response(
+                    {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            if not pin_result.ok:
                 return Response(
                     {"error": "Invalid transaction PIN", "success": False},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -1406,7 +1442,14 @@ class GloDataTopUpViews(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if not request.user.verify_transaction_pin(transaction_pin):
+            pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+            if pin_result.locked:
+                retry_min = int(pin_result.retry_after // 60) + 1
+                return Response(
+                    {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            if not pin_result.ok:
                 return Response(
                     {"error": "Invalid transaction PIN", "success": False},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -1553,7 +1596,14 @@ class DSTVPaymentViews(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if not request.user.verify_transaction_pin(transaction_pin):
+            pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+            if pin_result.locked:
+                retry_min = int(pin_result.retry_after // 60) + 1
+                return Response(
+                    {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            if not pin_result.ok:
                 return Response(
                     {"error": "Invalid transaction PIN", "success": False},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -1700,7 +1750,14 @@ class GOTVPaymentViews(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if not request.user.verify_transaction_pin(transaction_pin):
+            pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+            if pin_result.locked:
+                retry_min = int(pin_result.retry_after // 60) + 1
+                return Response(
+                    {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            if not pin_result.ok:
                 return Response(
                     {"error": "Invalid transaction PIN", "success": False},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -1846,7 +1903,14 @@ class StartimesPaymentViews(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if not request.user.verify_transaction_pin(transaction_pin):
+            pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+            if pin_result.locked:
+                retry_min = int(pin_result.retry_after // 60) + 1
+                return Response(
+                    {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            if not pin_result.ok:
                 return Response(
                     {"error": "Invalid transaction PIN", "success": False},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -1993,7 +2057,14 @@ class ShowMaxPaymentViews(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if not request.user.verify_transaction_pin(transaction_pin):
+            pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+            if pin_result.locked:
+                retry_min = int(pin_result.retry_after // 60) + 1
+                return Response(
+                    {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            if not pin_result.ok:
                 return Response(
                     {"error": "Invalid transaction PIN", "success": False},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -2139,7 +2210,14 @@ class ElectricityPaymentViews(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if not request.user.verify_transaction_pin(transaction_pin):
+            pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+            if pin_result.locked:
+                retry_min = int(pin_result.retry_after // 60) + 1
+                return Response(
+                    {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            if not pin_result.ok:
                 return Response(
                     {"error": "Invalid transaction PIN", "success": False},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -2267,7 +2345,14 @@ class WAECRegitrationViews(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not request.user.verify_transaction_pin(transaction_pin):
+        pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+        if pin_result.locked:
+            retry_min = int(pin_result.retry_after // 60) + 1
+            return Response(
+                {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        if not pin_result.ok:
             return Response(
                 {"error": "Invalid transaction PIN"}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -2391,7 +2476,14 @@ class WAECResultCheckerViews(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not request.user.verify_transaction_pin(transaction_pin):
+        pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+        if pin_result.locked:
+            retry_min = int(pin_result.retry_after // 60) + 1
+            return Response(
+                {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        if not pin_result.ok:
             return Response(
                 {"error": "Invalid transaction PIN"}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -2519,7 +2611,14 @@ class JAMBRegistrationViews(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not request.user.verify_transaction_pin(transaction_pin):
+        pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+        if pin_result.locked:
+            retry_min = int(pin_result.retry_after // 60) + 1
+            return Response(
+                {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        if not pin_result.ok:
             return Response(
                 {"error": "Invalid transaction PIN"}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -2724,7 +2823,14 @@ class InternalTransferView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not request.user.verify_transaction_pin(transaction_pin):
+        pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+        if pin_result.locked:
+            retry_min = int(pin_result.retry_after // 60) + 1
+            return Response(
+                {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        if not pin_result.ok:
             return Response(
                 {"error": "Invalid transaction PIN"}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -2894,7 +3000,14 @@ class WithdrawalView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not request.user.verify_transaction_pin(transaction_pin):
+        pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+        if pin_result.locked:
+            retry_min = int(pin_result.retry_after // 60) + 1
+            return Response(
+                {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        if not pin_result.ok:
             return Response(
                 {"error": "Invalid transaction PIN", "success": False},
                 status=status.HTTP_400_BAD_REQUEST,
