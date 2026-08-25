@@ -999,6 +999,72 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /autotopup/create/:
+    post:
+      operationId: autotopup_create_create
+      description: Schedule a new auto top-up. Funds will be locked from wallet. Requires
+        transaction PIN.
+      summary: Create a new auto top-up
+      tags:
+      - Auto Top-Up
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoTopUpCreate'
+            examples:
+              AirtimeAutoTop-Up:
+                value:
+                  service_type: airtime
+                  amount: '100.00'
+                  phone_number: 08012345678
+                  network: mtn
+                  start_date: '2025-11-02T10:00:00Z'
+                  repeat_days: 7
+                  is_active: true
+                  transaction_pin: '1234'
+                summary: Airtime Auto Top-Up
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AutoTopUpCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AutoTopUpCreate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoTopUp'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /autotopup/list/:
+    get:
+      operationId: autotopup_list_list
+      description: Retrieve all auto top-up schedules for the authenticated user.
+      summary: List user's auto top-ups
+      tags:
+      - Auto Top-Up
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AutoTopUp'
+          description: ''
   /autotopup/{id}/:
     get:
       operationId: autotopup_retrieve
@@ -1256,72 +1322,6 @@ paths:
               schema:
                 type: object
                 additionalProperties: {}
-          description: ''
-  /autotopup/create/:
-    post:
-      operationId: autotopup_create_create
-      description: Schedule a new auto top-up. Funds will be locked from wallet. Requires
-        transaction PIN.
-      summary: Create a new auto top-up
-      tags:
-      - Auto Top-Up
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AutoTopUpCreate'
-            examples:
-              AirtimeAutoTop-Up:
-                value:
-                  service_type: airtime
-                  amount: '100.00'
-                  phone_number: 08012345678
-                  network: mtn
-                  start_date: '2025-11-02T10:00:00Z'
-                  repeat_days: 7
-                  is_active: true
-                  transaction_pin: '1234'
-                summary: Airtime Auto Top-Up
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AutoTopUpCreate'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/AutoTopUpCreate'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AutoTopUp'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-  /autotopup/list/:
-    get:
-      operationId: autotopup_list_list
-      description: Retrieve all auto top-up schedules for the authenticated user.
-      summary: List user's auto top-ups
-      tags:
-      - Auto Top-Up
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AutoTopUp'
           description: ''
   /bonus/campaigns/:
     get:
@@ -1645,6 +1645,101 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /marketplace/events/all/:
+    get:
+      operationId: marketplace_events_all_list
+      description: Get all approved events with ticket types and pricing information.
+        Optionally filter by category.
+      summary: List all approved events
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+        description: Filter by category (Music, Conference, Sports, Networking)
+      tags:
+      - Events
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventInfo'
+          description: ''
+  /marketplace/events/create/:
+    post:
+      operationId: marketplace_events_create_create
+      description: Create a new event with ticket information. Only admin or verified
+        vendors can create events.
+      summary: Create a new event
+      tags:
+      - Events
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateEvent'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateEvent'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventInfo'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /marketplace/events/public/{event_id}/:
+    get:
+      operationId: marketplace_events_public_retrieve
+      description: Retrieve details of an approved event without authentication.
+      summary: Get public event details
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Events
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventInfo'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /marketplace/events/{event_id}/:
     get:
       operationId: marketplace_events_retrieve
@@ -1861,101 +1956,6 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
-  /marketplace/events/all/:
-    get:
-      operationId: marketplace_events_all_list
-      description: Get all approved events with ticket types and pricing information.
-        Optionally filter by category.
-      summary: List all approved events
-      parameters:
-      - in: query
-        name: category
-        schema:
-          type: string
-        description: Filter by category (Music, Conference, Sports, Networking)
-      tags:
-      - Events
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/EventInfo'
-          description: ''
-  /marketplace/events/create/:
-    post:
-      operationId: marketplace_events_create_create
-      description: Create a new event with ticket information. Only admin or verified
-        vendors can create events.
-      summary: Create a new event
-      tags:
-      - Events
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/CreateEvent'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CreateEvent'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EventInfo'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '403':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-  /marketplace/events/public/{event_id}/:
-    get:
-      operationId: marketplace_events_public_retrieve
-      description: Retrieve details of an approved event without authentication.
-      summary: Get public event details
-      parameters:
-      - in: path
-        name: event_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - Events
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EventInfo'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
   /marketplace/my-scanner-assignments/:
     get:
       operationId: marketplace_my_scanner_assignments_retrieve
@@ -2033,6 +2033,80 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/TicketList'
+          description: ''
+  /marketplace/tickets/my/:
+    get:
+      operationId: marketplace_tickets_my_list
+      description: Retrieve all tickets purchased by or assigned to the authenticated
+        user
+      summary: Get my tickets
+      tags:
+      - Tickets
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IssuedTicket'
+          description: ''
+  /marketplace/tickets/scan/:
+    post:
+      operationId: marketplace_tickets_scan_create
+      description: Scan a ticket QR code to validate and mark as used. Requires scanner
+        assignment or staff access.
+      summary: Scan and validate ticket QR code
+      tags:
+      - Scanner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                qr_data:
+                  type: string
+                  description: QR code data from scanner
+                event_id:
+                  type: string
+                  format: uuid
+                  description: Event UUID being scanned for
+              required:
+              - qr_data
+              - event_id
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
   /marketplace/tickets/{ticket_id}/:
     get:
@@ -2161,80 +2235,6 @@ paths:
               required:
               - recipient_email
               - recipient_name
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '403':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-  /marketplace/tickets/my/:
-    get:
-      operationId: marketplace_tickets_my_list
-      description: Retrieve all tickets purchased by or assigned to the authenticated
-        user
-      summary: Get my tickets
-      tags:
-      - Tickets
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/IssuedTicket'
-          description: ''
-  /marketplace/tickets/scan/:
-    post:
-      operationId: marketplace_tickets_scan_create
-      description: Scan a ticket QR code to validate and mark as used. Requires scanner
-        assignment or staff access.
-      summary: Scan and validate ticket QR code
-      tags:
-      - Scanner
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                qr_data:
-                  type: string
-                  description: QR code data from scanner
-                event_id:
-                  type: string
-                  format: uuid
-                  description: Event UUID being scanned for
-              required:
-              - qr_data
-              - event_id
       security:
       - jwtAuth: []
       responses:
@@ -2546,6 +2546,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotificationListResponse'
           description: ''
+  /notifications/mark-all-read/:
+    post:
+      operationId: notifications_mark_all_read_create
+      summary: Mark all notifications as read
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /notifications/{notification_id}/delete/:
     delete:
       operationId: notifications_delete_destroy
@@ -2598,22 +2614,6 @@ paths:
                 additionalProperties: {}
           description: ''
         '404':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-  /notifications/mark-all-read/:
-    post:
-      operationId: notifications_mark_all_read_create
-      summary: Mark all notifications as read
-      tags:
-      - Notifications
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
           content:
             application/json:
               schema:
@@ -2673,6 +2673,58 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /payments/airtime-buyback/:
+    post:
+      operationId: payments_airtime_buyback_create
+      description: Convert airtime to wallet cash balance. Requires JWT; validates
+        PIN and wallet.
+      summary: Convert airtime to cash
+      tags:
+      - Payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Airtime2Cash'
+            examples:
+              RequestExample:
+                value:
+                  amount: 100
+                  network: mtn
+                  phone_number: 08012345678
+                summary: Request Example
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Airtime2Cash'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Airtime2Cash'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                ResponseExample:
+                  value:
+                    message: Airtime converted to wallet balance
+                    request_id: 20260820ABCD1234
+                    response_description: TRANSACTION SUCCESSFUL
+                    state: true
+                  summary: Response Example
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /payments/airtime/:
     post:
       operationId: payments_airtime_create
@@ -2714,58 +2766,6 @@ paths:
                   value:
                     amount: '100'
                     message: Transaction successful
-                    request_id: 20260820ABCD1234
-                    response_description: TRANSACTION SUCCESSFUL
-                    state: true
-                  summary: Response Example
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-  /payments/airtime-buyback/:
-    post:
-      operationId: payments_airtime_buyback_create
-      description: Convert airtime to wallet cash balance. Requires JWT; validates
-        PIN and wallet.
-      summary: Convert airtime to cash
-      tags:
-      - Payments
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Airtime2Cash'
-            examples:
-              RequestExample:
-                value:
-                  amount: 100
-                  network: mtn
-                  phone_number: 08012345678
-                summary: Request Example
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Airtime2Cash'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Airtime2Cash'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-              examples:
-                ResponseExample:
-                  value:
-                    message: Airtime converted to wallet balance
                     request_id: 20260820ABCD1234
                     response_description: TRANSACTION SUCCESSFUL
                     state: true
@@ -3225,111 +3225,6 @@ paths:
                       total_amount: '1000.00'
                   summary: Response Example
           description: ''
-  /payments/group/{group_id}/:
-    get:
-      operationId: payments_group_retrieve
-      description: Get detailed info about a group including its members. Requires
-        JWT and group membership.
-      summary: Get group details
-      parameters:
-      - in: path
-        name: group_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - Group Payments
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-              examples:
-                ResponseExample:
-                  value:
-                    group:
-                      current_amount: '0'
-                      id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                      join_code: ABC123
-                      member_count: 3
-                      members:
-                      - email: a@b.com
-                        id: 1
-                        name: A B
-                        role: owner
-                      name: Family Group
-                      total_amount: '10000'
-                    success: true
-                  summary: Response Example
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-  /payments/group/{group_id}/update/:
-    patch:
-      operationId: payments_group_update_partial_update
-      description: Update group details (e.g. sub_number). Requires JWT and owner
-        role.
-      summary: Update group details
-      parameters:
-      - in: path
-        name: group_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - Group Payments
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: {}
-          application/x-www-form-urlencoded:
-            schema:
-              type: object
-              additionalProperties: {}
-          multipart/form-data:
-            schema:
-              type: object
-              additionalProperties: {}
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-              examples:
-                ResponseExample:
-                  value:
-                    group:
-                      id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                      name: Family Group
-                      sub_number: '2'
-                    message: Group updated successfully
-                    success: true
-                  summary: Response Example
-          description: ''
-        '403':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
   /payments/group/add-member/:
     post:
       operationId: payments_group_add_member_create
@@ -3663,6 +3558,111 @@ paths:
                     status: active
                     target_amount: '10000'
                   summary: Response Example
+          description: ''
+  /payments/group/{group_id}/:
+    get:
+      operationId: payments_group_retrieve
+      description: Get detailed info about a group including its members. Requires
+        JWT and group membership.
+      summary: Get group details
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Group Payments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                ResponseExample:
+                  value:
+                    group:
+                      current_amount: '0'
+                      id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                      join_code: ABC123
+                      member_count: 3
+                      members:
+                      - email: a@b.com
+                        id: 1
+                        name: A B
+                        role: owner
+                      name: Family Group
+                      total_amount: '10000'
+                    success: true
+                  summary: Response Example
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /payments/group/{group_id}/update/:
+    patch:
+      operationId: payments_group_update_partial_update
+      description: Update group details (e.g. sub_number). Requires JWT and owner
+        role.
+      summary: Update group details
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Group Payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: {}
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: {}
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                ResponseExample:
+                  value:
+                    group:
+                      id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                      name: Family Group
+                      sub_number: '2'
+                    message: Group updated successfully
+                    success: true
+                  summary: Response Example
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
   /payments/internal-transfer/:
     post:
@@ -4309,9 +4309,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/CreateTicket'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CreateTicket'
         required: true
       security:
       - jwtAuth: []
@@ -4404,9 +4401,6 @@ paths:
       requestBody:
         content:
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/AddMessage'
-          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/AddMessage'
         required: true
