@@ -69,14 +69,16 @@ class SupportTicketListView(APIView):
         ],
     )
     def get(self, request):
-        tickets = SupportTicket.objects.filter(user=request.user).order_by(
-            "-created_at"
+        tickets = (
+            SupportTicket.objects.filter(user=request.user)
+            .prefetch_related("messages__sender", "messages__attachments")
+            .order_by("-created_at")
         )
         serializer = SupportTicketSerializer(
             tickets, many=True, context={"request": request}
         )
         return Response(
-            {"count": tickets.count(), "tickets": serializer.data},
+            {"count": len(serializer.data), "tickets": serializer.data},
             status=status.HTTP_200_OK,
         )
 
@@ -191,14 +193,17 @@ class SupportTicketDetailView(APIView):
         ],
     )
     def get(self, request, ticket_id):
-        try:
-            ticket = SupportTicket.objects.get(id=ticket_id, user=request.user)
-            serializer = SupportTicketSerializer(ticket, context={"request": request})
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except SupportTicket.DoesNotExist:
+        ticket = (
+            SupportTicket.objects.filter(id=ticket_id, user=request.user)
+            .prefetch_related("messages__sender", "messages__attachments")
+            .first()
+        )
+        if ticket is None:
             return Response(
                 {"error": "Ticket not found"}, status=status.HTTP_404_NOT_FOUND
             )
+        serializer = SupportTicketSerializer(ticket, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="Add a message to a support ticket",
