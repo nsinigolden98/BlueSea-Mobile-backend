@@ -6,6 +6,7 @@ from django.db import transaction as db_transaction
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from django.db.models import Count, Q
 from .models import BonusPoint, BonusHistory, BonusCampaign, Referral, User
 from .serializers import (
     BonusPointSerializer,
@@ -272,9 +273,15 @@ class ReferralView(APIView):
         tags=["Bonus & Rewards"],
     )
     def get(self, request):
-        referrals = Referral.objects.filter(referrer=request.user)
-        referral_count = referrals.count()
-        completed_count = referrals.filter(status="completed").count()
+        referrals = Referral.objects.filter(
+            referrer=request.user
+        ).select_related("referrer", "referred_user")
+        counts = referrals.aggregate(
+            total=Count("id"),
+            completed=Count("id", filter=Q(status="completed")),
+        )
+        referral_count = counts["total"]
+        completed_count = counts["completed"]
         serializer = ReferralSerializer(referrals, many=True)
 
         return Response(
