@@ -1,5 +1,7 @@
 from django.urls import reverse
+from django.conf import settings
 from django.test import override_settings
+from unittest import mock
 from rest_framework import status
 from rest_framework.test import APITestCase
 from django.utils import timezone
@@ -264,3 +266,78 @@ class CreateEventModeTestCase(APITestCase):
         ser = CreateEventSerializer(data=self._valid_data(event_mode="spaceship"))
         self.assertFalse(ser.is_valid())
         self.assertIn("event_mode", ser.errors)
+
+
+@override_settings(
+    SECURE_SSL_REDIRECT=False,
+)
+@mock.patch("silk.middleware._should_intercept", return_value=False)
+class MarketPlaceQueryCountTestCase(APITestCase):
+    def setUp(self):
+        from market_place.models import TicketType, IssuedTicket
+
+        self.user = Profile.objects.create_user(
+            email="mplist@example.com",
+            phone="08010000001",
+            surname="MP",
+            other_names="List",
+            role="user",
+        )
+        self.vendor = TicketVendor.objects.create(
+            user=self.user,
+            business_type="individual",
+            brand_name="MP Brand",
+            legal_full_name="MP Legal",
+            phone_number=self.user.phone,
+            email=self.user.email,
+            is_verified=True,
+        )
+        for i in range(3):
+            event = EventInfo.objects.create(
+                vendor=self.vendor,
+                event_title=f"E{i}",
+                hosted_by="MP Brand",
+                category="Music",
+                event_date=timezone.now() + timedelta(days=1),
+                event_location="Lagos",
+                is_approved=True,
+                is_free=False,
+            )
+            tt = TicketType.objects.create(
+                event=event, name="Regular", price=100, quantity_available=10
+            )
+            for j in range(2):
+                IssuedTicket.objects.create(
+                    event=event,
+                    ticket_type=tt,
+                    owner_name="Owner",
+                    owner_email=self.user.email,
+                    purchased_by=self.user,
+                    qr_code=f"QR-{i}-{j}",
+                    status="used",
+                )
+            IssuedTicket.objects.create(
+                event=event,
+                ticket_type=tt,
+                owner_name="Owner",
+                owner_email=self.user.email,
+                purchased_by=self.user,
+                qr_code=f"QR-{i}-c",
+                status="canceled",
+            )
+
+    def test_event_list_query_count_is_bounded(self, mock_should_wrap):
+        self.client.force_authenticate(user=self.user)
+        # main query (select_related vendor + annotate) + prefetch ticket_types
+        with self.assertNumQueries(2):
+            resp = self.client.get(reverse("event-list"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.data), 3)
+
+    def test_my_tickets_query_count_is_bounded(self, mock_should_wrap):
+        self.client.force_authenticate(user=self.user)
+        # aggregate stats + main select_related query
+        with self.assertNumQueries(2):
+            resp = self.client.get(reverse("my-tickets"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.data["tickets"]), 9)

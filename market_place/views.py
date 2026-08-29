@@ -26,6 +26,7 @@ from django.utils import timezone
 from decimal import Decimal
 import secrets
 from django.db import transaction
+from django.db.models import Count, Q
 import csv
 from wallet.models import Wallet
 from bonus.models import BonusPoint
@@ -461,8 +462,17 @@ class EventListView(APIView):
     )
     def get(self, request):
         # Base query: only approved events
-        events = EventInfo.objects.filter(is_approved=True).prefetch_related(
-            "ticket_types"
+        events = (
+            EventInfo.objects.filter(is_approved=True)
+            .select_related("vendor")
+            .prefetch_related("ticket_types")
+            .annotate(
+                tickets_sold_annotated=Count(
+                    "issued_tickets",
+                    filter=~Q(issued_tickets__status="canceled"),
+                    distinct=True,
+                )
+            )
         )
 
         # Filter by category if provided
@@ -860,7 +870,9 @@ class MyTicketsView(APIView):
             purchased_by=user
         ) | IssuedTicket.objects.filter(owner_email=user.email)
 
-        tickets = tickets.select_related("ticket_type", "event").order_by("-created_at")
+        tickets = tickets.select_related(
+            "ticket_type", "event", "event__vendor"
+        ).order_by("-created_at")
 
         serializer = IssuedTicketSerializer(tickets, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -1292,7 +1304,7 @@ class TicketListView(APIView):
         )
 
         return Response(
-            {"state": True, "count": tickets.count(), "tickets": serializer.data},
+            {"state": True, "count": len(serializer.data), "tickets": serializer.data},
             status=status.HTTP_200_OK,
         )
 
@@ -1325,13 +1337,13 @@ class MyTicketsListView(APIView):
         ).select_related("event", "ticket_type", "event__vendor")
 
         # Calculate statistics
-        stats = {
-            "all": base_tickets.count(),
-            "upcoming": base_tickets.filter(status="upcoming").count(),
-            "used": base_tickets.filter(status="used").count(),
-            "expired": base_tickets.filter(status="expired").count(),
-            "canceled": base_tickets.filter(status="canceled").count(),
-        }
+        stats = base_tickets.aggregate(
+            all=Count("id"),
+            upcoming=Count("id", filter=Q(status="upcoming")),
+            used=Count("id", filter=Q(status="used")),
+            expired=Count("id", filter=Q(status="expired")),
+            canceled=Count("id", filter=Q(status="canceled")),
+        )
 
         # Filter by status
         if status_filter != "all":
@@ -1366,7 +1378,7 @@ class TicketDetailView(APIView):
         """Get single ticket details - only if you're the current owner"""
         try:
             ticket = IssuedTicket.objects.select_related(
-                "event", "ticket_type", "purchased_by", "scanned_by"
+                "event", "event__vendor", "ticket_type", "purchased_by", "scanned_by"
             ).get(id=ticket_id)
         except IssuedTicket.DoesNotExist:
             return Response(
@@ -2095,24 +2107,28 @@ class VendorTicketsList(APIView):
             )
 
         # Calculate statistics
-        stats = {
-            "total_tickets": IssuedTicket.objects.filter(event__vendor=vendor).count(),
-            "upcoming": IssuedTicket.objects.filter(
-                event__vendor=vendor, status="upcoming"
-            ).count(),
-            "used": IssuedTicket.objects.filter(
-                event__vendor=vendor, status="used"
-            ).count(),
-            "expired": IssuedTicket.objects.filter(
-                event__vendor=vendor, status="expired"
-            ).count(),
-            "canceled": IssuedTicket.objects.filter(
-                event__vendor=vendor, status="canceled"
-            ).count(),
-        }
+        stats = IssuedTicket.objects.filter(event__vendor=vendor).aggregate(
+            total_tickets=Count("id"),
+            upcoming=Count("id", filter=Q(status="upcoming")),
+            used=Count("id", filter=Q(status="used")),
+            expired=Count("id", filter=Q(status="expired")),
+            canceled=Count("id", filter=Q(status="canceled")),
+        )
 
         # Get event breakdown
-        vendor_events = EventInfo.objects.filter(vendor=vendor).order_by("-event_date")
+        vendor_events = (
+            EventInfo.objects.filter(vendor=vendor)
+            .select_related("vendor")
+            .prefetch_related("ticket_types")
+            .annotate(
+                tickets_sold_annotated=Count(
+                    "issued_tickets",
+                    filter=~Q(issued_tickets__status="canceled"),
+                    distinct=True,
+                )
+            )
+            .order_by("-event_date")
+        )
         all_event = EventInfoSerializer(vendor_events, many=True)
 
         return Response(
