@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.db.models import Prefetch
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -162,7 +163,14 @@ class AutoTopUpDetailView(APIView):
         try:
             return (
                 AutoTopUp.objects.select_related("user__wallet")
-                .prefetch_related("history")
+                .prefetch_related(
+                    Prefetch(
+                        "history",
+                        queryset=AutoTopUpHistory.objects.select_related(
+                            "auto_topup"
+                        ).order_by("-executed_at"),
+                    )
+                )
                 .get(pk=pk, user=user)
             )
         except AutoTopUp.DoesNotExist:
@@ -484,13 +492,18 @@ class AutoTopUpHistoryView(APIView):
     )
     def get(self, request, pk):
         try:
-            auto_topup = AutoTopUp.objects.get(pk=pk, user=request.user)
+            AutoTopUp.objects.get(pk=pk, user=request.user)
         except AutoTopUp.DoesNotExist:
             return Response(
                 {"error": "Auto top-up not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
-        # Optimized query
-        history = auto_topup.history.all().order_by("-executed_at")
+        history = (
+            AutoTopUpHistory.objects.filter(
+                auto_topup__user=request.user, auto_topup_id=pk
+            )
+            .select_related("auto_topup")
+            .order_by("-executed_at")
+        )
         serializer = AutoTopUpHistorySerializer(history, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
