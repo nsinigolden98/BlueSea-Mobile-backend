@@ -4,6 +4,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from .models import AffiliateProfile, AffiliateLink, AffiliateSale
+from payments.vtpass import generate_reference_id
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +136,7 @@ def pay_out(affiliate):
         ).select_related("affiliate__user")
     )
     if not sales:
-        return [], Decimal("0.00")
+        return [], Decimal("0.00"), None
 
     wallet = affiliate.user.wallet
     total = Decimal("0.00")
@@ -147,9 +148,15 @@ def pay_out(affiliate):
         total += sale.commission_amount
         paid.append(sale)
 
+    reference = None
     if total > 0:
-        wallet.credit(total, description="Affiliate commission payout")
-    return paid, total
+        reference = f"AFF-{generate_reference_id()}"
+        wallet.credit(
+            total,
+            description="Affiliate commission payout",
+            reference=reference,
+        )
+    return paid, total, reference
 
 
 def revoke_sale(ticket):

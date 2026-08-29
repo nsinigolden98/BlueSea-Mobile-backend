@@ -292,7 +292,7 @@ class AffiliatePayoutView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        paid, total = pay_out(profile)
+        paid, total, reference = pay_out(profile)
         if total <= 0:
             return Response(
                 {
@@ -307,6 +307,7 @@ class AffiliatePayoutView(APIView):
                 "message": f"{len(paid)} commission(s) paid out.",
                 "amount_paid": str(total),
                 "wallet_balance": str(profile.user.wallet.balance),
+                "reference": reference,
             },
             status=status.HTTP_200_OK,
         )

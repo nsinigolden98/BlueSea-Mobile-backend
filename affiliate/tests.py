@@ -203,6 +203,19 @@ class AffiliateFlowTestCase(APITestCase):
             self.affiliate_user.wallet.balance, Decimal("100000.00") + Decimal("400.00")
         )
 
+        # Payout returns a unique reference id, stored on the wallet transaction
+        self.assertIsNotNone(payout.data.get("reference"))
+        from transactions.models import WalletTransaction
+
+        last_txn = (
+            WalletTransaction.objects.filter(wallet=self.affiliate_user.wallet)
+            .order_by("-id")
+            .first()
+        )
+        self.assertIsNotNone(last_txn)
+        self.assertEqual(last_txn.reference, payout.data["reference"])
+        self.assertTrue(str(last_txn.reference).startswith("AFF-"))
+
     def test_revoke_on_cancel(self):
         self._apply(self.affiliate_user)
         profile = AffiliateProfile.objects.get(affiliate_name="smokeaff")

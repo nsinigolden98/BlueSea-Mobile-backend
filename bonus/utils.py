@@ -151,7 +151,7 @@ def award_vtu_purchase_points(user, purchase_amount, reference):
     POINTS_PER_100 = 1
 
     purchase_amount = Decimal(str(purchase_amount))
-    points = int(purchase_amount / 100) * POINTS_PER_100
+    points = round((purchase_amount / 100),1) * POINTS_PER_100
 
     if points > 0:
         return award_points(
