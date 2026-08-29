@@ -109,7 +109,7 @@ class InitializeFunding(APIView):
             if amount < Decimal('100.00'):
                 return Response({"error": "Minimum funding amount is 100.00"}, status=status.HTTP_400_BAD_REQUEST)
 
-            payment_reference = f"BS-{uuid.uuid4()}"
+            payment_reference = f"BS-DEP-{uuid.uuid4()}"
 
             # FundWallet.objects.create(
             #     user=request.user,

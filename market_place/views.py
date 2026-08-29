@@ -2218,7 +2218,7 @@ class EventWithdrawalView(APIView):
         wallet_credit = available - platform_fee
 
         # Credit the user's main wallet
-        payment_ref = f"EW{uuid.uuid4().hex[:12].upper()}"
+        payment_ref = f"BS-MARK-{uuid.uuid4().hex[:12].upper()}"
         try:
             user_wallet = request.user.wallet
             user_wallet.credit(
