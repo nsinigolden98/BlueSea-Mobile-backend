@@ -93,8 +93,35 @@ class SupportMessageInline(admin.TabularInline):
     form = SupportMessageReplyForm
     extra = 1
     can_delete = False
-    readonly_fields = ["sender", "is_admin"]
-    fields = ["sender", "is_admin", "message", "images"]
+    ordering = ["created_at"]
+    readonly_fields = ["sender", "is_admin", "created_at", "attachment_preview"]
+    fields = [
+        "sender",
+        "is_admin",
+        "created_at",
+        "message",
+        "images",
+        "attachment_preview",
+    ]
+
+    @admin.display(description="Attachments")
+    def attachment_preview(self, obj):
+        if not obj.pk:
+            return "-"
+        imgs = obj.attachments.all()
+        if not imgs:
+            return "-"
+        return format_html(
+            '<div style="display:flex; gap:4px; flex-wrap:wrap;">{}</div>',
+            format_html(
+                "".join(
+                    '<img src="{}" style="max-height:60px; border:1px solid #ccc; '
+                    'border-radius:4px;" />'.format(a.image.url)
+                    for a in imgs
+                    if a.image
+                )
+            ),
+        )
 
 
 @admin.register(SupportTicket)
@@ -106,6 +133,7 @@ class SupportTicketAdmin(admin.ModelAdmin):
         "status",
         "priority",
         "message_count",
+        "attachment_count",
         "created_at",
         "updated_at",
     ]
@@ -123,11 +151,41 @@ class SupportTicketAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return qs.annotate(message_count=Count("messages"))
+        return qs.annotate(
+            message_count=Count("messages"),
+            attachment_count=Count("messages__attachments"),
+        )
 
     @admin.display(description="Messages", ordering="message_count")
     def message_count(self, obj):
         return obj.message_count
+
+    @admin.display(description="Attachments", ordering="attachment_count")
+    def attachment_count(self, obj):
+        return obj.attachment_count
+
+    def save_formset(self, request, form, formset, change):
+        new_message_forms = []
+        if formset.model == SupportMessage:
+            for inline_form in formset:
+                instance = inline_form.instance
+                if instance.pk is None:
+                    instance.sender = request.user
+                    instance.is_admin = True
+                    new_message_forms.append(inline_form)
+        super().save_formset(request, form, formset, change)
+        if formset.model == SupportMessage:
+            for inline_form in formset:
+                instance = inline_form.instance
+                if not instance.pk:
+                    continue
+                images = inline_form.cleaned_data.get("images") or []
+                for image in images:
+                    SupportAttachment.objects.create(message=instance, image=image)
+            for inline_form in new_message_forms:
+                instance = inline_form.instance
+                if instance.is_admin:
+                    notify_admin_reply(instance)
 
 
 @admin.register(SupportMessage)
@@ -138,18 +196,55 @@ class SupportMessageAdmin(admin.ModelAdmin):
         "sender",
         "is_admin",
         "message_preview",
+        "attachment_count",
         "created_at",
     ]
     list_filter = ["is_admin", "created_at"]
     search_fields = ["message", "sender__email", "ticket__subject"]
-    readonly_fields = ["sender", "is_admin", "created_at"]
+    readonly_fields = ["sender", "is_admin", "created_at", "attachment_preview"]
     inlines = [SupportAttachmentInline]
     date_hierarchy = "created_at"
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.annotate(attachment_count=Count("attachments"))
 
     @admin.display(description="Message")
     def message_preview(self, obj):
         text = obj.message or ""
         return text[:80] + "..." if len(text) > 80 else text
+
+    @admin.display(description="Attachments", ordering="attachment_count")
+    def attachment_count(self, obj):
+        return obj.attachment_count
+
+    @admin.display(description="Preview")
+    def attachment_preview(self, obj):
+        if not obj.pk:
+            return "-"
+        imgs = obj.attachments.all()
+        if not imgs:
+            return "-"
+        return format_html(
+            '<div style="display:flex; gap:4px; flex-wrap:wrap;">{}</div>',
+            format_html(
+                "".join(
+                    '<img src="{}" style="max-height:80px; border:1px solid #ccc; '
+                    'border-radius:4px;" />'.format(a.image.url)
+                    for a in imgs
+                    if a.image
+                )
+            ),
+        )
+
+    def save_formset(self, request, form, formset, change):
+        if formset.model == SupportMessage:
+            for inline_form in formset:
+                instance = inline_form.instance
+                if instance.pk is None:
+                    instance.sender = request.user
+                    instance.is_admin = True
+        super().save_formset(request, form, formset, change)
 
 
 @admin.register(SupportAttachment)
