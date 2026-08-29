@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from django.urls import reverse
@@ -25,7 +26,12 @@ BLANK_GIF = (
 )
 
 
-@override_settings(SECURE_SSL_REDIRECT=False)
+@override_settings(
+    SECURE_SSL_REDIRECT=False,
+    MIDDLEWARE=[m for m in settings.MIDDLEWARE if "silk" not in m],
+    SILKY_INTERCEPT_REQUEST=False,
+    SILKY_META=False,
+)
 class AffiliateFlowTestCase(APITestCase):
     def setUp(self):
         # Vendor + event + ticket type
@@ -134,6 +140,18 @@ class AffiliateFlowTestCase(APITestCase):
 
         no_agreement = self._apply(self.other_user, name="othername", agreement=False)
         self.assertEqual(no_agreement.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_dashboard_query_count(self):
+        self._apply(self.affiliate_user)
+        profile = AffiliateProfile.objects.get(affiliate_name="smokeaff")
+        self._approve(profile)
+
+        self.client.force_authenticate(user=self.affiliate_user)
+        with self.assertNumQueries(4):
+            dash = self.client.get(reverse("affiliate-dashboard"))
+        self.assertEqual(dash.status_code, status.HTTP_200_OK)
+        self.assertEqual(dash.data["total_sales"], 0)
+        self.assertEqual(dash.data["total_clicks"], 0)
 
     def test_full_flow_commission_payout_and_revoke(self):
         # Apply + approve

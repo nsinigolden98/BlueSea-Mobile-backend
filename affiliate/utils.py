@@ -133,7 +133,7 @@ def pay_out(affiliate):
     sales = list(
         AffiliateSale.objects.filter(
             affiliate=affiliate, status="payable"
-        ).select_related("affiliate__user")
+        ).select_related("affiliate__user__wallet")
     )
     if not sales:
         return [], Decimal("0.00"), None

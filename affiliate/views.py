@@ -1,6 +1,7 @@
 import logging
 from decimal import Decimal
 
+from django.db.models import Count, Q, Sum
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
@@ -27,7 +28,9 @@ TAG = ["Affiliate"]
 
 
 def get_profile_or_404(user):
-    return get_object_or_404(AffiliateProfile, user=user)
+    return get_object_or_404(
+        AffiliateProfile.objects.select_related("user__wallet"), user=user
+    )
 
 
 class ApplyAffiliateView(APIView):
@@ -101,7 +104,7 @@ class AffiliateLinkView(APIView):
     )
     def get(self, request):
         profile = get_profile_or_404(request.user)
-        links = AffiliateLink.objects.filter(affiliate=profile)
+        links = AffiliateLink.objects.filter(affiliate=profile).select_related("event")
         return Response(
             AffiliateLinkSerializer(links, many=True).data, status=status.HTTP_200_OK
         )
@@ -142,7 +145,7 @@ class AffiliateLinkView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        link, created = AffiliateLink.objects.get_or_create(
+        link, created = AffiliateLink.objects.select_related("event").get_or_create(
             affiliate=profile,
             event=event,
             defaults={"commission_rate": profile.commission_rate},
@@ -220,25 +223,36 @@ class AffiliateDashboardView(APIView):
         profile = get_profile_or_404(request.user)
         sweep_payable(profile)
 
-        sales = AffiliateSale.objects.filter(affiliate=profile)
-        links = AffiliateLink.objects.filter(affiliate=profile)
+        total_clicks = (
+            AffiliateLink.objects.filter(affiliate=profile).aggregate(
+                total=Sum("clicks")
+            )["total"]
+            or 0
+        )
 
-        total_clicks = sum(link.clicks for link in links)
-        sums = {s: Decimal("0.00") for s in ("pending", "success", "payable", "paid")}
-        for sale in sales:
-            sums[sale.status] += sale.commission_amount
+        counts = AffiliateSale.objects.filter(affiliate=profile).aggregate(
+            total=Count("id"),
+            pending=Count("id", filter=Q(status="pending")),
+            success=Count("id", filter=Q(status="success")),
+            payable=Count("id", filter=Q(status="payable")),
+            paid=Count("id", filter=Q(status="paid")),
+            revoked=Count("id", filter=Q(status="revoked")),
+            pending_amount=Sum("commission_amount", filter=Q(status="pending")),
+            payable_amount=Sum("commission_amount", filter=Q(status="payable")),
+            paid_amount=Sum("commission_amount", filter=Q(status="paid")),
+        )
 
         data = {
             "total_clicks": total_clicks,
-            "total_sales": sales.count(),
-            "pending_count": sales.filter(status="pending").count(),
-            "success_count": sales.filter(status="success").count(),
-            "payable_count": sales.filter(status="payable").count(),
-            "paid_count": sales.filter(status="paid").count(),
-            "revoked_count": sales.filter(status="revoked").count(),
-            "pending_amount": sums["pending"],
-            "payable_amount": sums["payable"],
-            "paid_amount": sums["paid"],
+            "total_sales": counts["total"],
+            "pending_count": counts["pending"],
+            "success_count": counts["success"],
+            "payable_count": counts["payable"],
+            "paid_count": counts["paid"],
+            "revoked_count": counts["revoked"],
+            "pending_amount": counts["pending_amount"] or Decimal("0.00"),
+            "payable_amount": counts["payable_amount"] or Decimal("0.00"),
+            "paid_amount": counts["paid_amount"] or Decimal("0.00"),
         }
         return Response(data, status=status.HTTP_200_OK)
 
@@ -259,7 +273,9 @@ class AffiliateSalesListView(APIView):
     def get(self, request):
         profile = get_profile_or_404(request.user)
         sweep_payable(profile)
-        sales = AffiliateSale.objects.filter(affiliate=profile)
+        sales = AffiliateSale.objects.filter(affiliate=profile).select_related(
+            "affiliate", "event", "buyer"
+        )
         return Response(
             AffiliateSaleSerializer(sales, many=True).data,
             status=status.HTTP_200_OK,
