@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from django.db.models import Count, Q
 from .models import Group, GroupMember
 from accounts.pin_security import verify_pin_with_lockout
 from drf_spectacular.utils import extend_schema, OpenApiExample
@@ -319,16 +320,27 @@ class ListMyGroupsView(APIView):
             memberships = GroupMember.objects.filter(user=request.user).select_related(
                 "group"
             )
+            group_ids = [m.group_id for m in memberships]
+
+            # Single grouped aggregate instead of 3N .count() queries
+            per_group = (
+                GroupMember.objects.filter(group_id__in=group_ids)
+                .values("group_id")
+                .annotate(
+                    member_count=Count("id"),
+                    paid_members=Count("id", filter=Q(payment_status="paid")),
+                    pending_members=Count("id", filter=Q(payment_status="pending")),
+                )
+            )
+            counts_by_group = {row["group_id"]: row for row in per_group}
+
             groups = []
             for membership in memberships:
                 group = membership.group
-                member_count = GroupMember.objects.filter(group=group).count()
-                paid_members = GroupMember.objects.filter(
-                    group=group, payment_status="paid"
-                ).count()
-                pending_members = GroupMember.objects.filter(
-                    group=group, payment_status="pending"
-                ).count()
+                counts = counts_by_group.get(group.id, {})
+                member_count = counts.get("member_count", 0)
+                paid_members = counts.get("paid_members", 0)
+                pending_members = counts.get("pending_members", 0)
 
                 groups.append(
                     {
