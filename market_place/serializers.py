@@ -101,8 +101,10 @@ class EventInfoSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.IntegerField())
     def get_tickets_sold(self, obj):
         """Calculate tickets sold"""
-        issued = obj.issued_tickets.exclude(status="canceled").count()
-        return issued
+        annotated = getattr(obj, "tickets_sold_annotated", None)
+        if annotated is not None:
+            return annotated
+        return obj.issued_tickets.exclude(status="canceled").count()
 
     def validate_vendor_id(self, value):
         """Validate that vendor exists and is verified"""
