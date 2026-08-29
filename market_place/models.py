@@ -203,6 +203,12 @@ class EventInfo(models.Model):
         ("Others", "Others"),
     ]
 
+    EVENT_MODE_CHOICES = [
+        ("offline", "Offline"),
+        ("online", "Online"),
+        ("hybrid", "Hybrid"),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     vendor = models.ForeignKey(
         TicketVendor, on_delete=models.CASCADE, related_name="events"
@@ -218,7 +224,24 @@ class EventInfo(models.Model):
         help_text="Optional ticket design image",
     )
     event_date = models.DateTimeField()
-    event_location = models.CharField(max_length=255)
+    event_mode = models.CharField(
+        max_length=10,
+        choices=EVENT_MODE_CHOICES,
+        default="offline",
+        help_text="Whether the event is in-person, virtual, or both",
+    )
+    event_location = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Physical venue/address (required for offline and hybrid events)",
+    )
+    meeting_link = models.URLField(
+        max_length=500,
+        null=True,
+        blank=True,
+        help_text="Online meeting URL (required for online and hybrid events)",
+    )
     event_description = models.TextField(null=True, blank=True)
     is_free = models.BooleanField(default=False)
     quantity = models.IntegerField(

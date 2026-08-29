@@ -142,7 +142,9 @@ class CreateEventView(APIView):
             "event_title": request.data.get("event_title"),
             "event_description": request.data.get("event_description"),
             "event_date": request.data.get("event_date"),
+            "event_mode": request.data.get("event_mode"),
             "event_location": request.data.get("event_location"),
+            "meeting_link": request.data.get("meeting_link"),
             "hosted_by": request.data.get("hosted_by"),
             "category": request.data.get("category"),
             "is_free": is_free,
@@ -1111,7 +1113,9 @@ class ScanTicketView(APIView):
                                 "date": ticket.event.event_date.strftime(
                                     "%Y-%m-%d %H:%M:%S"
                                 ),
+                                "event_mode": ticket.event.event_mode,
                                 "location": ticket.event.event_location,
+                                "meeting_link": ticket.event.meeting_link,
                                 "vendor": ticket.event.vendor.brand_name,
                             },
                             "purchased_by": ticket.purchased_by.email
@@ -1223,7 +1227,11 @@ class ExportAttendeesView(APIView):
             lines = []
             lines.append(f"Attendee List for: {event.event_title}")
             lines.append(f"Event Date: {event.event_date}")
-            lines.append(f"Location: {event.event_location}")
+            lines.append(f"Event Mode: {event.get_event_mode_display()}")
+            if event.event_location:
+                lines.append(f"Location: {event.event_location}")
+            if event.meeting_link:
+                lines.append(f"Meeting Link: {event.meeting_link}")
             lines.append("=" * 80)
             lines.append("")
 
@@ -1731,7 +1739,9 @@ class ScannerDashboardView(APIView):
                     "id": str(event.id),
                     "title": event.event_title,
                     "date": event.event_date.strftime("%Y-%m-%d %H:%M:%S"),
+                    "event_mode": event.event_mode,
                     "location": event.event_location,
+                    "meeting_link": event.meeting_link,
                     "vendor": event.vendor.brand_name,
                 },
                 "statistics": {
@@ -1802,7 +1812,9 @@ class MyScannerAssignmentsView(APIView):
                     "event_id": str(event.id),
                     "event_title": event.event_title,
                     "event_date": event.event_date.strftime("%Y-%m-%d %H:%M:%S"),
+                    "event_mode": event.event_mode,
                     "event_location": event.event_location,
+                    "meeting_link": event.meeting_link,
                     "event_banner": request.build_absolute_uri(event.event_banner.url)
                     if event.event_banner
                     else None,
@@ -1829,7 +1841,9 @@ class MyScannerAssignmentsView(APIView):
                     "event_id": str(event.id),
                     "event_title": event.event_title,
                     "event_date": event.event_date.strftime("%Y-%m-%d %H:%M:%S"),
+                    "event_mode": event.event_mode,
                     "event_location": event.event_location,
+                    "meeting_link": event.meeting_link,
                     "event_banner": request.build_absolute_uri(event.event_banner.url)
                     if event.event_banner
                     else None,
