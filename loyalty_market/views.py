@@ -30,7 +30,7 @@ class RewardListView(APIView):
         rewards = Reward.objects.filter(inventory__gt=0).order_by("-created_at")
         serializer = RewardSerializer(rewards, many=True)
         return Response(
-            {"count": rewards.count(), "rewards": serializer.data},
+            {"count": len(serializer.data), "rewards": serializer.data},
             status=status.HTTP_200_OK,
         )
 
@@ -140,9 +140,11 @@ class UserRedemptionsView(APIView):
         tags=["Loyalty Market"],
     )
     def get(self, request):
-        redemptions = RedemptionTransaction.objects.filter(
-            user_id=request.user
-        ).order_by("-created_at")
+        redemptions = (
+            RedemptionTransaction.objects.filter(user_id=request.user)
+            .select_related("reward_id")
+            .order_by("-created_at")
+        )
 
         results = []
         for r in redemptions:
@@ -157,6 +159,6 @@ class UserRedemptionsView(APIView):
             )
 
         return Response(
-            {"count": redemptions.count(), "redemptions": results},
+            {"count": len(results), "redemptions": results},
             status=status.HTTP_200_OK,
         )
