@@ -165,13 +165,13 @@ class TicketTypeInline(admin.TabularInline):
 @admin.register(EventInfo)
 class EventInfoAdmin(admin.ModelAdmin):
     list_display = [
-        'event_title', 'hosted_by', 'category',
+        'event_title', 'hosted_by', 'category', 'event_mode_display',
         'event_date_display', 'event_location',
         'free_badge', 'approval_badge', 'vendor_link', 'created_at'
     ]
-    list_filter = ['category', 'is_free', 'is_approved', 'event_date', 'created_at']
-    search_fields = ['event_title', 'hosted_by', 'event_location', 'event_description', 'vendor__brand_name']
-    readonly_fields = ['id', 'created_at', 'banner_preview', 'ticket_image_preview']
+    list_filter = ['category', 'event_mode', 'is_free', 'is_approved', 'event_date', 'created_at']
+    search_fields = ['event_title', 'hosted_by', 'event_location', 'meeting_link', 'event_description', 'vendor__brand_name']
+    readonly_fields = ['id', 'created_at', 'banner_preview', 'ticket_image_preview', 'event_mode_display', 'meeting_link_preview']
     list_per_page = 25
     date_hierarchy = 'event_date'
     inlines = [TicketTypeInline]
@@ -179,10 +179,10 @@ class EventInfoAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Event Information', {
-            'fields': ('id', 'vendor', 'event_title', 'hosted_by', 'category')
+            'fields': ('id', 'vendor', 'event_title', 'hosted_by', 'category', 'event_mode')
         }),
         ('Event Details', {
-            'fields': ('event_description', 'event_location', 'event_date')
+            'fields': ('event_description', 'event_location', 'meeting_link', 'meeting_link_preview', 'event_date')
         }),
         ('Images', {
             'fields': ('event_banner', 'banner_preview', 'ticket_image', 'ticket_image_preview')
@@ -207,6 +207,21 @@ class EventInfoAdmin(admin.ModelAdmin):
             label = format_html('<span style="color:#28a745;">{}</span>', obj.event_date)
         return label
     event_date_display.short_description = 'Event Date'
+
+    @admin.display(description='Mode')
+    def event_mode_display(self, obj):
+        return obj.get_event_mode_display()
+
+    @admin.display(description='Meeting Link')
+    def meeting_link_preview(self, obj):
+        if obj.meeting_link:
+            return format_html(
+                '<a href="{}" target="_blank" style="word-break:break-all;">{}</a>',
+                obj.meeting_link,
+                obj.meeting_link,
+            )
+        return '-'
+    meeting_link_preview.short_description = 'Meeting Link'
 
     def free_badge(self, obj):
         return _bool_badge(obj.is_free, 'Free', 'Paid')

@@ -74,7 +74,9 @@ class EventInfoSerializer(serializers.ModelSerializer):
             "event_title",
             "event_description",
             "event_date",
+            "event_mode",
             "event_location",
+            "meeting_link",
             "hosted_by",
             "category",
             "is_free",
@@ -132,7 +134,9 @@ class CreateEventSerializer(serializers.ModelSerializer):
             "event_title",
             "event_description",
             "event_date",
+            "event_mode",
             "event_location",
+            "meeting_link",
             "hosted_by",
             "category",
             "is_free",
@@ -198,6 +202,35 @@ class CreateEventSerializer(serializers.ModelSerializer):
                                 "ticket_types": f"Ticket type {idx} ({ticket_type.get('name')}): invalid quantity_available format"
                             }
                         )
+
+        # Validate event mode and its required fields
+        event_mode = data.get("event_mode")
+        event_location = data.get("event_location")
+        meeting_link = data.get("meeting_link")
+
+        if event_mode == "offline":
+            if not event_location:
+                raise serializers.ValidationError(
+                    {"event_location": "event_location is required for offline events"}
+                )
+        elif event_mode == "online":
+            if not meeting_link:
+                raise serializers.ValidationError(
+                    {"meeting_link": "meeting_link is required for online events"}
+                )
+        elif event_mode == "hybrid":
+            if not event_location:
+                raise serializers.ValidationError(
+                    {"event_location": "event_location is required for hybrid events"}
+                )
+            if not meeting_link:
+                raise serializers.ValidationError(
+                    {"meeting_link": "meeting_link is required for hybrid events"}
+                )
+        elif event_mode is not None:
+            raise serializers.ValidationError(
+                {"event_mode": "event_mode must be 'offline', 'online' or 'hybrid'"}
+            )
 
         return data
 

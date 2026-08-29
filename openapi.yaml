@@ -5766,9 +5766,30 @@ components:
         event_date:
           type: string
           format: date-time
+        event_mode:
+          enum:
+          - offline
+          - online
+          - hybrid
+          type: string
+          x-spec-enum-id: 8ed50e2269c0523f
+          description: |-
+            Whether the event is in-person, virtual, or both
+
+            * `offline` - Offline
+            * `online` - Online
+            * `hybrid` - Hybrid
         event_location:
           type: string
+          nullable: true
+          description: Physical venue/address (required for offline and hybrid events)
           maxLength: 255
+        meeting_link:
+          type: string
+          format: uri
+          nullable: true
+          description: Online meeting URL (required for online and hybrid events)
+          maxLength: 500
         hosted_by:
           type: string
           description: Name of the host/organizer
@@ -5817,7 +5838,6 @@ components:
       - category
       - event_banner
       - event_date
-      - event_location
       - event_title
       - hosted_by
       - vendor
@@ -6227,9 +6247,30 @@ components:
         event_date:
           type: string
           format: date-time
+        event_mode:
+          enum:
+          - offline
+          - online
+          - hybrid
+          type: string
+          x-spec-enum-id: 8ed50e2269c0523f
+          description: |-
+            Whether the event is in-person, virtual, or both
+
+            * `offline` - Offline
+            * `online` - Online
+            * `hybrid` - Hybrid
         event_location:
           type: string
+          nullable: true
+          description: Physical venue/address (required for offline and hybrid events)
           maxLength: 255
+        meeting_link:
+          type: string
+          format: uri
+          nullable: true
+          description: Online meeting URL (required for online and hybrid events)
+          maxLength: 500
         hosted_by:
           type: string
           description: Name of the host/organizer
@@ -6293,7 +6334,6 @@ components:
       - created_at
       - event_banner
       - event_date
-      - event_location
       - event_title
       - hosted_by
       - id
