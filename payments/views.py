@@ -853,7 +853,7 @@ class AirtimeTopUpViews(APIView):
             serializer = AirtimeTopUpSerializer(data=request.data)
 
             if serializer.is_valid(raise_exception=True):
-                request_id = generate_reference_id()
+                request_id = f'BS-AIRT{generate_reference_id()}'
                 serializer.save(request_id=request_id, user=request.user)
 
                 with transaction.atomic():
@@ -1003,7 +1003,7 @@ class MTNDataTopUpViews(APIView):
 
             serializer = MTNDataTopUpSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                request_id = generate_reference_id()
+                request_id = f'BS-DAT-MTN{generate_reference_id()}'
                 serializer.save(request_id=request_id, user=request.user)
                 with transaction.atomic():
                     amount = mtn_dict[serializer.data["plan"]][1]
@@ -1157,7 +1157,7 @@ class AirtelDataTopUpViews(APIView):
 
             serializer = AirtelDataTopUpSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                request_id = generate_reference_id()
+                request_id = f'BS-DAT-AIR{generate_reference_id()}'
                 serializer.save(request_id=request_id, user=request.user)
                 with transaction.atomic():
                     amount = airtel_dict[serializer.data["plan"]][1]
@@ -1307,7 +1307,7 @@ class EtisalatDataTopUpViews(APIView):
 
             serializer = EtisalatDataTopUpSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                request_id = generate_reference_id()
+                request_id = f'BS-DAT-ETI{generate_reference_id()}'
                 serializer.save(request_id=request_id, user=request.user)
                 with transaction.atomic():
                     amount = etisalat_dict[serializer.data["plan"]][1]
@@ -1457,7 +1457,7 @@ class GloDataTopUpViews(APIView):
 
             serializer = GloDataTopUpSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                request_id = generate_reference_id()
+                request_id = f'BS-DAT-GLO{generate_reference_id()}'
                 serializer.save(request_id=request_id, user=request.user)
                 with transaction.atomic():
                     amount = glo_dict[serializer.data["plan"]][1]
@@ -1611,7 +1611,7 @@ class DSTVPaymentViews(APIView):
 
             serializer = DSTVPaymentSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                request_id = generate_reference_id()
+                request_id = f'BS-TV-DS{generate_reference_id()}'
                 serializer.save(request_id=request_id, user=request.user)
                 with transaction.atomic():
                     amount = dstv_dict[serializer.data["dstv_plan"]][1]
@@ -1765,7 +1765,7 @@ class GOTVPaymentViews(APIView):
 
             serializer = GOTVPaymentSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                request_id = generate_reference_id()
+                request_id = f'BS-TV-GO{generate_reference_id()}'
                 serializer.save(request_id=request_id, user=request.user)
                 with transaction.atomic():
                     amount = gotv_dict[serializer.data["gotv_plan"]][1]
@@ -1918,7 +1918,7 @@ class StartimesPaymentViews(APIView):
 
             serializer = StartimesPaymentSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                request_id = generate_reference_id()
+                request_id = f'BS-TV-STA{generate_reference_id()}'
                 serializer.save(request_id=request_id, user=request.user)
                 with transaction.atomic():
                     amount = startimes_dict[serializer.data["startimes_plan"]][1]
@@ -2072,7 +2072,7 @@ class ShowMaxPaymentViews(APIView):
 
             serializer = ShowMaxPaymentSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                request_id = generate_reference_id()
+                request_id = f'BS-TV-SM{generate_reference_id()}'
                 serializer.save(request_id=request_id, user=request.user)
                 with transaction.atomic():
                     amount = showmax_dict[serializer.data["showmax_plan"]][1]
@@ -2225,7 +2225,7 @@ class ElectricityPaymentViews(APIView):
 
             serializer = ElectricityPaymentSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                request_id = generate_reference_id()
+                request_id = f'BS-LIB{generate_reference_id()}'
                 serializer.save(request_id=request_id, user=request.user)
                 with transaction.atomic():
                     amount = int(serializer.data["amount"])
@@ -2359,7 +2359,7 @@ class WAECRegitrationViews(APIView):
 
         serializer = WAECRegitrationSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            request_id = generate_reference_id()
+            request_id = f'BS-WAC-{generate_reference_id()}'
             serializer.save(request_id=request_id, user=request.user)
             with transaction.atomic():
                 amount = 37500
@@ -2490,7 +2490,7 @@ class WAECResultCheckerViews(APIView):
 
         serializer = WAECResultCheckerSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            request_id = generate_reference_id()
+            request_id = f'BS-EPN-{generate_reference_id()}'
             serializer.save(request_id=request_id, user=request.user)
             with transaction.atomic():
                 amount = 5350
@@ -2626,7 +2626,7 @@ class JAMBRegistrationViews(APIView):
         serializer = JAMBRegistrationSerializer(data=request.data)
 
         if serializer.is_valid(raise_exception=True):
-            request_id = generate_reference_id()
+            request_id = f'BS-JMB-{generate_reference_id()}'
             serializer.save(request_id=request_id, user=request.user)
 
             with transaction.atomic():
@@ -2872,8 +2872,8 @@ class InternalTransferView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        sender_reference = generate_reference_id()
-        recipient_reference = generate_reference_id()
+        sender_reference = f'BS-INT-{generate_reference_id()}'
+        recipient_reference =f'BS-INT-{generate_reference_id()}'
 
         try:
             with transaction.atomic():
@@ -3022,7 +3022,7 @@ class WithdrawalView(APIView):
 
         try:
             with transaction.atomic():
-                reference_id = generate_reference_id()
+                reference_id = f'BS-WIT-{generate_reference_id()}'
                 withdrawal = Withdrawal.objects.create(
                     user=request.user,
                     account_name=account_name,
