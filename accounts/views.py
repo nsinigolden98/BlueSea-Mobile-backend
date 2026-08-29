@@ -604,7 +604,7 @@ class PasswordResetView(APIView):
             serializer = ResetPasswordSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 email = serializer.validated_data["email"]
-                user = Profile.objects.get(email=email)
+                user = serializer.user
 
                 otp = get_random_string(6, "0123456789")
                 timestamp = timezone.now()
@@ -671,8 +671,9 @@ class VerifyResetOTPView(APIView):
                 user_otp = serializer.validated_data["otp"]
 
                 try:
-                    user = Profile.objects.get(email=email)
-                    reset_record = ResetPassword.objects.get(profile=user)
+                    reset_record = ResetPassword.objects.select_related("profile").get(
+                        profile__email=email
+                    )
                 except (Profile.DoesNotExist, ResetPassword.DoesNotExist):
                     return Response(
                         {"message": "Invalid request", "state": False},
@@ -1287,7 +1288,9 @@ class LookupUserView(APIView):
             )
 
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.only("email", "other_names", "surname", "image").get(
+                email=email
+            )
             return Response(
                 {
                     "found": True,
