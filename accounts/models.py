@@ -49,6 +49,7 @@ class Profile(AbstractUser):
     referral_code = models.CharField(
         max_length=6, default=generate_referal_code, unique=True
     )
+    has_DVA = models.BooleanField(default=False, db_index=True)
 
     objects = UserManager()
 
@@ -87,6 +88,38 @@ class Profile(AbstractUser):
         except PinDecryptionError:
             return False
         return check_password(plain, self.transaction_pin)
+
+
+class PaystackDedicatedAccount(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="dva_account",
+    )
+    dedicated_account_id = models.IntegerField(unique=True, null=True, blank=True)
+    account_number = models.CharField(max_length=15, unique=True, db_index=True)
+    account_name = models.CharField(max_length=100)
+    bank_name = models.CharField(max_length=50, default="Wema Bank")
+    bank_slug = models.CharField(max_length=50, default="wema-bank")
+    bank_id = models.IntegerField(null=True, blank=True)
+    customer_code = models.CharField(max_length=50, db_index=True)
+    customer_id = models.IntegerField(null=True, blank=True)
+    phone = models.CharField(max_length=20, null=True, blank=True)
+    bvn_encrypted = models.TextField(null=True, blank=True)
+    active = models.BooleanField(default=True)
+    paystack_response = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["account_number"]),
+            models.Index(fields=["customer_code"]),
+            models.Index(fields=["user"]),
+        ]
+
+    def __str__(self):
+        return f"{self.account_number} - {self.bank_name} - {self.user.email}"
 
 
 # @receiver(post_save, sender=settings.AUTH_USER_MODEL)
