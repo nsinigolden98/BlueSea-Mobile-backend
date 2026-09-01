@@ -28,8 +28,8 @@ class CurrentUserView(APIView):
     @extend_schema(
         summary="Get current user profile",
         description=(
-            "Return the authenticated user's profile details, "
-            "including saved preferences"
+            "Return the authenticated user's profile details, including saved preferences. "
+            "If `has_DVA` is true, `dva_account` contains Wema DVA `account_number`, `account_name`, `bank_name`/`bank_slug`/`bank_id`, `customer_code`, `active`."
         ),
         responses={
             200: inline_serializer(
@@ -44,13 +44,26 @@ class CurrentUserView(APIView):
                     "image": serializers.URLField(allow_null=True, required=False),
                     "referral_code": serializers.CharField(allow_null=True),
                     "created_on": serializers.DateTimeField(),
+                    "has_DVA": serializers.BooleanField(),
+                    "dva_account": inline_serializer(
+                        name="DvaAccount",
+                        fields={
+                            "account_number": serializers.CharField(),
+                            "account_name": serializers.CharField(),
+                            "bank_name": serializers.CharField(),
+                            "bank_slug": serializers.CharField(),
+                            "bank_id": serializers.IntegerField(allow_null=True),
+                            "customer_code": serializers.CharField(),
+                            "active": serializers.BooleanField(),
+                        },
+                    ),
                     "preference": UserPreferenceSerializer(),
                 },
             )
         },
         examples=[
             OpenApiExample(
-                "Success Response",
+                "Success without DVA",
                 value={
                     "id": 1,
                     "other_names": "John",
@@ -61,6 +74,46 @@ class CurrentUserView(APIView):
                     "image": "http://example.com/media/profiles/photo.jpg",
                     "referral_code": "REF123",
                     "created_on": "2026-01-01T12:00:00Z",
+                    "has_DVA": False,
+                    "dva_account": None,
+                    "preference": {
+                        "image": "http://example.com/media/profiles/photo.jpg",
+                        "nickname": "Johnny",
+                        "gender": "male",
+                        "date_of_birth": "1990-01-01",
+                        "country": "Nigeria",
+                        "state": "Lagos",
+                        "city": "Ikeja",
+                        "street_address": "123 Main St",
+                        "landmark": "Near Plaza",
+                        "postal_code": "100001",
+                        "updated_on": "2026-01-01T12:00:00Z",
+                    },
+                },
+                response_only=True,
+            ),
+            OpenApiExample(
+                "Success with DVA",
+                value={
+                    "id": 1,
+                    "other_names": "John",
+                    "email": "user@example.com",
+                    "phone": "08012345678",
+                    "surname": "Doe",
+                    "pin_is_set": True,
+                    "image": "http://example.com/media/profiles/photo.jpg",
+                    "referral_code": "REF123",
+                    "created_on": "2026-01-01T12:00:00Z",
+                    "has_DVA": True,
+                    "dva_account": {
+                        "account_number": "0123456789",
+                        "account_name": "Test / John Doe",
+                        "bank_name": "Wema Bank",
+                        "bank_slug": "wema-bank",
+                        "bank_id": 20,
+                        "customer_code": "CUS_xxx",
+                        "active": True,
+                    },
                     "preference": {
                         "image": "http://example.com/media/profiles/photo.jpg",
                         "nickname": "Johnny",
@@ -86,6 +139,28 @@ class CurrentUserView(APIView):
 
         preference, _ = UpdateUserModel.objects.get_or_create(user=request.user)
         data["preference"] = UserPreferenceSerializer(preference).data
+
+        if not data.get("has_DVA"):
+            data["dva_account"] = None
+        elif data.get("dva_account") is None and getattr(
+            request.user, "has_DVA", False
+        ):
+            try:
+                from accounts.models import PaystackDedicatedAccount
+
+                dva = PaystackDedicatedAccount.objects.filter(user=request.user).first()
+                if dva:
+                    data["dva_account"] = {
+                        "account_number": dva.account_number,
+                        "account_name": dva.account_name,
+                        "bank_name": dva.bank_name,
+                        "bank_slug": dva.bank_slug,
+                        "bank_id": dva.bank_id,
+                        "customer_code": dva.customer_code,
+                        "active": dva.active,
+                    }
+            except Exception:
+                pass
 
         return Response(data, status=status.HTTP_200_OK)
 
