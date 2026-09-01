@@ -13,7 +13,6 @@ headers = {
 }
 
 
-
 mtn_dict = {
     "1.5GB Weekly Plan (7 Days) - N1,000": ("mtn-1500mb-1000", 1000),
     "1.8GB + 6mins + 5 SMS, Monthly - N1500": ("mtn-1800mb-1500", 1500),
@@ -24,7 +23,10 @@ mtn_dict = {
     "16.5GB + 10mins Monthly Plan - N,6500": ("mtn-data-6500", 6500),
     "18GB - 14 days - N6,000": ("mtn-14d-18gb-6000", 6000),
     "2.5GB Daily Plan - 750 Naira": ("mtn-2.5-750", 750),
-    "2.7GB + 2mins + 2GB All Night Streaming + 200MB YouTube Music, Monthly Plan - N2000": ("mtn-2.7gb-2000", 2000),
+    "2.7GB + 2mins + 2GB All Night Streaming + 200MB YouTube Music, Monthly Plan - N2000": (
+        "mtn-2.7gb-2000",
+        2000,
+    ),
     "20GB Monthly Plan - N7,500": ("mtn-20gb-7500", 7500),
     "20GB Weekly Plan - 5,000 Naira": ("mtn-20-5000", 5000),
     "230MB Daily Plan (1 Day) - N200": ("mtn-230mb-200", 200),
@@ -46,7 +48,10 @@ mtn_dict = {
     "7GB Monthly Plan - N3,500": ("mtn-5.5gb-3500", 3500),
     "MTN 1.5TB - N225,000 Broadband Router": ("mtn-1500gb-yearly", 225000),
     "MTN 14.5GB Monthly Plan - N5,000": ("mtn-14.5gb-5000", 5000),
-    "MTN 260GB + 2GB daily upon exhausting main bundle - N45,000": ("mtn-260gb-monthly", 45000),
+    "MTN 260GB + 2GB daily upon exhausting main bundle - N45,000": (
+        "mtn-260gb-monthly",
+        45000,
+    ),
     "MTN N,2500 3.5GB +5mins Monthly Plan": ("mtn-3.5gb-2500", 2500),
     "MTN N1,000 3.2GB - 2 days": ("mtn-3.2gb-1000", 1000),
     "MTN N1,000 3.5GB - (1 day)": ("mtn-3.5gb-1-1000", 1000),
@@ -58,9 +63,15 @@ mtn_dict = {
     "MTN N2500 6GB - 7 days": ("mtn-7gb-3000", 2500),
     "MTN N3,000 6.75GB Monthly": ("mtn-6.75gb-3000", 3000),
     "MTN N3,500 11GB  - 7 days": ("mtn-11gb-3500", 3500),
-    "MTN N30,000 150GB + 2GB daily - 5G Router Data (30 Days)": ("mtn-150gb-30000", 30000),
+    "MTN N30,000 150GB + 2GB daily - 5G Router Data (30 Days)": (
+        "mtn-150gb-30000",
+        30000,
+    ),
     "MTN N35,000 165GB Monthly Data Plan (30 Days)": ("mtn-165gb-35000", 35000),
-    "MTN N37,500 200GB + 5GB Youtube/MSTeams/Zoom - 5G Broadband Data (30 Days)": ("mtn-200gb-37500", 37500),
+    "MTN N37,500 200GB + 5GB Youtube/MSTeams/Zoom - 5G Broadband Data (30 Days)": (
+        "mtn-200gb-37500",
+        37500,
+    ),
     "MTN N4,500 10GB + 10mins  - 30 days": ("mtn-8gb-ex-3000", 4500),
     "MTN N500 1GB + 1.5mins - 1 day": ("mtn-1gb-350", 500),
     "MTN N900 2.5GB - 2 days": ("mtn-2-5gb-900", 900),
@@ -68,19 +79,49 @@ mtn_dict = {
 }
 
 airtel_dict = {
-    "1,000 Naira - 4GB Plan + 2GB YouTube Night + 200MB YT/IG/TT(2 Days)": ("airt-1000-2", 1000),
-    "1.5GB Binge Plan + Youtube & Social Plan Data (2 Days) - 600 Naira": ("airt-600", 600),
+    "1,000 Naira - 4GB Plan + 2GB YouTube Night + 200MB YT/IG/TT(2 Days)": (
+        "airt-1000-2",
+        1000,
+    ),
+    "1.5GB Binge Plan + Youtube & Social Plan Data (2 Days) - 600 Naira": (
+        "airt-600",
+        600,
+    ),
     "1.5GB Social Plan - 500 Naira": ("airt-social-500-7", 500),
-    "1.5GB Weekly Plan + Youtube & Social Plans (7 Days) - 1,000 Naira": ("airt-1000-7", 1000),
-    "100GB Monthly Plan + Youtube & Social Plan (30 Days) - 20,000 Naira": ("airt-20000", 20000),
-    "100GB Unlimited Uiltra 20 - Router Only (30 Days) - 20,000 Naira": ("airt-mifi-20000-30", 20000),
-    "10GB Monthly Plan + Youtube & Social Plan (30 Days) - 4,000 Naira": ("airt-4000", 4000),
-    "10GB Weekly Plan + Youtube & Social Platform (7 Days) - 3000 Naira": ("airt-3000-7", 3000),
+    "1.5GB Weekly Plan + Youtube & Social Plans (7 Days) - 1,000 Naira": (
+        "airt-1000-7",
+        1000,
+    ),
+    "100GB Monthly Plan + Youtube & Social Plan (30 Days) - 20,000 Naira": (
+        "airt-20000",
+        20000,
+    ),
+    "100GB Unlimited Uiltra 20 - Router Only (30 Days) - 20,000 Naira": (
+        "airt-mifi-20000-30",
+        20000,
+    ),
+    "10GB Monthly Plan + Youtube & Social Plan (30 Days) - 4,000 Naira": (
+        "airt-4000",
+        4000,
+    ),
+    "10GB Weekly Plan + Youtube & Social Platform (7 Days) - 3000 Naira": (
+        "airt-3000-7",
+        3000,
+    ),
     "13GB MIFI 5 Data - MiFi Only (30 Days) - 5,000 Naira": ("airt-mifi-5000-30", 5000),
-    "13GB Monthly Plan + Youtube & Social Plan (30 Days) - 5,000 Naira": ("airt-5000", 5000),
+    "13GB Monthly Plan + Youtube & Social Plan (30 Days) - 5,000 Naira": (
+        "airt-5000",
+        5000,
+    ),
     "160GB Monthly Plan (30 Days) - 30,000 Naira": ("airt-30000", 30000),
-    "18GB Monthly Plan + Youtube & Social Plan (30 Days) - 6000 Naira": ("airt-6000-30", 6000),
-    "18GB Weekly Plan + Youtube & Social Platform (7 Days) - 5000 Naira": ("airt-5000-7", 5000),
+    "18GB Monthly Plan + Youtube & Social Plan (30 Days) - 6000 Naira": (
+        "airt-6000-30",
+        6000,
+    ),
+    "18GB Weekly Plan + Youtube & Social Platform (7 Days) - 5000 Naira": (
+        "airt-5000-7",
+        5000,
+    ),
     "1GB Social Plan Plan (3 Days) - 300 Naira": ("airt-social-300-3", 300),
     "1GB Weekly Plan (7 Days) - 800 Naira": ("airt-800-7", 800),
     "200GB Monthly Plan (90 Days) - 50,000 Naira": ("airt-50000", 50000),
@@ -88,32 +129,89 @@ airtel_dict = {
     "210GB Data (30 Days) - 40,000 Naira": ("airt-40000", 40000),
     "230MB Daily Plan (2 Days) - 200 Naira - 200MB - 1Day": ("airt-200", 200),
     "250MB Night Plan (12 - 5 AM) - 50 Naira  - 1Day": ("airt-50", 50),
-    "25GB Monthly Plan + Youtube & Social Plan (30 Days) - 8,000 Naira": ("airt-8000", 8000),
-    "2GB Binge Plan + Youtube & Social Plan Data (2 Days) - 750 Naira": ("airt-750-2", 750),
-    "2GB Monthly Plan + Youtube & Social Plan (30 Days) - 1,500 Naira": ("airt-1500-30", 1500),
-    "3.5GB Weekly Plan + Youtube & Social Platform (7 Days) - 1,500 Naira": ("airt-1500-7", 1500),
+    "25GB Monthly Plan + Youtube & Social Plan (30 Days) - 8,000 Naira": (
+        "airt-8000",
+        8000,
+    ),
+    "2GB Binge Plan + Youtube & Social Plan Data (2 Days) - 750 Naira": (
+        "airt-750-2",
+        750,
+    ),
+    "2GB Monthly Plan + Youtube & Social Plan (30 Days) - 1,500 Naira": (
+        "airt-1500-30",
+        1500,
+    ),
+    "3.5GB Weekly Plan + Youtube & Social Platform (7 Days) - 1,500 Naira": (
+        "airt-1500-7",
+        1500,
+    ),
     "300MB Daily Plan (1 Day) - 300 Naira": ("airt-300-1", 300),
-    "350GB Monthly Plan + Youtube & Social Plan (120 Days) - 60,000 Naira": ("airt-60000", 60000),
-    "35GB MIFI 10 Data - MiFi Only (30 Days) - 10,000 Naira": ("airt-mifi-10000-30", 10000),
-    "35GB Monthly Plan + Youtube & Social Plan (30 Days) - 10,000 Naira": ("airt-10000", 10000),
-    "3GB Monthly Plan + Youtube & Social Plan (30 Days)- 2,000 Naira": ("airt-2000", 2000),
-    "4GB Monthly Plan + Youtube & Social Plan (30 Days) - 2,500 Naira": ("airt-2500", 2500),
+    "350GB Monthly Plan + Youtube & Social Plan (120 Days) - 60,000 Naira": (
+        "airt-60000",
+        60000,
+    ),
+    "35GB MIFI 10 Data - MiFi Only (30 Days) - 10,000 Naira": (
+        "airt-mifi-10000-30",
+        10000,
+    ),
+    "35GB Monthly Plan + Youtube & Social Plan (30 Days) - 10,000 Naira": (
+        "airt-10000",
+        10000,
+    ),
+    "3GB Monthly Plan + Youtube & Social Plan (30 Days)- 2,000 Naira": (
+        "airt-2000",
+        2000,
+    ),
+    "4GB Monthly Plan + Youtube & Social Plan (30 Days) - 2,500 Naira": (
+        "airt-2500",
+        2500,
+    ),
     "500 Naira Binge Plan 1GB": ("airt-binge-500-1", 500),
     "500MB Daily Plan (2 Days) - 350 Naira - 500MB - 2 Days": ("airt-350-500", 350),
     "500MB Weekly Plan (7 Days) - 500 Naira": ("airt-500", 500),
-    "5GB Binge Plan + Youtube & Social Platforms Data (2 Day) - 1,500 Naira": ("airt-1500-2", 1500),
-    "60GB MIFI 15 Data - MiFi Only (30 Days) - 15,000 Naira": ("airt-mifi-15000-30", 15000),
-    "60GB Monthly Plan + Youtube & Social Plan (30 Days) - 15,000 Naira": ("airt-15000", 15000),
+    "5GB Binge Plan + Youtube & Social Platforms Data (2 Day) - 1,500 Naira": (
+        "airt-1500-2",
+        1500,
+    ),
+    "60GB MIFI 15 Data - MiFi Only (30 Days) - 15,000 Naira": (
+        "airt-mifi-15000-30",
+        15000,
+    ),
+    "60GB Monthly Plan + Youtube & Social Plan (30 Days) - 15,000 Naira": (
+        "airt-15000",
+        15000,
+    ),
     "680GB Data (365 Days) - 100,000 Naira": ("airt-100000", 100000),
-    "6GB Weekly Plan + Youtube & Social Platform (7 Days) - 2,500 Naira": ("airt-2500-7", 2500),
+    "6GB Weekly Plan + Youtube & Social Platform (7 Days) - 2,500 Naira": (
+        "airt-2500-7",
+        2500,
+    ),
     "75MB Daily Plan (1 Day) - 75 Naira": ("airt-75-1", 75),
-    "8GB Monthly Plan + Youtube & Social Plan (30 Days) - 3,000 Naira": ("airt-3000", 3000),
+    "8GB Monthly Plan + Youtube & Social Plan (30 Days) - 3,000 Naira": (
+        "airt-3000",
+        3000,
+    ),
     "Airtel Data - 100 Naira - 110MB - 1 Day": ("airt-daily-100", 100),
-    "Unlimited 20MBPS Data - Router Only (120 Days) - 150,000 Naira": ("airt-mifi-150000-120", 150000),
-    "Unlimited 20MBPS Data - Router Only (30 Days) - 30,000 Naira": ("airt-mifi-30000-30", 30000),
-    "Unlimited 60MBPS Data - Router Only (30 Days) - 50,000 Naira": ("airt-mifi-50000-30", 50000),
-    "Unlimited 60MBPS Data - Router Only (90 Days) - 135,000 Naira": ("airt-mifi-135000-90", 135000),
-    "Unlimited 60MBPS Data - Router Only (90 Days) - 80,000 Naira": ("airt-mifi-80000-90", 80000),
+    "Unlimited 20MBPS Data - Router Only (120 Days) - 150,000 Naira": (
+        "airt-mifi-150000-120",
+        150000,
+    ),
+    "Unlimited 20MBPS Data - Router Only (30 Days) - 30,000 Naira": (
+        "airt-mifi-30000-30",
+        30000,
+    ),
+    "Unlimited 60MBPS Data - Router Only (30 Days) - 50,000 Naira": (
+        "airt-mifi-50000-30",
+        50000,
+    ),
+    "Unlimited 60MBPS Data - Router Only (90 Days) - 135,000 Naira": (
+        "airt-mifi-135000-90",
+        135000,
+    ),
+    "Unlimited 60MBPS Data - Router Only (90 Days) - 80,000 Naira": (
+        "airt-mifi-80000-90",
+        80000,
+    ),
 }
 
 glo_dict = {
@@ -144,7 +242,10 @@ glo_dict = {
     "1GB 1 Day - N300 Oneoff": ("glo-1000mb-300-oneoff", 300),
     "1GB 1 Day - Special N350": ("glo-350-special-1day", 350),
     "1GB 1 Day - Youtube Special N250": ("glo-youtube-250", 250),
-    "2.2GB + 2GB Night - N1000 - 30 Days - Camp-Boost": ("glo-campus-booster-1000", 1000),
+    "2.2GB + 2GB Night - N1000 - 30 Days - Camp-Boost": (
+        "glo-campus-booster-1000",
+        1000,
+    ),
     "2.2GB + 3GB - N1500 - 30 Days": ("glo-monthly-1500", 1500),
     "2.5GB 2 Days - Weekend N500": ("glo-weekend-500", 500),
     "200MB - 99 Naira - 14 days (Best Value)": ("glo-dg-99", 99),
@@ -153,7 +254,10 @@ glo_dict = {
     "240MB + 5MB Night - N100 - 1 Day - Camp-Boost": ("glo-campus-booster-100", 100),
     "250MB + 25MB Night - N200 - 2 Days": ("glo-2days-200", 200),
     "26GB + 2GB - N8,000 - 30 Days": ("glo-monthly-8000", 8000),
-    "29GB + 3GB Night - N5000 - 30 Days - Camp-Boost": ("glo-campus-booster-5000", 5000),
+    "29GB + 3GB Night - N5000 - 30 Days - Camp-Boost": (
+        "glo-campus-booster-5000",
+        5000,
+    ),
     "2GB - 990 Naira - 30 days (Best Value)": ("glo-dg-990", 990),
     "3.1GB + 2GB - N1000 - 2 Days - Special": ("glo-1000-special-2days", 1000),
     "3.25GB + 3GB Night - N2000 - 30 Days": ("glo-monthly-2000", 2000),
@@ -187,9 +291,18 @@ glo_dict = {
     "750MB Night - N120": ("glo-night-120-1day", 120),
     "8.5GB + 2GB Night - N3000 - 30 Days": ("glo-monthly-3000", 3000),
     "875MB 1 Day - Weekend N200": ("glo-sunday-200", 200),
-    "Glo MyG N1000 3.5 GB 30 Days (Whatsapp, Instagram, Snapchat, Boomplay, Audiomac, GloTV, Tiktok)": ("glo-social-oneoff-1000", 1000),
-    "Glo MyG N300 1 GB 3 Days OneOff (Whatsapp, Instagram, Snapchat, Boomplay, Audiomac, GloTV, Tiktok)": ("glo-social-oneoff-300", 300),
-    "Glo MyG N500 1.5 GB 7 Days (Whatsapp, Instagram, Snapchat, Boomplay, Audiomac, GloTV, Tiktok)": ("glo-social-oneoff-500", 500),
+    "Glo MyG N1000 3.5 GB 30 Days (Whatsapp, Instagram, Snapchat, Boomplay, Audiomac, GloTV, Tiktok)": (
+        "glo-social-oneoff-1000",
+        1000,
+    ),
+    "Glo MyG N300 1 GB 3 Days OneOff (Whatsapp, Instagram, Snapchat, Boomplay, Audiomac, GloTV, Tiktok)": (
+        "glo-social-oneoff-300",
+        300,
+    ),
+    "Glo MyG N500 1.5 GB 7 Days (Whatsapp, Instagram, Snapchat, Boomplay, Audiomac, GloTV, Tiktok)": (
+        "glo-social-oneoff-500",
+        500,
+    ),
     "Glo TV Lite 2GB 7 Days": ("glo-tv-900", 900),
     "Glo TV Max 6 GB 30 Days": ("glo-tv-3200", 3200),
     "Glo TV VOD 2GB 7days Oneoff": ("glo-tv-450", 450),
@@ -239,15 +352,24 @@ dstv_dict = {
     "DStv Compact Plus + Extra View N36,000": ("dstv45", 36000),
     "DStv Compact Plus + French Plus N54,500": ("dstv43", 54500),
     "DStv Compact Plus + French Touch N37,000": ("complus-frenchtouch", 37000),
-    "DStv Compact Plus + FrenchPlus + Extra View N60,500": ("complus-french-extraview", 60500),
+    "DStv Compact Plus + FrenchPlus + Extra View N60,500": (
+        "complus-french-extraview",
+        60500,
+    ),
     "DStv Compact Plus + Showmax N32,250": ("dstv-compact-plus-showmax", 32250),
-    "DStv Compact Plus Movie Bundle Add-on E36 - N3,500": ("dstv-compact-plus-movie", 3500),
+    "DStv Compact Plus Movie Bundle Add-on E36 - N3,500": (
+        "dstv-compact-plus-movie",
+        3500,
+    ),
     "DStv Compact Plus N30,000": ("dstv7", 30000),
     "DStv Confam + ExtraView N17,000": ("confam-extra", 17000),
     "DStv French 11 N10,800": ("french11", 10800),
     "DStv French Plus Add-on N24,500": ("frenchplus-addon", 24500),
     "DStv French Touch Add-on N7,000": ("frenchtouch-addon", 7000),
-    "DStv Great Wall Standalone Bouquet + Showmax N8,300": ("dstv-greatwall-showmax", 8300),
+    "DStv Great Wall Standalone Bouquet + Showmax N8,300": (
+        "dstv-greatwall-showmax",
+        8300,
+    ),
     "DStv Great Wall Standalone Bouquet N3,800": ("dstv-greatwall", 3800),
     "DStv India Add-on N14,900": ("dstv-indian-add-on", 14900),
     "DStv Indian N14,900": ("dstv-indian", 14900),
@@ -288,10 +410,16 @@ showmax_dict = {
     "Sports Mobile Only - N12,000 - 3 Months": ("sports_mobile_only_3", 12000),
     "Sports Only - N3,200": ("sports-only-1", 3200),
     "Sports Only 3 months - N9,600": ("sports-only-3", 9600),
-    "Full Sports Mobile Only - 3 months - N16,200": ("full-sports-mobile-only-3", 16200),
+    "Full Sports Mobile Only - 3 months - N16,200": (
+        "full-sports-mobile-only-3",
+        16200,
+    ),
     "Mobile Only - N6,700 - 6 Months": ("mobile-only-6", 6700),
     "Full - 6 months - 14,700": ("full-only-6", 14700),
-    "Full Sports Mobile Only - 6 months - N32,400": ("full-sports-mobile-only-6", 32400),
+    "Full Sports Mobile Only - 6 months - N32,400": (
+        "full-sports-mobile-only-6",
+        32400,
+    ),
     "Sports Mobile Only - 6 months - N24,000": ("sports-mobile-only-6", 24000),
     "Sports Only - 6 months - N18,200": ("sports-only-6", 18200),
 }
@@ -335,8 +463,30 @@ def generate_reference_id():
     return reference_id
 
 
+_session = None
+
+
+def _get_session():
+    global _session
+    if _session is None:
+        from requests.adapters import HTTPAdapter
+        from urllib3.util.retry import Retry
+
+        _session = requests.Session()
+        retry = Retry(
+            total=2, backoff_factor=0.3, status_forcelist=[429, 500, 502, 503, 504]
+        )
+        adapter = HTTPAdapter(max_retries=retry, pool_connections=20, pool_maxsize=20)
+        _session.mount("https://", adapter)
+        _session.mount("http://", adapter)
+        _session.headers.update(headers)
+    return _session
+
+
 def top_up(user_data):
-    response = requests.post(f"{BASE_URL}/pay", headers=headers, json=user_data)
+    session = _get_session()
+    response = session.post(f"{BASE_URL}/pay", json=user_data, timeout=(3, 10))
+    response.raise_for_status()
     return response.json()
 
 

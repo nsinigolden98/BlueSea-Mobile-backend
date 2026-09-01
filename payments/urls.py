@@ -19,7 +19,9 @@ from .views import (
     Airtime2CashViews,
     InternalTransferView,
     WithdrawalView,
+    PaymentStatusView,
 )
+from .webhook import VTpassWebhookView
 
 urlpatterns = [
     path("airtime/", AirtimeTopUpViews.as_view(), name="airtime"),
@@ -54,7 +56,10 @@ urlpatterns = [
     path(
         "internal-transfer/", InternalTransferView.as_view(), name="internal-transfer"
     ),
+    path("withdrawal/", WithdrawalView.as_view(), name="withdrawal"),
     path(
-        "withdrawal/", WithdrawalView.as_view(), name="withdrawal"
+        "status/<str:reference_id>/", PaymentStatusView.as_view(), name="payment-status"
     ),
+    path("webhook/vtpass", VTpassWebhookView.as_view(), name="vtpass-webhook"),
+    path("webhook/vtpass/", VTpassWebhookView.as_view(), name="vtpass-webhook-slash"),
 ]

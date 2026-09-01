@@ -431,6 +431,14 @@ STARTIMES_PLANS = [
 ]
 
 
+VT_STATUS_CHOICES = [
+    ("pending", "Pending"),
+    ("delivered", "Delivered"),
+    ("failed", "Failed"),
+    ("reversed", "Reversed"),
+]
+
+
 class AirtimeTopUp(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -442,7 +450,12 @@ class AirtimeTopUp(models.Model):
     network = models.CharField(max_length=10, choices=NETWORK_TYPES)
     phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    status = models.CharField(
+        max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
+    )
+    vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class MTNDataTopUp(models.Model):
@@ -456,7 +469,12 @@ class MTNDataTopUp(models.Model):
     billersCode = models.CharField(max_length=20)
     phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    status = models.CharField(
+        max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
+    )
+    vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class AirtelDataTopUp(models.Model):
@@ -470,7 +488,12 @@ class AirtelDataTopUp(models.Model):
     billersCode = models.CharField(max_length=20)
     phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    status = models.CharField(
+        max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
+    )
+    vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class GloDataTopUp(models.Model):
@@ -484,7 +507,12 @@ class GloDataTopUp(models.Model):
     billersCode = models.CharField(max_length=20)
     phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    status = models.CharField(
+        max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
+    )
+    vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class EtisalatDataTopUp(models.Model):
@@ -498,7 +526,12 @@ class EtisalatDataTopUp(models.Model):
     billersCode = models.CharField(max_length=20)
     phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    status = models.CharField(
+        max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
+    )
+    vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class DSTVPayment(models.Model):
@@ -513,7 +546,12 @@ class DSTVPayment(models.Model):
     subscription_type = models.CharField(max_length=20, choices=SUB_TYPE)
     phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    status = models.CharField(
+        max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
+    )
+    vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class GOTVPayment(models.Model):
@@ -528,7 +566,12 @@ class GOTVPayment(models.Model):
     subscription_type = models.CharField(max_length=20, choices=SUB_TYPE)
     phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    status = models.CharField(
+        max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
+    )
+    vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class StartimesPayment(models.Model):
@@ -542,7 +585,12 @@ class StartimesPayment(models.Model):
     startimes_plan = models.CharField(max_length=100, choices=STARTIMES_PLANS)
     phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    status = models.CharField(
+        max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
+    )
+    vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class ShowMaxPayment(models.Model):
@@ -555,7 +603,12 @@ class ShowMaxPayment(models.Model):
     showmax_plan = models.CharField(max_length=100, choices=SHOWMAX_PLANS)
     phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    status = models.CharField(
+        max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
+    )
+    vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class ElectricityPayment(models.Model):
@@ -570,7 +623,12 @@ class ElectricityPayment(models.Model):
     biller_name = models.CharField(max_length=30, choices=BILLER_NAME)
     meter_type = models.CharField(max_length=20, choices=METER_TYPES)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    status = models.CharField(
+        max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
+    )
+    vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class WAECRegitration(models.Model):
@@ -582,7 +640,12 @@ class WAECRegitration(models.Model):
     )
     phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    status = models.CharField(
+        max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
+    )
+    vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class WAECResultChecker(models.Model):
@@ -594,7 +657,12 @@ class WAECResultChecker(models.Model):
     )
     phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    status = models.CharField(
+        max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
+    )
+    vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class JAMBRegistration(models.Model):
@@ -608,7 +676,12 @@ class JAMBRegistration(models.Model):
     exam_type = models.CharField(max_length=20, choices=EXAM_TYPES)
     phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    status = models.CharField(
+        max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
+    )
+    vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class GroupPayment(models.Model):
@@ -628,18 +701,31 @@ class GroupPayment(models.Model):
         ("failed", "Failed"),
         ("reversed", "Reversed"),
     ]
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="payments")
-    initiated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPES)
+    group = models.ForeignKey(
+        Group, on_delete=models.CASCADE, related_name="payments", db_index=True
+    )
+    initiated_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, db_index=True
+    )
+    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPES, db_index=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     service_details = models.JSONField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
-    vtu_reference = models.CharField(max_length=100, blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="pending", db_index=True
+    )
+    vtu_reference = models.CharField(
+        max_length=100, blank=True, null=True, db_index=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["group", "-created_at"]),
+            models.Index(fields=["status", "-created_at"]),
+            models.Index(fields=["vtu_reference"]),
+        ]
 
     def __str__(self):
         return f"{self.group.name} - {self.payment_type} - ₦{self.total_amount}"
@@ -678,7 +764,12 @@ class Airtime2Cash(models.Model):
     network = models.CharField(max_length=10, choices=NETWORK_TYPES)
     phone_number = models.CharField(max_length=11)
     request_id = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    status = models.CharField(
+        max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
+    )
+    vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class ElectricityPaymentCustomers(models.Model):
@@ -719,3 +810,26 @@ class Withdrawal(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+
+class VTpassWebhookLog(models.Model):
+    request_id = models.CharField(max_length=100, db_index=True)
+    transaction_id = models.CharField(
+        max_length=100, blank=True, null=True, db_index=True
+    )
+    vt_status = models.CharField(max_length=20, blank=True, null=True)
+    code = models.CharField(max_length=20, blank=True, null=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    raw_payload = models.JSONField(default=dict)
+    is_processed = models.BooleanField(default=False)
+    error = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        unique_together = ("request_id", "transaction_id", "vt_status")
+        indexes = [models.Index(fields=["request_id", "vt_status"])]
+
+    def __str__(self):
+        return f"{self.request_id} - {self.vt_status} - {self.code}"
