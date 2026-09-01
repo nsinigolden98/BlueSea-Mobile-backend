@@ -22,7 +22,6 @@ from .views import (
     PaymentStatusView,
 )
 from .webhook import VTpassWebhookView
-from .views import PaymentsWebSocketInfoView
 
 urlpatterns = [
     path("airtime/", AirtimeTopUpViews.as_view(), name="airtime"),
@@ -63,5 +62,4 @@ urlpatterns = [
     ),
     path("webhook/vtpass", VTpassWebhookView.as_view(), name="vtpass-webhook"),
     path("webhook/vtpass/", VTpassWebhookView.as_view(), name="vtpass-webhook-slash"),
-    path("ws-info/", PaymentsWebSocketInfoView.as_view(), name="payments-ws-info"),
 ]

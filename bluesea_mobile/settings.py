@@ -49,7 +49,10 @@ SILKY_MAX_RESPONSE_BODY_SIZE = 1 * 1024 * 1024
 SILKY_MAX_RECORDED_REQUESTS = 10**4
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = ["testserver", "attemptable-chelsea-preadvisable.ngrok-free.dev"] + os.environ.get("ALLOWED_HOSTS", "").split(",")
+ALLOWED_HOSTS = [
+    "testserver",
+    "attemptable-chelsea-preadvisable.ngrok-free.dev",
+] + os.environ.get("ALLOWED_HOSTS", "").split(",")
 
 # CSRF and CORS
 CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
@@ -274,6 +277,62 @@ PIN_MAX_ATTEMPTS = int(os.environ.get("PIN_MAX_ATTEMPTS", "5"))
 PIN_LOCKOUT_MINUTES = int(os.environ.get("PIN_LOCKOUT_MINUTES", "15"))
 
 
+def _inject_websocket_docs(result, generator, request, public):
+    # Hook-based WebSocket docs (no REST ws-info/ endpoint)
+    # Adds wss:// ws/payments/ paths to OpenAPI without documenting webhooks
+    paths = result.setdefault("paths", {})
+    ws_desc = (
+        "Real-time WebSocket for VTpass payment status. "
+        "Connect with `?token=<JWT access token>` or `Authorization: Bearer <token>` header. "
+        "On `pending` creation via `POST /payments/*` you receive `reference_id`; subscribe to `ws/payments/{reference_id}/` (owner-checked) or `ws/payments/` (user-scoped). "
+        'Server pushes `{"type":"payment_update","reference_id":"BS-...","status":"delivered|failed|reversed|pending","payment_type":"AirtimeTopUp","vtpass_transaction_id":"...","amount":"100"}` '
+        "when `POST /payments/webhook/vtpass` or DVA `POST /transactions/webhook/paystack/` updates status. "
+        'Send `{"type":"ping"}` → `{"type":"pong"}`. Close `4401` unauth / `4403` not owner. '
+        "Also `wallet_user_{id}` group for DVA `wallet_update`. Fallback: `GET /payments/status/{reference_id}/`."
+    )
+    for ws_path in ["/ws/payments/", "/ws/payments/{reference_id}/"]:
+        if ws_path not in paths:
+            paths[ws_path] = {
+                "get": {
+                    "tags": ["Payments"],
+                    "summary": "Payments WebSocket (real-time status)",
+                    "description": ws_desc,
+                    "operationId": f"payments_ws_{'base' if ws_path == '/ws/payments/' else 'detail'}_retrieve",
+                    "parameters": [
+                        {
+                            "name": "token",
+                            "in": "query",
+                            "required": False,
+                            "description": "JWT access token (alternative to Authorization header)",
+                            "schema": {"type": "string"},
+                        }
+                    ]
+                    + (
+                        [
+                            {
+                                "name": "reference_id",
+                                "in": "path",
+                                "required": True,
+                                "description": "Reference ID (BS-...) owner-checked, e.g. BS-AIRT202509011200-XXXX",
+                                "schema": {"type": "string"},
+                            }
+                        ]
+                        if "{reference_id}" in ws_path
+                        else []
+                    ),
+                    "responses": {
+                        "101": {
+                            "description": "Switching Protocols - WebSocket established"
+                        },
+                        "4401": {"description": "Missing/invalid JWT"},
+                        "4403": {"description": "Not owner of reference_id"},
+                    },
+                    "x-websocket": True,
+                }
+            }
+    return result
+
+
 def _inject_support_tag(result, generator, request, public):
     for path in result.get("paths", {}).values():
         for op in path.values():
@@ -329,7 +388,10 @@ def _inject_support_tag(result, generator, request, public):
 
 SPECTACULAR_SETTINGS = {
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
-    "POSTPROCESSING_HOOKS": ["bluesea_mobile.settings._inject_support_tag"],
+    "POSTPROCESSING_HOOKS": [
+        "bluesea_mobile.settings._inject_websocket_docs",
+        "bluesea_mobile.settings._inject_support_tag",
+    ],
     "SERVE_AUTHENTICATION": [
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
