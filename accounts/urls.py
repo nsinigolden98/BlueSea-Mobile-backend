@@ -46,4 +46,9 @@ urlpatterns = [
         name="set-new-transaction-pin",
     ),
     path("user/lookup/", views.LookupUserView.as_view(), name="user-lookup"),
+    path(
+        "dva/assign/",
+        views.DedicatedVirtualAccountAssignView.as_view(),
+        name="dva-assign",
+    ),
 ]
