@@ -5,7 +5,7 @@ from django.db import transaction
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
@@ -71,8 +71,14 @@ from bonus.utils import (
 )
 from bonus.models import Referral, BonusCampaign, BonusHistory, BonusPoint
 import logging
-from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiExample,
+    OpenApiParameter,
+    inline_serializer,
+)
 from drf_spectacular.types import OpenApiTypes
+from rest_framework import serializers
 
 
 logger = logging.getLogger(__name__)
@@ -2499,6 +2505,104 @@ class WithdrawalView(APIView):
                 {"success": False, "error": f"Withdrawal failed: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class PaymentsWebSocketInfoView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        summary="Payments WebSocket (real-time status)",
+        description=(
+            "Real-time WebSocket for VTpass payment status updates. "
+            "Connect with `?token=<JWT access token>` or `Authorization: Bearer <token>` header. "
+            "On `pending` creation via `POST /payments/*` you receive `reference_id`; subscribe to `ws/payments/<reference_id>/` or `ws/payments/` (user-scoped). "
+            'Server pushes `{"type":"payment_update","reference_id":"BS-...","status":"delivered|failed|reversed|pending","payment_type":"AirtimeTopUp","vtpass_transaction_id":"...","amount":"100"}` '
+            "when `POST /payments/webhook/vtpass` or DVA `POST /transactions/webhook/paystack/` updates status. "
+            'Send `{"type":"ping"}` → receive `{"type":"pong"}`. Close codes `4401` (unauth) / `4403` (not owner). '
+            "Provider: `wema-bank` hard-coded for DVA; no frontend param. `GET /payments/status/<reference_id>/` remains REST fallback for polling."
+        ),
+        responses={
+            200: inline_serializer(
+                name="PaymentsWebSocketInfo",
+                fields={
+                    "endpoints": serializers.ListField(child=serializers.CharField()),
+                    "auth": serializers.CharField(),
+                    "subscribe": serializers.CharField(),
+                    "events": serializers.ListField(child=serializers.CharField()),
+                },
+            )
+        },
+        tags=["Payments"],
+        examples=[
+            OpenApiExample(
+                "WebSocket Info",
+                value={
+                    "endpoints": [
+                        "wss://<host>/ws/payments/",
+                        "wss://<host>/ws/payments/{reference_id}/",
+                    ],
+                    "auth": "?token=<JWT> or Authorization: Bearer <JWT>",
+                    "subscribe": "ws/payments/BS-AIRT202509011200-XXXX/ with JWT owned by transaction user",
+                    "events": [
+                        '{"type":"payment_update","reference_id":"BS-...","status":"delivered","payment_type":"AirtimeTopUp"}',
+                        '{"type":"connected","reference_id":"BS-..."}',
+                        '{"type":"pong"}',
+                    ],
+                    "groups": [
+                        "payments_user_{user_id}",
+                        "payment_{reference_id}",
+                        "wallet_user_{user_id} (DVA credit)",
+                    ],
+                },
+                response_only=True,
+            )
+        ],
+    )
+    def get(self, request):
+        return Response(
+            {
+                "endpoints": [
+                    "wss://<host>/ws/payments/",
+                    "wss://<host>/ws/payments/{reference_id}/",
+                ],
+                "auth": "?token=<JWT access token> or Authorization: Bearer <token>",
+                "subscribe": "Connect with JWT of the owner; server validates reference_id ownership before joining payment_{reference_id}",
+                "groups": [
+                    "payments_user_{user_id} (all user payments)",
+                    "payment_{reference_id} (single reference, owner-checked)",
+                    "wallet_user_{user_id} (DVA wallet credit)",
+                ],
+                "events": [
+                    {
+                        "type": "connected",
+                        "user_id": 1,
+                        "reference_id": "BS-...",
+                        "message": "Subscribed to payment updates",
+                    },
+                    {
+                        "type": "payment_update",
+                        "reference_id": "BS-...",
+                        "status": "delivered|failed|reversed|pending",
+                        "payment_type": "AirtimeTopUp|GroupPayment",
+                        "vtpass_transaction_id": "TX123",
+                        "amount": "100",
+                    },
+                    {"type": "pong"},
+                    {
+                        "type": "wallet_update",
+                        "amount": "100",
+                        "reference": "SPL_xxx",
+                        "account_number": "0123456789",
+                    },
+                ],
+                "ping": {"type": "ping"},
+                "close_codes": {
+                    "4401": "Missing/invalid JWT",
+                    "4403": "Not owner of reference_id",
+                },
+                "note": "Real-time alternative to GET /payments/status/<reference_id>/ polling. Webhooks remain internal (not documented).",
+            }
+        )
 
 
 class PaymentStatusView(APIView):

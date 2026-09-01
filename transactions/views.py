@@ -270,6 +270,19 @@ class PaymentWebhook(APIView):
                             logger.info(
                                 f"DVA webhook {event} updated {dva.account_number} for {dva.user.email}"
                             )
+                            # Notify user that DVA is now active (credit-ready)
+                            try:
+                                send_notification(
+                                    user=dva.user,
+                                    title="Dedicated Account Active",
+                                    message=f"Your Wema DVA {dva.account_number} is now active via webhook and ready to receive funds.",
+                                    notification_type="dva_assigned",
+                                    email_subject="BlueSea - DVA Active",
+                                )
+                            except Exception as e:
+                                logger.warning(
+                                    f"DVA webhook notify failed {event}: {e}"
+                                )
                     elif event == "dedicatedaccount.assign.failed":
                         reason = (
                             payload_data.get("reason")
@@ -382,15 +395,38 @@ class PaymentWebhook(APIView):
                                 f"DVA credited {amount} to {dva.user.email} ref={reference} account={dva.account_number}"
                             )
                             try:
+                                sender = (
+                                    auth.get("sender_bank_name")
+                                    or auth.get("sender_name")
+                                    or "local bank"
+                                )
                                 send_notification(
                                     user=dva.user,
-                                    title="Funds Received",
-                                    message=f"₦{amount} received via Wema DVA {dva.account_number}",
-                                    notification_type="payment_success",
-                                    email_subject="BlueSea - Funds Received",
+                                    title="DVA Funds Received",
+                                    message=f"₦{amount} received via Wema DVA {dva.account_number} from {sender} (ref {reference}) — your BlueSea wallet has been credited.",
+                                    notification_type="dva_credited",
+                                    email_subject="BlueSea - DVA Funds Received",
                                 )
                             except Exception as e:
                                 logger.warning(f"DVA notify failed {reference}: {e}")
+                            # Also push real-time update via WebSocket if needed (wallet balance)
+                            try:
+                                from channels.layers import get_channel_layer
+                                from asgiref.sync import async_to_sync
+
+                                channel_layer = get_channel_layer()
+                                if channel_layer:
+                                    async_to_sync(channel_layer.group_send)(
+                                        f"wallet_user_{dva.user.id}",
+                                        {
+                                            "type": "wallet_update",
+                                            "amount": str(amount),
+                                            "reference": reference,
+                                            "account_number": dva.account_number,
+                                        },
+                                    )
+                            except Exception:
+                                pass
                         return Response(
                             {"success": True, "message": "DVA transfer credited"}
                         )
