@@ -1721,6 +1721,20 @@ class DedicatedVirtualAccountAssignView(APIView):
                     user.has_DVA = True
                     user.save(update_fields=["has_DVA"])
 
+                # Notify user of successful DVA assignment per Paystack docs handling
+                try:
+                    from notifications.utils import send_notification
+
+                    send_notification(
+                        user=user,
+                        title="Dedicated Virtual Account Ready",
+                        message=f"Your Wema DVA {dva.account_number} ({dva.account_name}) is active and ready to receive transfers.",
+                        notification_type="dva_assigned",
+                        email_subject="BlueSea - Your Dedicated Account is Ready",
+                    )
+                except Exception as e:
+                    logger.warning(f"DVA assign notify failed {user.email}: {e}")
+
             # Return per Paystack docs: status, message, data
             return Response(
                 {
