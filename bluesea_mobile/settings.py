@@ -49,7 +49,7 @@ SILKY_MAX_RESPONSE_BODY_SIZE = 1 * 1024 * 1024
 SILKY_MAX_RECORDED_REQUESTS = 10**4
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
+ALLOWED_HOSTS = ["testserver", "attemptable-chelsea-preadvisable.ngrok-free.dev"] + os.environ.get("ALLOWED_HOSTS", "").split(",")
 
 # CSRF and CORS
 CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
@@ -561,6 +561,8 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "Africa/Lagos"
+CELERY_TASK_ALWAYS_EAGER = DEBUG
+CELERY_TASK_EAGER_PROPAGATES = DEBUG
 
 # Cache Configuration with fallback
 REDIS_LOCATION = os.environ.get("REDIS_LOCATION")
@@ -586,6 +588,19 @@ else:
             "LOCATION": "unique-snowflake",
         }
     }
+
+# Channel Layer for WebSockets: InMemory in dev (no Redis/Celery), Redis in production
+if DEBUG:
+    CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
+elif REDIS_LOCATION:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {"hosts": [REDIS_LOCATION]},
+        }
+    }
+else:
+    CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 
 # Session Configuration
 SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
