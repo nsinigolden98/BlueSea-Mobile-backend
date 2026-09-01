@@ -1323,13 +1323,24 @@ class DedicatedVirtualAccountAssignView(APIView):
         request=inline_serializer(
             name="DVAAssignRequest",
             fields={
+                "first_name": serializers.CharField(
+                    help_text="First name for Paystack customer"
+                ),
+                "last_name": serializers.CharField(
+                    help_text="Last name for Paystack customer"
+                ),
+                "account_number": serializers.CharField(
+                    help_text="Customer personal account number 10 digits (NUBAN) for Paystack validation"
+                ),
+                "bank_code": serializers.CharField(
+                    help_text="Bank code 1-7 digits (e.g. 058, 000013) for account validation"
+                ),
+                "bvn": serializers.CharField(
+                    help_text="RSA-encrypted BVN (11 digits plain after decrypt, frontend encrypted)"
+                ),
                 "phone": serializers.CharField(
                     required=False,
                     help_text="Phone required if not in profile (11 digits, e.g. 08012345678)",
-                ),
-                "bvn": serializers.CharField(
-                    required=True,
-                    help_text="RSA-encrypted BVN (11 digits plain after decrypt, frontend encrypted)",
                 ),
             },
         ),
@@ -1338,11 +1349,18 @@ class DedicatedVirtualAccountAssignView(APIView):
             201: OpenApiTypes.OBJECT,
             400: OpenApiTypes.OBJECT,
         },
-        tags=["Account"],
+        tags=["Authentication"],
         examples=[
             OpenApiExample(
                 "Assign Request",
-                value={"phone": "08012345678", "bvn": "encrypted_string"},
+                value={
+                    "first_name": "John",
+                    "last_name": "Doe",
+                    "account_number": "0123456789",
+                    "bank_code": "058",
+                    "bvn": "encrypted_string",
+                    "phone": "08012345678",
+                },
                 request_only=True,
             ),
             OpenApiExample(
@@ -1373,34 +1391,168 @@ class DedicatedVirtualAccountAssignView(APIView):
             ),
         ],
     )
+    def _parse_dva_data(self, data):
+        # Helper to parse Paystack DVA data per docs: https://paystack.com/docs/api/dedicated-virtual-account/
+        # data: {account_number, account_name, bank: {name, slug, id}, id, active, customer: {customer_code, id}, ...}
+        # Handles both flat and nested dedicated_account shapes
+        dedicated = (
+            data.get("dedicated_account")
+            if isinstance(data.get("dedicated_account"), dict)
+            else data
+        )
+        if not isinstance(dedicated, dict):
+            dedicated = data
+        account_number = dedicated.get("account_number") or data.get("account_number")
+        account_name = dedicated.get("account_name") or data.get("account_name")
+        bank_info = dedicated.get("bank") or data.get("bank") or {}
+        bank_name = (
+            bank_info.get("name", "Wema Bank")
+            if isinstance(bank_info, dict)
+            else "Wema Bank"
+        )
+        bank_slug = (
+            bank_info.get("slug", "wema-bank")
+            if isinstance(bank_info, dict)
+            else "wema-bank"
+        )
+        bank_id = bank_info.get("id") if isinstance(bank_info, dict) else None
+        cust = dedicated.get("customer") or data.get("customer") or {}
+        customer_code = (
+            cust.get("customer_code")
+            if isinstance(cust, dict)
+            else data.get("customer_code") or ""
+        )
+        customer_id = (
+            cust.get("id") if isinstance(cust, dict) else data.get("customer_id")
+        )
+        dedicated_id = dedicated.get("id") or data.get("id")
+        active = dedicated.get("active", data.get("active", True))
+        return {
+            "account_number": account_number,
+            "account_name": account_name,
+            "bank_name": bank_name,
+            "bank_slug": bank_slug,
+            "bank_id": bank_id,
+            "customer_code": customer_code,
+            "customer_id": customer_id,
+            "dedicated_id": dedicated_id,
+            "active": active,
+        }
+
+    def _save_dva_and_notify(
+        self, user, parsed, phone_to_use, bvn_encrypted, paystack_resp
+    ):
+        from .models import PaystackDedicatedAccount
+
+        with transaction.atomic():
+            dva, created = PaystackDedicatedAccount.objects.get_or_create(
+                user=user,
+                defaults={
+                    "dedicated_account_id": parsed["dedicated_id"],
+                    "account_number": parsed["account_number"],
+                    "account_name": parsed["account_name"],
+                    "bank_name": parsed["bank_name"],
+                    "bank_slug": parsed["bank_slug"],
+                    "bank_id": parsed["bank_id"],
+                    "customer_code": parsed["customer_code"],
+                    "customer_id": parsed["customer_id"],
+                    "phone": phone_to_use,
+                    "bvn_encrypted": bvn_encrypted,
+                    "active": parsed["active"],
+                    "paystack_response": paystack_resp,
+                },
+            )
+            if not created:
+                dva.account_number = parsed["account_number"]
+                dva.account_name = parsed["account_name"]
+                dva.bank_name = parsed["bank_name"]
+                dva.bank_slug = parsed["bank_slug"]
+                dva.bank_id = parsed["bank_id"]
+                dva.customer_code = parsed["customer_code"]
+                dva.customer_id = parsed["customer_id"]
+                dva.phone = phone_to_use
+                dva.bvn_encrypted = bvn_encrypted
+                dva.active = parsed["active"]
+                dva.paystack_response = paystack_resp
+                dva.save()
+
+            if not user.has_DVA:
+                user.has_DVA = True
+                user.save(update_fields=["has_DVA"])
+
+            try:
+                from notifications.utils import send_notification
+
+                send_notification(
+                    user=user,
+                    title="Dedicated Virtual Account Ready",
+                    message=f"Your Wema DVA {dva.account_number} ({dva.account_name}) is active and ready to receive transfers.",
+                    notification_type="dva_assigned",
+                    email_subject="BlueSea - Your Dedicated Account is Ready",
+                )
+            except Exception as e:
+                logger.warning(f"DVA assign notify failed {user.email}: {e}")
+
+            return dva, created
+
     def post(self, request):
         from .models import PaystackDedicatedAccount
 
         user = request.user
 
-        # Idempotent: if DVA already exists, return existing without creating new
-        existing = PaystackDedicatedAccount.objects.filter(user=user).first()
-        if existing:
-            if not user.has_DVA:
-                user.has_DVA = True
-                user.save(update_fields=["has_DVA"])
-            return Response(
-                {
-                    "already_exists": True,
-                    "account_number": existing.account_number,
-                    "account_name": existing.account_name,
-                    "bank_name": existing.bank_name,
-                    "bank_slug": existing.bank_slug,
-                    "bank_id": existing.bank_id,
-                    "customer_code": existing.customer_code,
-                    "active": existing.active,
-                    "has_DVA": True,
-                },
-                status=status.HTTP_200_OK,
-            )
+        # Idempotent: check has_DVA true (do not query Paystack, just local has_DVA)
+        if getattr(user, "has_DVA", False):
+            existing = PaystackDedicatedAccount.objects.filter(user=user).first()
+            if existing:
+                return Response(
+                    {
+                        "already_exists": True,
+                        "account_number": existing.account_number,
+                        "account_name": existing.account_name,
+                        "bank_name": existing.bank_name,
+                        "bank_slug": existing.bank_slug,
+                        "bank_id": existing.bank_id,
+                        "customer_code": existing.customer_code,
+                        "active": existing.active,
+                        "has_DVA": True,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+            # has_DVA true but no record (edge) -> continue to create
 
-        # Phone handling: required if not in DB, and update phone field
+        # Required fields from frontend: first_name, last_name, account_number, bank_code (up to 7 digits), bvn (encrypted), phone if not in DB
+        first_name = (request.data.get("first_name") or "").strip()
+        last_name = (request.data.get("last_name") or "").strip()
+        account_number = (request.data.get("account_number") or "").strip()
+        bank_code = (request.data.get("bank_code") or "").strip()
         bvn_encrypted = request.data.get("bvn")
+        if not first_name:
+            return Response(
+                {"error": "first_name is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        if not last_name:
+            return Response(
+                {"error": "last_name is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        if not account_number:
+            return Response(
+                {"error": "account_number is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not re.match(r"^\d{10}$", account_number):
+            return Response(
+                {"error": "account_number must be 10 digits (NUBAN)"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not bank_code:
+            return Response(
+                {"error": "bank_code is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        if not re.match(r"^\d{1,7}$", bank_code):
+            return Response(
+                {"error": "bank_code must be 1-7 digits"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if not bvn_encrypted:
             return Response(
                 {"error": "bvn is required"}, status=status.HTTP_400_BAD_REQUEST
@@ -1422,47 +1574,28 @@ class DedicatedVirtualAccountAssignView(APIView):
                 {"error": "bvn must be 11 digits"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        phone_from_request = request.data.get("phone")
-        phone_in_db = (user.phone or "").strip() if getattr(user, "phone", None) else ""
-        phone_to_use = (phone_from_request or phone_in_db or "").strip()
+        phone_from_request = (request.data.get("phone") or "").strip()
+        phone_in_db = (user.phone or "").strip()
+        phone_to_use = phone_from_request or phone_in_db
         if not phone_to_use:
             return Response(
-                {"error": "phone is required to create dedicated account"},
-                status=status.HTTP_400_BAD_REQUEST,
+                {"error": "phone is required"}, status=status.HTTP_400_BAD_REQUEST
             )
-        if not re.match(r"^0[789][01]\d{8}$", phone_to_use) and not re.match(
-            r"^\+234[789][01]\d{8}$", phone_to_use
+        if not re.match(r"^\d{11}$", phone_to_use) and not re.match(
+            r"^\+234\d{10,14}$", phone_to_use
         ):
-            # Allow +234 or 0 prefix, 11 digits total for 0 prefix
-            if not re.match(r"^\d{11}$", phone_to_use):
-                return Response(
-                    {"error": "phone must be valid Nigerian number (e.g. 08012345678)"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        # Update phone field if provided and different or missing in DB
-        if phone_from_request and phone_from_request.strip() != phone_in_db:
+            return Response(
+                {"error": "phone must be 11 digits"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        if phone_from_request and phone_from_request != phone_in_db:
             try:
-                user.phone = phone_from_request.strip()
+                user.phone = phone_from_request
                 user.save(update_fields=["phone"])
             except Exception:
                 pass
-
-        # Prepare Paystack single-step payload: wema-bank hard-coded, do not allow frontend to change
-        first_name = (
-            user.surname or user.other_names or user.email.split("@")[0] or "User"
-        ).strip()
-        # Paystack expects first_name/last_name separate; use other_names as last_name if available
-        last_name = (user.other_names or user.surname or "User").strip()
-        if not first_name:
-            first_name = user.email.split("@")[0]
-        if not last_name:
-            last_name = "User"
-        # Normalize phone to +234 format for Paystack if needed, but Paystack accepts 080... or +234...
-        paystack_phone = phone_to_use
-        if paystack_phone.startswith("0"):
-            paystack_phone = "+234" + paystack_phone[1:]
-
+        paystack_phone = (
+            "+234" + phone_to_use[1:] if phone_to_use.startswith("0") else phone_to_use
+        )
         payload = {
             "email": user.email,
             "first_name": first_name,
@@ -1471,6 +1604,8 @@ class DedicatedVirtualAccountAssignView(APIView):
             "preferred_bank": "wema-bank",
             "country": "NG",
             "bvn": bvn_plain,
+            "account_number": account_number,
+            "bank_code": bank_code,
         }
 
         headers = {
@@ -1512,168 +1647,19 @@ class DedicatedVirtualAccountAssignView(APIView):
         data = j.get("data") or {}
 
         if not status_ok:
-            # Paystack docs: failure could be due to bvn, phone, etc.
-            err_msg = (
-                message or j.get("message") or "Failed to assign dedicated account"
-            )
-            # If Paystack says customer already has DVA, treat as existing and fetch
-            if "already" in err_msg.lower() and "assigned" in err_msg.lower():
-                # Try to fetch existing DVA via customer
-                try:
-                    # Attempt to fetch via Paystack dedicated_account list for this customer
-                    fetch_headers = {
-                        "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"
-                    }
-                    cust_code = (
-                        data.get("customer_code")
-                        or data.get("customer", {}).get("customer_code")
-                        if isinstance(data.get("customer"), dict)
-                        else None
-                    )
-                    # Fallback: try to list dedicated accounts for user
-                    list_resp = requests.get(
-                        f"https://api.paystack.co/dedicated_account?customer={cust_code}"
-                        if cust_code
-                        else "https://api.paystack.co/dedicated_account",
-                        headers=fetch_headers,
-                        timeout=(3, 10),
-                    )
-                    lj = list_resp.json()
-                    if lj.get("status") and lj.get("data"):
-                        lst = (
-                            lj["data"] if isinstance(lj["data"], list) else [lj["data"]]
-                        )
-                        if lst:
-                            d = lst[0]
-                            # Create local record from fetched data
-                            with transaction.atomic():
-                                dva, created = (
-                                    PaystackDedicatedAccount.objects.get_or_create(
-                                        user=user,
-                                        defaults={
-                                            "dedicated_account_id": d.get("id"),
-                                            "account_number": d.get("account_number"),
-                                            "account_name": d.get(
-                                                "account_name",
-                                                f"{first_name} {last_name}",
-                                            ),
-                                            "bank_name": d.get("bank", {}).get(
-                                                "name", "Wema Bank"
-                                            )
-                                            if isinstance(d.get("bank"), dict)
-                                            else "Wema Bank",
-                                            "bank_slug": d.get("bank", {}).get(
-                                                "slug", "wema-bank"
-                                            )
-                                            if isinstance(d.get("bank"), dict)
-                                            else "wema-bank",
-                                            "bank_id": d.get("bank", {}).get("id")
-                                            if isinstance(d.get("bank"), dict)
-                                            else None,
-                                            "customer_code": d.get("customer", {}).get(
-                                                "customer_code", ""
-                                            )
-                                            if isinstance(d.get("customer"), dict)
-                                            else (d.get("customer_code") or ""),
-                                            "customer_id": d.get("customer", {}).get(
-                                                "id"
-                                            )
-                                            if isinstance(d.get("customer"), dict)
-                                            else None,
-                                            "phone": phone_to_use,
-                                            "bvn_encrypted": bvn_encrypted,
-                                            "active": d.get("active", True),
-                                            "paystack_response": d,
-                                        },
-                                    )
-                                )
-                                if not user.has_DVA:
-                                    user.has_DVA = True
-                                    user.save(update_fields=["has_DVA"])
-                                return Response(
-                                    {
-                                        "already_exists": True,
-                                        "account_number": dva.account_number,
-                                        "account_name": dva.account_name,
-                                        "bank_name": dva.bank_name,
-                                        "bank_slug": dva.bank_slug,
-                                        "customer_code": dva.customer_code,
-                                        "has_DVA": True,
-                                    },
-                                    status=status.HTTP_200_OK,
-                                )
-                except Exception as e:
-                    logger.warning(f"DVA fetch fallback failed for {user.email}: {e}")
+            err_msg = message or "Failed to assign dedicated account"
             logger.warning(f"Paystack DVA assign failed for {user.email}: {j}")
             return Response(
-                {
-                    "error": err_msg,
-                    "paystack_message": message,
-                    "paystack_status": j.get("status"),
-                },
+                {"error": err_msg, "paystack_message": message},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Success per docs: create local DVA record and set has_DVA true
         try:
-            # Paystack success data shape per docs: https://paystack.com/docs/api/dedicated-virtual-account/
-            # data: {account_number, account_name, bank: {name, slug, id}, id, active, customer: {id, customer_code, ...}, ...}
-            account_number = data.get("account_number")
-            account_name = data.get("account_name") or f"{first_name} {last_name}"
-            bank_info = data.get("bank") or {}
-            bank_name = (
-                bank_info.get("name", "Wema Bank")
-                if isinstance(bank_info, dict)
-                else "Wema Bank"
-            )
-            bank_slug = (
-                bank_info.get("slug", "wema-bank")
-                if isinstance(bank_info, dict)
-                else "wema-bank"
-            )
-            bank_id = bank_info.get("id")
-            cust = data.get("customer") or {}
-            customer_code = (
-                cust.get("customer_code")
-                if isinstance(cust, dict)
-                else data.get("customer_code") or ""
-            )
-            customer_id = (
-                cust.get("id") if isinstance(cust, dict) else data.get("customer_id")
-            )
-            dedicated_id = data.get("id")
-            active = data.get("active", True)
-
-            if not account_number:
-                # Some Paystack flows return data with dedicated_account nested
-                dedicated = data.get("dedicated_account") or {}
-                if isinstance(dedicated, dict) and dedicated.get("account_number"):
-                    account_number = dedicated.get("account_number")
-                    account_name = dedicated.get("account_name", account_name)
-                    bank_info = dedicated.get("bank", bank_info)
-                    bank_name = (
-                        bank_info.get("name", bank_name)
-                        if isinstance(bank_info, dict)
-                        else bank_name
-                    )
-                    bank_slug = (
-                        bank_info.get("slug", bank_slug)
-                        if isinstance(bank_info, dict)
-                        else bank_slug
-                    )
-                    bank_id = (
-                        bank_info.get("id", bank_id)
-                        if isinstance(bank_info, dict)
-                        else bank_id
-                    )
-                    dedicated_id = dedicated.get("id", dedicated_id)
-                    active = dedicated.get("active", active)
-
-            if not account_number or not customer_code:
+            parsed = self._parse_dva_data(data)
+            if not parsed["account_number"] or not parsed["customer_code"]:
                 logger.warning(
                     f"Paystack DVA assign success but missing fields for {user.email}: {j}"
                 )
-                # Still set has_DVA if Paystack says success, but return Paystack data
                 return Response(
                     {
                         "status": j.get("status"),
@@ -1683,59 +1669,9 @@ class DedicatedVirtualAccountAssignView(APIView):
                     },
                     status=status.HTTP_200_OK,
                 )
-
-            with transaction.atomic():
-                dva, created = PaystackDedicatedAccount.objects.get_or_create(
-                    user=user,
-                    defaults={
-                        "dedicated_account_id": dedicated_id,
-                        "account_number": account_number,
-                        "account_name": account_name,
-                        "bank_name": bank_name,
-                        "bank_slug": bank_slug,
-                        "bank_id": bank_id,
-                        "customer_code": customer_code,
-                        "customer_id": customer_id,
-                        "phone": phone_to_use,
-                        "bvn_encrypted": bvn_encrypted,
-                        "active": active,
-                        "paystack_response": j,
-                    },
-                )
-                if not created:
-                    # Update existing with latest Paystack data
-                    dva.account_number = account_number
-                    dva.account_name = account_name
-                    dva.bank_name = bank_name
-                    dva.bank_slug = bank_slug
-                    dva.bank_id = bank_id
-                    dva.customer_code = customer_code
-                    dva.customer_id = customer_id
-                    dva.phone = phone_to_use
-                    dva.bvn_encrypted = bvn_encrypted
-                    dva.active = active
-                    dva.paystack_response = j
-                    dva.save()
-
-                if not user.has_DVA:
-                    user.has_DVA = True
-                    user.save(update_fields=["has_DVA"])
-
-                # Notify user of successful DVA assignment per Paystack docs handling
-                try:
-                    from notifications.utils import send_notification
-
-                    send_notification(
-                        user=user,
-                        title="Dedicated Virtual Account Ready",
-                        message=f"Your Wema DVA {dva.account_number} ({dva.account_name}) is active and ready to receive transfers.",
-                        notification_type="dva_assigned",
-                        email_subject="BlueSea - Your Dedicated Account is Ready",
-                    )
-                except Exception as e:
-                    logger.warning(f"DVA assign notify failed {user.email}: {e}")
-
-            # Return per Paystack docs: status, message, data
+            dva, created = self._save_dva_and_notify(
+                user, parsed, phone_to_use, bvn_encrypted, j
+            )
             return Response(
                 {
                     "status": j.get("status"),
