@@ -121,16 +121,9 @@ class InitializeFunding(APIView):
 
             payment_reference = f"BS-DEP-{uuid.uuid4()}"
 
-            # FundWallet.objects.create(
-            #     user=request.user,
-            #     amount=amount,
-            #     payment_reference=payment_reference,
-            #     status="PENDING"
-            # )
-
             FundWallet.objects.create(
                 user=request.user,
-                amount=amount,
+                amount=amount * Decimal("0.985"),
                 payment_reference=payment_reference,
                 status="PENDING",
             )
@@ -145,21 +138,6 @@ class InitializeFunding(APIView):
                     "payment_reference": payment_reference,
                 },
             }
-
-            # success, result = checkout(payload)
-
-            # if not success:
-            #     return JsonResponse({
-            #         "success": False,
-            #         "error": result
-            #     }, status=400)
-
-            # return JsonResponse({
-            #     "success": True,
-            #     "authorization_url": result,
-            #     "payment_reference": payment_reference,
-            #     "amount": str(amount),
-            # })
 
             success, authorization_url = checkout(payload)
 
@@ -316,10 +294,8 @@ class PaymentWebhook(APIView):
                 amount = raw_amount / Decimal("100")
                 auth = payload.get("authorization") or {}
                 channel = auth.get("channel") or payload.get("channel") or ""
-                is_dva_transfer = (
-                    channel == "dedicated_account"
-                    or "dedicated_account" in str(auth).lower()
-                )
+                is_dva_transfer =  channel == "dedicated_nuban"
+                amount = amount * Decimal("0.99") if is_dva_transfer else amount * Decimal("0.985")
 
                 # DVA dedicated_account transfer: local bank -> Wema DVA -> Paystack webhook -> wallet credit
                 if is_dva_transfer:
@@ -388,24 +364,20 @@ class PaymentWebhook(APIView):
                             # Use wallet.credit for atomic F() update + idempotency
                             wallet.credit(
                                 amount=amount,
-                                description=f"DVA Wema {dva.account_number} from {auth.get('sender_bank_name', '')} via {dva.bank_name}",
+                                description=f"DVA Wema {dva.account_number} from {auth.get("sender_name")} {auth.get('sender_bank_name', '')} via {dva.bank_name}",
                                 reference=reference,
                             )
                             logger.info(
                                 f"DVA credited {amount} to {dva.user.email} ref={reference} account={dva.account_number}"
                             )
                             try:
-                                sender = (
-                                    auth.get("sender_bank_name")
-                                    or auth.get("sender_name")
-                                    or "local bank"
-                                )
+                                sender = f'{auth.get("sender_bank_name")} in {auth.get("sender_name")}' 
                                 send_notification(
                                     user=dva.user,
-                                    title="DVA Funds Received",
+                                    title="Dedicated Virtual Account Deposite Received",
                                     message=f"₦{amount} received via Wema DVA {dva.account_number} from {sender} (ref {reference}) — your BlueSea wallet has been credited.",
-                                    notification_type="dva_credited",
-                                    email_subject="BlueSea - DVA Funds Received",
+                                    notification_type="payment_success",
+                                    email_subject="BlueSea Mobile- Dedicated Virtual Account Deposite Received",
                                 )
                             except Exception as e:
                                 logger.warning(f"DVA notify failed {reference}: {e}")
@@ -531,11 +503,11 @@ class PaymentWebhook(APIView):
 
                             try:
                                 send_notification(
-                                    user=request.user,
+                                    user=funding_request.user,
                                     title="Deposite To Bluesea Account",
                                     message=f"Successful Deposite of ₦{webhook_amount}",
-                                    notification_type="Account Deposite",
-                                    email_subject="BlueSea - Deposite",
+                                    notification_type="payment_success",
+                                    email_subject="BlueSea Mobile - Checkout Deposite",
                                 )
                             except Exception as e:
                                 logger.error(f"Error awarding bonus points: {str(e)}")
