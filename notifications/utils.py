@@ -28,7 +28,10 @@ def send_notification(user, title, message, notification_type='info', email_subj
             email_template = 'notifications/default_notification.html'
         
         email_context = {
-            'user': user,
+            'user': {
+                'email': user.email,
+                'first_name': user.other_names,
+            },
             'title': title,
             'message': message,
             'notification_type': notification_type,
