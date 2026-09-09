@@ -1,46 +1,38 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from rest_framework import status
-from rest_framework.parsers import MultiPartParser, FormParser
-from .serializers import (
-    EventInfoSerializer,
-    VendorSerializer,
-    CreateEventSerializer,
-    PurchaseTicketSerializer,
-    IssuedTicketSerializer,
-    ScanTicketSerializer,
-    AttendeeExportSerializer,
-    TicketListSerializer,
-    TicketDetailSerializer,
-    TransferTicketSerializer,
-    CancelTicketSerializer,
-    VerifyAccountNameSerializer,
-    EventWithdrawalRequestSerializer,
-)
-from .models import EventInfo, TicketType, IssuedTicket, TicketVendor, EventScanner
-import logging
-from django.shortcuts import get_object_or_404
-from django.http import HttpResponse
-from django.utils import timezone
-from decimal import Decimal
-import secrets
-from django.db import transaction
-from django.db.models import Count, Q
 import csv
-from wallet.models import Wallet
-from bonus.models import BonusPoint
-from drf_spectacular.utils import extend_schema, OpenApiParameter
-from drf_spectacular.types import OpenApiTypes
-from .utils import generate_ticket_qr_code, parse_qr_data
+import logging
 import uuid
-import base64
-from django.core.files.base import ContentFile
-from rest_framework.throttling import UserRateThrottle
-from accounts.models import Profile
-from accounts.pin_security import verify_pin_with_lockout
-from django.db import models
 from datetime import datetime
+
+from django.db import models, transaction
+from django.db.models import Count, Q
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import status
+from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
+from rest_framework.views import APIView
+
+from accounts.pin_security import verify_pin_with_lockout
+from wallet.models import Wallet
+
+from .models import EventInfo, EventScanner, IssuedTicket, TicketVendor
+from .serializers import (
+    CreateEventSerializer,
+    EventInfoSerializer,
+    EventWithdrawalRequestSerializer,
+    IssuedTicketSerializer,
+    PurchaseTicketSerializer,
+    TicketDetailSerializer,
+    TicketListSerializer,
+    VendorSerializer,
+    VerifyAccountNameSerializer,
+)
+from .utils import generate_ticket_qr_code, parse_qr_data
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +40,11 @@ logger = logging.getLogger(__name__)
 
 
 class CreateEventView(APIView):
-    permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = (IsAuthenticated,)
+    parser_classes = (
+        MultiPartParser,
+        FormParser,
+    )
 
     @extend_schema(
         summary="Create a new event",
@@ -65,27 +60,14 @@ class CreateEventView(APIView):
     def post(self, request):
         user = request.user
 
-        # Check if user is admin
-        is_admin = user.is_staff or user.is_superuser
-
-        if not is_admin:
-            vendor = TicketVendor.objects.filter(user=user).first()
-            vendor_id = vendor.id if vendor else None
-
-            # Check if vendor exists and is verified
-            try:
-                if not vendor.is_verified:
-                    return Response(
-                        {
-                            "error": "Only verified vendors can create events. Please complete KYC verification."
-                        },
-                        status=status.HTTP_403_FORBIDDEN,
-                    )
-            except TicketVendor.DoesNotExist:
-                return Response(
-                    {"error": "Vendor not found", "state": False},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
+        vendor = TicketVendor.objects.filter(user=user).first()
+        if not vendor or not vendor.is_verified:
+            return Response(
+                {
+                    "error": "Only verified vendors can create events. Please complete KYC verification."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         # Check if is_free
         is_free = request.data.get("is_free", "false")
@@ -635,11 +617,12 @@ class PurchaseTicketView(APIView):
                         reference_id = generate_reference_id()
                         user_wallet = request.user.wallet
 
-                        user_wallet.debit(
-                            amount=0,
-                            description=f" Bought {quantity} ticket for {event}",
-                            reference=reference_id,
-                        )
+                        if not event.is_free:
+                            user_wallet.debit(
+                                amount=0,
+                                description=f" Bought {quantity} ticket for {event}",
+                                reference=reference_id,
+                            )
 
                         # Generate QR image
                         try:
