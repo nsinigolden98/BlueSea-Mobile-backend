@@ -1,5 +1,3 @@
-from celery.schedules import crontab
-
 """
 Django settings for bluesea_mobile project.
 
@@ -12,10 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-from pathlib import Path
 import os
-import dotenv
 from datetime import timedelta
+from pathlib import Path
+
+import dotenv
 
 dotenv.load_dotenv()
 
@@ -324,8 +323,8 @@ def _inject_websocket_docs(result, generator, request, public):
                         "101": {
                             "description": "Switching Protocols - WebSocket established"
                         },
-                        "4401": {"description": "Missing/invalid JWT"},
-                        "4403": {"description": "Not owner of reference_id"},
+                        "401": {"description": "Missing/invalid JWT"},
+                        "403": {"description": "Not owner of reference_id"},
                     },
                     "x-websocket": True,
                 }
@@ -333,64 +332,10 @@ def _inject_websocket_docs(result, generator, request, public):
     return result
 
 
-def _inject_support_tag(result, generator, request, public):
-    for path in result.get("paths", {}).values():
-        for op in path.values():
-            if isinstance(op, dict) and isinstance(op.get("tags"), list):
-                op["tags"] = [
-                    t["name"] if isinstance(t, dict) else t for t in op["tags"]
-                ]
-    # Build a complete, alphabetically-sorted root tags list so the docs
-    # sidebar is ordered (Support is no longer forced first).
-    seen = {}
-    for path_item in result.get("paths", {}).values():
-        if not isinstance(path_item, dict):
-            continue
-        for op in path_item.values():
-            if not isinstance(op, dict):
-                continue
-            for t in op.get("tags", []) or []:
-                name = t["name"] if isinstance(t, dict) else t
-                if name not in seen:
-                    seen[name] = {"name": name}
-    seen["Support"] = {
-        "name": "Support",
-        "description": "Customer support tickets, threaded messages, and "
-        "image attachments. Requires JWT authentication; users can only "
-        "access their own tickets.",
-    }
-    result["tags"] = [seen[k] for k in sorted(seen)]
-
-    # Sort paths alphabetically for readable documentation.
-    if isinstance(result.get("paths"), dict):
-        result["paths"] = dict(sorted(result["paths"].items()))
-
-    # Support attachment endpoints: document only multipart/form-data
-    # (images cannot be sent as urlencoded/json), keeping images as binary.
-    for path_key, path_item in result.get("paths", {}).items():
-        if not (isinstance(path_key, str) and path_key.startswith("/support")):
-            continue
-        if not isinstance(path_item, dict):
-            continue
-        for op in path_item.values():
-            if not isinstance(op, dict):
-                continue
-            if op.get("operationId") not in (
-                "support_ticket_create",
-                "support_ticket_add_message",
-            ):
-                continue
-            body = op.get("requestBody")
-            if isinstance(body, dict) and isinstance(body.get("content"), dict):
-                body["content"].pop("application/x-www-form-urlencoded", None)
-    return result
-
-
 SPECTACULAR_SETTINGS = {
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
     "POSTPROCESSING_HOOKS": [
         "bluesea_mobile.settings._inject_websocket_docs",
-        "bluesea_mobile.settings._inject_support_tag",
     ],
     "SERVE_AUTHENTICATION": [
         "rest_framework.authentication.SessionAuthentication",
@@ -525,11 +470,7 @@ STATIC_URL = "static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Base URL of the backend, used to build absolute URLs for static assets
-SITE_URL = (
-    os.environ.get("LOCAL_URL").rstrip("/")
-    if DEBUG
-    else os.environ.get("SITE_URL").rstrip("/")
-)
+SITE_URL = os.environ.get("LOCAL_URL") if DEBUG else os.environ.get("SITE_URL")
 
 
 STORAGES = {
@@ -549,7 +490,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
     EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
-    EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
+    EMAIL_PORT = int(os.environ.get("EMAIL_PORT"," 587"))
     EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
     EMAIL_USE_SSL = False
     EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")

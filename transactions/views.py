@@ -1,6 +1,5 @@
-from rest_framework import status
+from rest_framework import status  # noqa: I001
 from rest_framework import serializers
-from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 import json
@@ -9,12 +8,10 @@ from rest_framework.views import APIView
 from .models import WalletTransaction, FundWallet
 from .serializers import (
     WalletTransactionSerializer,
-    WalletFundingSerializer,
     AccountNameSerializer,
     InitializeFundingSerializer,
 )
 from wallet.models import Wallet
-from wallet.serializers import WalletSerializer
 import uuid
 from .paystack import checkout, get_account_name
 from django.utils import timezone
@@ -33,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 class GetWalletTransaction(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     # Instantiate the paginator class for use in the get method
     paginator = WalletTransactionPagination()
@@ -82,7 +79,7 @@ class GetWalletTransaction(APIView):
 
 
 class InitializeFunding(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Initialize wallet funding",
@@ -123,7 +120,7 @@ class InitializeFunding(APIView):
 
             FundWallet.objects.create(
                 user=request.user,
-                amount=amount * Decimal("0.985"),
+                amount=amount,
                 payment_reference=payment_reference,
                 status="PENDING",
             )
@@ -164,8 +161,8 @@ class InitializeFunding(APIView):
 
 
 class PaymentWebhook(APIView):
-    authentication_classes = []
-    permission_classes = [AllowAny]
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
 
     def verify_signature(self, request):
         signature = request.headers.get("X-Paystack-Signature")
@@ -291,11 +288,11 @@ class PaymentWebhook(APIView):
                 payload = data.get("data", {})
                 reference = payload.get("reference")
                 raw_amount = Decimal(str(payload.get("amount", "0")))
-                amount = raw_amount / Decimal("100")
+                amount = raw_amount / 100  # Convert kobo to naira
                 auth = payload.get("authorization") or {}
                 channel = auth.get("channel") or payload.get("channel") or ""
                 is_dva_transfer =  channel == "dedicated_nuban"
-                amount = amount * Decimal("0.99") if is_dva_transfer else amount * Decimal("0.985")
+                
 
                 # DVA dedicated_account transfer: local bank -> Wema DVA -> Paystack webhook -> wallet credit
                 if is_dva_transfer:
@@ -383,8 +380,8 @@ class PaymentWebhook(APIView):
                                 logger.warning(f"DVA notify failed {reference}: {e}")
                             # Also push real-time update via WebSocket if needed (wallet balance)
                             try:
-                                from channels.layers import get_channel_layer
                                 from asgiref.sync import async_to_sync
+                                from channels.layers import get_channel_layer
 
                                 channel_layer = get_channel_layer()
                                 if channel_layer:
@@ -548,7 +545,7 @@ class PaymentWebhook(APIView):
 
 
 class DvaRefreshView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Requery Wema DVA for pending transfers",
@@ -587,9 +584,10 @@ class DvaRefreshView(APIView):
     )
     def post(self, request):
         try:
-            from accounts.models import PaystackDedicatedAccount
             import requests as req_lib
             from django.core.cache import cache
+
+            from accounts.models import PaystackDedicatedAccount
 
             dva = PaystackDedicatedAccount.objects.filter(user=request.user).first()
             if not dva:
@@ -709,7 +707,7 @@ class DvaRefreshView(APIView):
 
 
 class AccountNameView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Resolve account name",

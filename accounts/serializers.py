@@ -1,7 +1,8 @@
-from rest_framework import serializers
-from .models import Profile
-from django.utils.crypto import get_random_string
 from django.core.exceptions import ValidationError
+from django.utils.crypto import get_random_string
+from rest_framework import serializers
+
+from .models import Profile
 
 
 class UserSerializer(serializers.Serializer):
@@ -33,8 +34,8 @@ class UserSerializer(serializers.Serializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = ["id", "email", "role", "email_verified", "created_on"]
-        read_only_fields = ["id", "email_verified", "created_on"]
+        fields = ("id", "email", "role", "email_verified", "created_on")
+        read_only_fields = ("id", "email_verified", "created_on")
 
 
 class LoginSerializer(serializers.Serializer):
@@ -114,3 +115,24 @@ class ResetPasswordConfirmSerializer(serializers.Serializer):
     token = serializers.CharField(help_text="Signed token from OTP verification")
     new_password = serializers.CharField(help_text="New password (min 8 characters)")
     confirm_password = serializers.CharField(help_text="Confirm the new password")
+
+class DedicatedVirtualAccountAssignSerializer(serializers.Serializer):
+    first_name =serializers.CharField(
+                    help_text="First name for Paystack customer"
+                )
+    last_name = serializers.CharField(
+                    help_text="Last name for Paystack customer"
+                )
+    account_number = serializers.CharField(
+                    help_text="Customer personal account number 10 digits (NUBAN) for Paystack validation"
+                )
+    bank_code =  serializers.CharField(
+                    help_text="Bank code 1-7 digits (e.g. 058, 000013) for account validation"
+                )
+    bvn = serializers.CharField(
+                    help_text="RSA-encrypted BVN (11 digits plain after decrypt, frontend encrypted)"
+                )
+    phone = serializers.CharField(
+                    required=False,
+                    help_text="Phone required if not in profile (11 digits, e.g. 08012345678)",
+                )
