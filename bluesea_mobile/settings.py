@@ -286,7 +286,7 @@ def _inject_websocket_docs(result, generator, request, public):
         "On `pending` creation via `POST /payments/*` you receive `reference_id`; subscribe to `ws/payments/{reference_id}/` (owner-checked) or `ws/payments/` (user-scoped). "
         'Server pushes `{"type":"payment_update","reference_id":"BS-...","status":"delivered|failed|reversed|pending","payment_type":"AirtimeTopUp","vtpass_transaction_id":"...","amount":"100"}` '
         "when `POST /payments/webhook/vtpass` or DVA `POST /transactions/webhook/paystack/` updates status. "
-        'Send `{"type":"ping"}` → `{"type":"pong"}`. Close `4401` unauth / `4403` not owner. '
+        'Send `{"type":"ping"}` → `{"type":"pong"}`. Close `401` unauth / `403` not owner. '
         "Also `wallet_user_{id}` group for DVA `wallet_update`. Fallback: `GET /payments/status/{reference_id}/`."
     )
     for ws_path in ["/ws/payments/", "/ws/payments/{reference_id}/"]:
@@ -490,7 +490,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
     EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
-    EMAIL_PORT = int(os.environ.get("EMAIL_PORT"," 587"))
+    EMAIL_PORT = int(os.environ.get("EMAIL_PORT", " 587"))
     EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
     EMAIL_USE_SSL = False
     EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
