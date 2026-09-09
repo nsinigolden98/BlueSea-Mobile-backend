@@ -1,12 +1,10 @@
-from django.conf import settings
-from django.db import models
-from django.contrib.auth.models import AbstractUser, BaseUserManager
-from django.utils import timezone
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from rest_framework.authtoken.models import Token
-from django.contrib.auth.hashers import make_password, check_password
 import secrets
+
+from django.conf import settings
+from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.db import models
+from django.utils import timezone
 
 
 def generate_referal_code():
@@ -54,7 +52,7 @@ class Profile(AbstractUser):
     objects = UserManager()
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = ()
 
     username = None
 
@@ -79,7 +77,7 @@ class Profile(AbstractUser):
         self.save()
 
     def verify_transaction_pin(self, pin):
-        from .crypto import decrypt_pin, PinDecryptionError
+        from .crypto import PinDecryptionError, decrypt_pin
 
         if not self.pin_is_set or not self.transaction_pin:
             return False
@@ -112,11 +110,11 @@ class PaystackDedicatedAccount(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        indexes = [
+        indexes = (
             models.Index(fields=["account_number"]),
             models.Index(fields=["customer_code"]),
             models.Index(fields=["user"]),
-        ]
+        )
 
     def __str__(self):
         return f"{self.account_number} - {self.bank_name} - {self.user.email}"

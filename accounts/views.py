@@ -1,55 +1,50 @@
-from django.core.cache import cache
+import logging
 import random
+import re
 import uuid
-from click import confirm
-from django.shortcuts import render
-from rest_framework import status
+from datetime import timedelta
+
+import dotenv
+import requests
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core import signing
+from django.core.cache import cache
+from django.db import transaction
+from django.utils import timezone
+from django.utils.crypto import get_random_string
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiExample,
+    extend_schema,
+)
+from rest_framework import serializers, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view, permission_classes
-from autotopup.views import IsAuthenticated
-from transactions.urls import api_view
-from .utils import send_email_verification
-from rest_framework_simplejwt.views import TokenObtainPairView
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.utils.crypto import get_random_string
-from django.utils import timezone
-from datetime import timedelta
-from django.core import signing
-from django.conf import settings
-from django.db import transaction
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework.permissions import AllowAny
-from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+from autotopup.views import IsAuthenticated
+from wallet.models import Wallet
+
+from .crypto import PinDecryptionError, decrypt_pin
 from .models import (
-    Profile,
     EmailVerification,
+    Profile,
     ResetPassword,
     ResetPasswordValuationToken,
 )
-from .social_auth import GoogleAuth, AppleAuth, get_or_create_social_user
-from .social_serializers import GoogleLoginSerializer, AppleLoginSerializer
-from .crypto import decrypt_pin, PinDecryptionError
 from .pin_security import verify_pin_with_lockout
-import logging
 from .serializers import *
-import os
-import re
-import requests
-from wallet.models import Wallet
-from drf_spectacular.utils import (
-    extend_schema,
-    OpenApiExample,
-    OpenApiParameter,
-    inline_serializer,
-)
-from drf_spectacular.types import OpenApiTypes
-from rest_framework import serializers
-
-import dotenv
+from .social_auth import AppleAuth, GoogleAuth, get_or_create_social_user
+from .social_serializers import AppleLoginSerializer, GoogleLoginSerializer
+from .utils import send_email_verification
 
 dotenv.load_dotenv()
 
@@ -60,8 +55,8 @@ logger = logging.getLogger(__name__)
 
 
 class RegisterView(APIView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes = ()
+    permission_classes = ()
 
     @extend_schema(
         summary="Register a new user",
@@ -101,14 +96,14 @@ class RegisterView(APIView):
             if serializer.is_valid(raise_exception=True):
                 with transaction.atomic():
                     account = serializer.save()
-                    role = account.role
+                    # role = account.role
                     # account.save()
                     Wallet.objects.create(user=account)
 
                     otp = get_random_string(6, "0123456789")
                     timestamp = timezone.now()
 
-                    verification_url = f"{settings.LOCAL_URL}/accounts/verify-email?code={int(otp)}&email={account.email}"
+                    # verification_url = f"{settings.LOCAL_URL}/accounts/verify-email?code={int(otp)}&email={account.email}"
                     template = "accounts/signup_email_verify.html"
 
                     send_email = send_email_verification(
@@ -155,8 +150,8 @@ class RegisterView(APIView):
 
 
 class VerifyEmail(APIView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes = ()
+    permission_classes = ()
 
     @extend_schema(
         summary="Verify email address",
@@ -219,8 +214,8 @@ class VerifyEmail(APIView):
 
 
 class ResendOtp(APIView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes = ()
+    permission_classes = ()
 
     @extend_schema(
         summary="Resend OTP",
@@ -310,8 +305,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 @method_decorator(csrf_exempt, name="dispatch")
 class LoginView(TokenObtainPairView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
     serializer_class = MyTokenObtainPairSerializer
 
     @extend_schema(
@@ -347,8 +342,8 @@ class LoginView(TokenObtainPairView):
 
 
 class GoogleLoginView(APIView):
-    authentication_classes = []
-    permission_classes = [AllowAny]
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
 
     @extend_schema(
         summary="Google OAuth login",
@@ -469,8 +464,8 @@ class GoogleLoginView(APIView):
 
 
 class AppleLoginView(APIView):
-    authentication_classes = []
-    permission_classes = [AllowAny]
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
 
     @extend_schema(
         summary="Apple OAuth login",
@@ -563,7 +558,7 @@ class AppleLoginView(APIView):
 
 
 class LogoutView(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = (JWTAuthentication,)
 
     @extend_schema(
         summary="User logout",
@@ -597,8 +592,8 @@ class LogoutView(APIView):
 
 
 class PasswordResetView(APIView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes = ()
+    permission_classes = ()
 
     @extend_schema(
         summary="Request password reset",
@@ -661,8 +656,8 @@ class PasswordResetView(APIView):
 
 
 class VerifyResetOTPView(APIView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes = ()
+    permission_classes = ()
 
     @extend_schema(
         summary="Verify password reset OTP",
@@ -729,8 +724,8 @@ class VerifyResetOTPView(APIView):
 
 
 class ResetUserPassword(APIView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes = ()
+    permission_classes = ()
 
     @extend_schema(
         summary="Reset password",
@@ -1266,7 +1261,7 @@ def reset_transaction_pin(request):
 
 
 class LookupUserView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Lookup user by email",
@@ -1315,35 +1310,13 @@ class LookupUserView(APIView):
 
 
 class DedicatedVirtualAccountAssignView(APIView):
-    permission_classes = [IsAuthenticated]
-
+    permission_classes = (IsAuthenticated,)
+    serializer_class = DedicatedVirtualAccountAssignSerializer
+    
     @extend_schema(
         summary="Assign Wema Dedicated Virtual Account",
         description="Create single-step Paystack DVA for Wema Bank. BVN is required (frontend sends RSA-encrypted, backend decrypts). Phone is required if not in DB and will update profile. If DVA already exists, returns existing account without creating new one. Handles Paystack responses per docs.",
-        request=inline_serializer(
-            name="DVAAssignRequest",
-            fields={
-                "first_name": serializers.CharField(
-                    help_text="First name for Paystack customer"
-                ),
-                "last_name": serializers.CharField(
-                    help_text="Last name for Paystack customer"
-                ),
-                "account_number": serializers.CharField(
-                    help_text="Customer personal account number 10 digits (NUBAN) for Paystack validation"
-                ),
-                "bank_code": serializers.CharField(
-                    help_text="Bank code 1-7 digits (e.g. 058, 000013) for account validation"
-                ),
-                "bvn": serializers.CharField(
-                    help_text="RSA-encrypted BVN (11 digits plain after decrypt, frontend encrypted)"
-                ),
-                "phone": serializers.CharField(
-                    required=False,
-                    help_text="Phone required if not in profile (11 digits, e.g. 08012345678)",
-                ),
-            },
-        ),
+        request=DedicatedVirtualAccountAssignSerializer,
         responses={
             200: OpenApiTypes.OBJECT,
             201: OpenApiTypes.OBJECT,
