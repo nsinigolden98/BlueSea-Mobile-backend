@@ -48,10 +48,7 @@ SILKY_MAX_RESPONSE_BODY_SIZE = 1 * 1024 * 1024
 SILKY_MAX_RECORDED_REQUESTS = 10**4
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = [
-    "testserver",
-    "attemptable-chelsea-preadvisable.ngrok-free.dev",
-] + os.environ.get("ALLOWED_HOSTS", "").split(",")
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 
 # CSRF and CORS
 CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
@@ -60,6 +57,7 @@ SECURE_SSL_REDIRECT = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = "Lax"
 
 
 INTERNAL_IPS = [

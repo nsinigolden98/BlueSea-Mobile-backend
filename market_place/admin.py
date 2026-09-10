@@ -1,9 +1,16 @@
-from django.contrib import admin
-from django.utils.html import format_html
-from django.contrib import messages
+from django.contrib import admin, messages
 from django.urls import reverse
 from django.utils import timezone
-from .models import TicketVendor, VendorKYC, EventInfo, TicketType, IssuedTicket, EventScanner
+from django.utils.html import format_html
+
+from .models import (
+    EventInfo,
+    EventScanner,
+    IssuedTicket,
+    TicketType,
+    TicketVendor,
+    VendorKYC,
+)
 
 
 def _bool_badge(value, true_label='Yes', false_label='No'):
@@ -20,15 +27,15 @@ def _bool_badge(value, true_label='Yes', false_label='No'):
 
 @admin.register(TicketVendor)
 class TicketVendorAdmin(admin.ModelAdmin):
-    list_display = [
+    list_display = (
         'brand_name', 'email', 'legal_full_name',
         'verification_badge', 'created_at'
-    ]
-    list_filter = ['is_verified', 'created_at']
-    search_fields = ['brand_name', 'legal_full_name', 'email', 'phone_number']
-    readonly_fields = ['id', 'created_at']
+    )
+    list_filter = ('is_verified', 'created_at')
+    search_fields = ('brand_name', 'legal_full_name', 'email', 'phone_number')
+    readonly_fields = ('id', 'created_at')
     list_per_page = 25
-    actions = ['approve_vendors', 'reject_vendors_action']
+    actions = ('approve_vendors', 'reject_vendors_action')
 
     fieldsets = (
         ('Vendor Information', {
@@ -72,16 +79,16 @@ class TicketVendorAdmin(admin.ModelAdmin):
 
 @admin.register(VendorKYC)
 class VendorKYCAdmin(admin.ModelAdmin):
-    list_display = [
+    list_display = (
         'vendor_link', 'document_type', 'document_number',
         'kyc_status_badge', 'submitted_at', 'reviewed_at'
-    ]
-    list_filter = ['status', 'submitted_at', 'reviewed_at']
-    search_fields = ['vendor__brand_name', 'document_type', 'document_number']
-    readonly_fields = ['id', 'submitted_at', 'document_image_preview', 'proof_of_address_preview']
+    )
+    list_filter = ('status', 'submitted_at', 'reviewed_at')
+    search_fields = ('vendor__brand_name', 'document_type', 'document_number')
+    readonly_fields = ('id', 'submitted_at', 'document_image_preview', 'proof_of_address_preview')
     list_per_page = 25
     date_hierarchy = 'submitted_at'
-    actions = ['approve_kyc', 'reject_kyc']
+    actions = ('approve_kyc', 'reject_kyc')
 
     fieldsets = (
         ('Vendor', {'fields': ('id', 'vendor')}),
@@ -159,23 +166,23 @@ class VendorKYCAdmin(admin.ModelAdmin):
 class TicketTypeInline(admin.TabularInline):
     model = TicketType
     extra = 1
-    fields = ['name', 'price', 'quantity_available']
+    fields = ('name', 'price', 'quantity_available')
 
 
 @admin.register(EventInfo)
 class EventInfoAdmin(admin.ModelAdmin):
-    list_display = [
+    list_display = (
         'event_title', 'hosted_by', 'category', 'event_mode_display',
         'event_date_display', 'event_location',
         'free_badge', 'approval_badge', 'vendor_link', 'created_at'
-    ]
-    list_filter = ['category', 'event_mode', 'is_free', 'is_approved', 'event_date', 'created_at']
-    search_fields = ['event_title', 'hosted_by', 'event_location', 'meeting_link', 'event_description', 'vendor__brand_name']
-    readonly_fields = ['id', 'created_at', 'banner_preview', 'ticket_image_preview', 'event_mode_display', 'meeting_link_preview']
+    )
+    list_filter = ('category', 'event_mode', 'is_free', 'is_approved', 'event_date', 'created_at')
+    search_fields = ('event_title', 'hosted_by', 'event_location', 'meeting_link', 'event_description', 'vendor__brand_name')
+    readonly_fields = ('id', 'created_at', 'banner_preview', 'ticket_image_preview', 'event_mode_display', 'meeting_link_preview')
     list_per_page = 25
     date_hierarchy = 'event_date'
-    inlines = [TicketTypeInline]
-    actions = ['approve_events', 'unapprove_events']
+    inlines = (TicketTypeInline,)
+    actions = ('approve_events', 'unapprove_events')
 
     fieldsets = (
         ('Event Information', {
@@ -267,10 +274,10 @@ class EventInfoAdmin(admin.ModelAdmin):
 
 @admin.register(TicketType)
 class TicketTypeAdmin(admin.ModelAdmin):
-    list_display = ['name', 'event_link', 'price_display', 'quantity_available', 'created_at']
-    list_filter = ['created_at', 'event__category']
-    search_fields = ['name', 'event__event_title']
-    readonly_fields = ['id', 'created_at']
+    list_display = ('name', 'event_link', 'price_display', 'quantity_available', 'created_at')
+    list_filter = ('created_at', 'event__category')
+    search_fields = ('name', 'event__event_title')
+    readonly_fields = ('id', 'created_at')
     list_per_page = 25
 
     fieldsets = (
@@ -296,17 +303,17 @@ class TicketTypeAdmin(admin.ModelAdmin):
 
 @admin.register(IssuedTicket)
 class IssuedTicketAdmin(admin.ModelAdmin):
-    list_display = [
+    list_display = (
         'short_id', 'owner_name', 'owner_email', 'event_link',
         'ticket_type_link', 'ticket_status_badge', 'transfer_count',
         'purchased_by_link', 'created_at'
-    ]
-    list_filter = ['status', 'created_at', 'event__category', 'transferred_at', 'canceled_at']
-    search_fields = ['owner_name', 'owner_email', 'qr_code', 'event__event_title']
-    readonly_fields = ['id', 'qr_code', 'qr_code_preview', 'created_at', 'updated_at']
+    )
+    list_filter = ('status', 'created_at', 'event__category', 'transferred_at', 'canceled_at')
+    search_fields = ('owner_name', 'owner_email', 'qr_code', 'event__event_title')
+    readonly_fields = ('id', 'qr_code', 'qr_code_preview', 'created_at', 'updated_at')
     list_per_page = 25
     date_hierarchy = 'created_at'
-    actions = ['mark_as_used', 'mark_as_expired', 'regenerate_qr_codes']
+    actions = ('mark_as_used', 'mark_as_expired', 'regenerate_qr_codes')
 
     fieldsets = (
         ('Ticket Info', {
@@ -402,10 +409,10 @@ class IssuedTicketAdmin(admin.ModelAdmin):
 
 @admin.register(EventScanner)
 class EventScannerAdmin(admin.ModelAdmin):
-    list_display = ['user_email', 'event_link', 'created_at']
-    list_filter = ['created_at']
-    search_fields = ['user__email', 'event__event_title']
-    readonly_fields = ['id', 'created_at']
+    list_display = ('user_email', 'event_link', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('user__email', 'event__event_title')
+    readonly_fields = ('id', 'created_at')
     list_per_page = 25
 
     fieldsets = (

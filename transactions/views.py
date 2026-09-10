@@ -13,7 +13,12 @@ from .serializers import (
 )
 from wallet.models import Wallet
 import uuid
-from .paystack import checkout, get_account_name
+from .paystack import (
+    checkout,
+    get_account_name,
+    create_transfer_recipient,
+    initiate_transfer,
+)
 from django.utils import timezone
 from django.conf import settings
 import hmac
@@ -201,8 +206,11 @@ class PaymentWebhook(APIView):
             ]:
                 try:
                     from accounts.models import PaystackDedicatedAccount
+                    logger.info("Processing webhook event: %s", event)
+                    logger.info(f"Webhook event: {event}, data: {data}")
+                    
 
-                    payload_data = data.get("data", {})
+                    payload_data = data.get("data")
                     # Per docs: DVA events contain customer, dedicated_account, etc.
                     # For dedicatedaccount.assign.success: data: {customer: {customer_code, id, ...}, dedicated_account: {account_number, account_name, bank: {name, slug, id}, id, active, ...}, ...}
                     # For customeridentification.success: data: {customer_id, customer_code, ...}
@@ -283,6 +291,75 @@ class PaymentWebhook(APIView):
                     )
                     return Response({"success": True})
 
+            # Handle Paystack transfer webhooks for automatic withdrawals
+            if event in [
+                "transfer.success",
+                "transfer.failed",
+                "transfer.reversed",
+            ]:
+                try:
+                    from payments.models import Withdrawal
+
+                    payload_data = data.get("data", {})
+                    reference = payload_data.get("reference")
+                    if not reference:
+                        return Response({"success": True})
+
+                    try:
+                        withdrawal = Withdrawal.objects.get(
+                            payment_reference=reference
+                        )
+                    except Withdrawal.DoesNotExist:
+                        logger.warning(
+                            f"Transfer webhook: Withdrawal with reference {reference} not found"
+                        )
+                        return Response({"success": True})
+
+                    if event == "transfer.success":
+                        withdrawal.status = "successful"
+                        withdrawal.completed_at = timezone.now()
+                        withdrawal.save(update_fields=["status", "completed_at"])
+                        logger.info(
+                            f"Transfer success: Withdrawal {reference} completed"
+                        )
+                    elif event == "transfer.failed":
+                        withdrawal.status = "failed"
+                        withdrawal.completed_at = timezone.now()
+                        withdrawal.save(update_fields=["status", "completed_at"])
+                        try:
+                            withdrawal.user.wallet.credit(
+                                amount=withdrawal.amount,
+                                description=f"Refund for failed withdrawal {reference}",
+                                reference=f"{reference}-REFUND",
+                            )
+                        except Exception:
+                            pass
+                        logger.warning(
+                            f"Transfer failed: Withdrawal {reference} refunded"
+                        )
+                    elif event == "transfer.reversed":
+                        withdrawal.status = "failed"
+                        withdrawal.completed_at = timezone.now()
+                        withdrawal.save(update_fields=["status", "completed_at"])
+                        try:
+                            withdrawal.user.wallet.credit(
+                                amount=withdrawal.amount,
+                                description=f"Refund for reversed withdrawal {reference}",
+                                reference=f"{reference}-REVERSAL",
+                            )
+                        except Exception:
+                            pass
+                        logger.warning(
+                            f"Transfer reversed: Withdrawal {reference} refunded"
+                        )
+
+                    return Response({"success": True})
+                except Exception as e:
+                    logger.error(
+                        f"Transfer webhook handling error {event}: {e}", exc_info=True
+                    )
+                    return Response({"success": True})
+
             # handle successful charge - includes DVA dedicated_account transfers per docs: https://paystack.com/docs/payments/dedicated-virtual-accounts/#requery
             if event == "charge.success":
                 payload = data.get("data", {})
@@ -291,8 +368,7 @@ class PaymentWebhook(APIView):
                 amount = raw_amount / 100  # Convert kobo to naira
                 auth = payload.get("authorization") or {}
                 channel = auth.get("channel") or payload.get("channel") or ""
-                is_dva_transfer =  channel == "dedicated_nuban"
-                
+                is_dva_transfer = channel == "dedicated_nuban"
 
                 # DVA dedicated_account transfer: local bank -> Wema DVA -> Paystack webhook -> wallet credit
                 if is_dva_transfer:
@@ -361,14 +437,14 @@ class PaymentWebhook(APIView):
                             # Use wallet.credit for atomic F() update + idempotency
                             wallet.credit(
                                 amount=amount,
-                                description=f"DVA Wema {dva.account_number} from {auth.get("sender_name")} {auth.get('sender_bank_name', '')} via {dva.bank_name}",
+                                description=f"DVA Wema {dva.account_number} from {auth.get('sender_name')} {auth.get('sender_bank_name', '')} via {dva.bank_name}",
                                 reference=reference,
                             )
                             logger.info(
                                 f"DVA credited {amount} to {dva.user.email} ref={reference} account={dva.account_number}"
                             )
                             try:
-                                sender = f'{auth.get("sender_bank_name")} in {auth.get("sender_name")}' 
+                                sender = f"{auth.get('sender_bank_name')} in {auth.get('sender_name')}"
                                 send_notification(
                                     user=dva.user,
                                     title="Dedicated Virtual Account Deposite Received",

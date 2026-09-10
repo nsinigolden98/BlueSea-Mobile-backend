@@ -32,6 +32,9 @@ class SupportTicket(models.Model):
     def __str__(self):
         return f"Ticket #{self.id} - {self.subject}"
 
+    class Meta:
+        ordering = ["-created_at"]
+
 
 class SupportMessage(models.Model):
     ticket = models.ForeignKey(

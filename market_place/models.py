@@ -1,26 +1,26 @@
-import email
-from django.db import models
-from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator, FileExtensionValidator
-from django.conf import settings
 import uuid
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.validators import FileExtensionValidator
+from django.db import models
 from django.utils import timezone
 
 User = get_user_model()
 
 
 class TicketVendor(models.Model):
-    BUSINESS_TYPE_CHOICES = [
+    BUSINESS_TYPE_CHOICES = (
         ("individual", "Individual"),
         ("registered", "Registered Business"),
         ("organizer", "Event Organizer"),
-    ]
+    )
 
-    VERIFICATION_STATUS_CHOICES = [
+    VERIFICATION_STATUS_CHOICES = (
         ("pending", "Pending"),
         ("approved", "Approved"),
         ("rejected", "Rejected"),
-    ]
+    )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
@@ -122,7 +122,7 @@ class TicketVendor(models.Model):
     class Meta:
         verbose_name = "Ticket Vendor"
         verbose_name_plural = "Ticket Vendors"
-        ordering = ["-created_at"]
+        ordering = ("-created_at",)
 
     def __str__(self):
         return self.brand_name
@@ -143,20 +143,18 @@ class TicketVendor(models.Model):
         # Sync verification_status with is_verified
         if self.is_verified:
             self.verification_status = "approved"
-        elif self.verification_status == "rejected":
-            self.is_verified = False
-        elif self.verification_status == "pending":
+        elif self.verification_status == "rejected" or self.verification_status == "pending":
             self.is_verified = False
 
         super().save(*args, **kwargs)
 
 
 class VendorKYC(models.Model):
-    KYC_STATUS_CHOICES = [
+    KYC_STATUS_CHOICES = (
         ("pending", "Pending"),
         ("approved", "Approved"),
         ("rejected", "Rejected"),
-    ]
+    )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     vendor = models.ForeignKey(
         TicketVendor, on_delete=models.CASCADE, related_name="vendor_kyc"
@@ -193,7 +191,7 @@ class VendorKYC(models.Model):
 
 
 class EventInfo(models.Model):
-    CATEGORY_CHOICES = [
+    CATEGORY_CHOICES = ( 
         ("Music", "Music"),
         ("Conference", "Conference"),
         ("Sports", "Sports"),
@@ -201,13 +199,13 @@ class EventInfo(models.Model):
         ("Workshop", "Workshop"),
         ("Party", "Party"),
         ("Others", "Others"),
-    ]
+    )
 
-    EVENT_MODE_CHOICES = [
+    EVENT_MODE_CHOICES = (  
         ("offline", "Offline"),
         ("online", "Online"),
         ("hybrid", "Hybrid"),
-    ]
+    )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     vendor = models.ForeignKey(
@@ -254,7 +252,7 @@ class EventInfo(models.Model):
         return self.event_title
 
     class Meta:
-        ordering = ["-event_date"]
+        ordering = ("-event_date",)
 
 
 class TicketType(models.Model):
@@ -277,16 +275,16 @@ class TicketType(models.Model):
         return f"{self.event.event_title} - {self.name}"
 
     class Meta:
-        ordering = ["price"]
+        ordering = ("price",)
 
 
 class IssuedTicket(models.Model):
-    STATUS_CHOICES = [
+    STATUS_CHOICES = (
         ("upcoming", "Upcoming"),
         ("used", "Used"),
         ("expired", "Expired"),
         ("canceled", "Canceled"),
-    ]
+    )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     ticket_type = models.ForeignKey(
@@ -346,7 +344,7 @@ class IssuedTicket(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ("-created_at",)
 
     def __str__(self):
         ticket_type_name = self.ticket_type.name if self.ticket_type else "Free Entry"
@@ -371,7 +369,7 @@ class IssuedTicket(models.Model):
     def can_cancel(self):
         """Check if ticket can be canceled and calculate refund"""
         # Only upcoming tickets can be canceled
-        if self.status not in ["upcoming"]:
+        if self.status not in ("upcoming",):
             return False, 0, "Only upcoming tickets can be canceled"
 
         # Free tickets cannot be canceled (no refund)
@@ -410,15 +408,15 @@ class EventScanner(models.Model):
         return f"Scanner {self.user.username} for Event {self.event.event_title}"
 
     class Meta:
-        unique_together = ["user", "event"]
+        unique_together = ("user", "event",)
 
 
 class EventWithdrawal(models.Model):
-    STATUS_CHOICES = [
+    STATUS_CHOICES = (
         ("pending", "Pending"),
         ("failed", "Failed"),
         ("successful", "Successful"),
-    ]
+    )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     event = models.ForeignKey(
@@ -438,4 +436,4 @@ class EventWithdrawal(models.Model):
         return f"Withdrawal {self.amount} for {self.event.event_title} - {self.status}"
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ("-created_at",)

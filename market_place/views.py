@@ -390,7 +390,7 @@ class CreateTicketVendor(APIView):
 
 
 class VendorStatusView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Get vendor verification status",
@@ -426,7 +426,7 @@ class VendorStatusView(APIView):
 
 
 class EventListView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="List all approved events",
@@ -467,7 +467,7 @@ class EventListView(APIView):
 
 
 class EventDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Get event details",
@@ -487,7 +487,7 @@ class EventDetailView(APIView):
 
 
 class EventPublicView(APIView):
-    permission_classes = []  # No authentication required
+    permission_classes = ()  # No authentication required
 
     @extend_schema(
         summary="Get public event details",
@@ -508,7 +508,7 @@ class EventPublicView(APIView):
 
 
 class PurchaseTicketView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Purchase event tickets",
@@ -604,7 +604,7 @@ class PurchaseTicketView(APIView):
                         )
 
                         # Generate QR code
-                        qr_data = f"{str(ticket.id)}:free-ticket:{attendee['email']}"
+                        qr_data = f"{ticket.id}:free-ticket:{attendee['email']}"
                         ticket.qr_code = qr_data
                         ticket.save()
 
