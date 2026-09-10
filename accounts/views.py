@@ -1312,7 +1312,7 @@ class LookupUserView(APIView):
 class DedicatedVirtualAccountAssignView(APIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = DedicatedVirtualAccountAssignSerializer
-    
+
     @extend_schema(
         summary="Assign Wema Dedicated Virtual Account",
         description="Create single-step Paystack DVA for Wema Bank. BVN is required (frontend sends RSA-encrypted, backend decrypts). Phone is required if not in DB and will update profile. If DVA already exists, returns existing account without creating new one. Handles Paystack responses per docs.",
@@ -1495,10 +1495,15 @@ class DedicatedVirtualAccountAssignView(APIView):
 
         # Required fields from frontend: first_name, last_name, account_number, bank_code (up to 7 digits), bvn (encrypted), phone if not in DB
         first_name = (request.data.get("first_name") or "").strip()
+        email = (request.data.get("email") or "").strip()
         last_name = (request.data.get("last_name") or "").strip()
         account_number = (request.data.get("account_number") or "").strip()
         bank_code = (request.data.get("bank_code") or "").strip()
         bvn_encrypted = request.data.get("bvn")
+        if not email:
+            return Response(
+                {"error": "email is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
         if not first_name:
             return Response(
                 {"error": "first_name is required"}, status=status.HTTP_400_BAD_REQUEST
@@ -1574,7 +1579,7 @@ class DedicatedVirtualAccountAssignView(APIView):
             "first_name": first_name,
             "last_name": last_name,
             "phone": paystack_phone,
-            "preferred_bank": "wema-bank",
+            "preferred_bank": "test-bank",
             "country": "NG",
             "bvn": bvn_plain,
             "account_number": account_number,

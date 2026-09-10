@@ -802,6 +802,8 @@ class Withdrawal(models.Model):
     payment_reference = models.CharField(
         max_length=100, unique=True, null=True, blank=True
     )
+    recipient_code = models.CharField(max_length=100, null=True, blank=True)
+    transfer_code = models.CharField(max_length=100, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(blank=True, null=True)
 

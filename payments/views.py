@@ -1,85 +1,72 @@
 import logging
-import uuid
 from decimal import Decimal
+
+from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.pagination import PageNumberPagination
-from django.shortcuts import get_object_or_404
-from django.contrib.auth import get_user_model
+
 from accounts.pin_security import verify_pin_with_lockout
-from .tasks import call_vtpass_task, call_group_vtpass_task
+
+from .tasks import call_vtpass_task
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
+import logging
+
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    extend_schema,
+)
+
+from bluesea_mobile.utils import InsufficientFundsException
 from group_payment.models import Group, GroupMember
+from notifications.utils import (
+    group_payment_failed,
+    send_notification,
+)
+
 from .models import GroupPayment, GroupPaymentContribution, Withdrawal
-from transactions.models import WalletTransaction
 from .serializers import (
+    AirtelDataTopUpSerializer,
+    Airtime2CashSerializer,
     AirtimeTopUpSerializer,
+    DSTVPaymentSerializer,
+    ElectricityPaymentCustomerSerializer,
+    ElectricityPaymentSerializer,
+    EtisalatDataTopUpSerializer,
+    GloDataTopUpSerializer,
+    GOTVPaymentSerializer,
+    GroupPaymentSerializer,
     JAMBRegistrationSerializer,
+    MTNDataTopUpSerializer,
+    ShowMaxPaymentSerializer,
+    StartimesPaymentSerializer,
     WAECRegitrationSerializer,
     WAECResultCheckerSerializer,
-    ElectricityPaymentSerializer,
-    DSTVPaymentSerializer,
-    GOTVPaymentSerializer,
-    StartimesPaymentSerializer,
-    ShowMaxPaymentSerializer,
-    MTNDataTopUpSerializer,
-    AirtelDataTopUpSerializer,
-    GloDataTopUpSerializer,
-    EtisalatDataTopUpSerializer,
-    GroupPaymentSerializer,
-    Airtime2CashSerializer,
-    ElectricityPaymentCustomerSerializer,
     WithdrawalRequestSerializer,
     WithdrawalResponseSerializer,
 )
-
-from notifications.utils import (
-    send_notification,
-    contribution_notification,
-    group_payment_success,
-    group_payment_failed,
-)
 from .vtpass import (
-    generate_reference_id,
-    top_up,
-    dstv_dict,
-    gotv_dict,
-    startimes_dict,
-    showmax_dict,
-    mtn_dict,
     airtel_dict,
-    glo_dict,
+    dstv_dict,
     etisalat_dict,
+    generate_reference_id,
     get_customer,
-    get_receipt,
+    glo_dict,
+    gotv_dict,
+    mtn_dict,
+    showmax_dict,
+    startimes_dict,
+    top_up,
 )
-
-from bluesea_mobile.utils import InsufficientFundsException, VTUAPIException
-from bonus.utils import (
-    award_daily_login_bonus,
-    award_points,
-    award_referral_bonus,
-    award_vtu_purchase_points,
-    user_points_summary,
-    redeem_points,
-)
-from bonus.models import Referral, BonusCampaign, BonusHistory, BonusPoint
-import logging
-from drf_spectacular.utils import (
-    extend_schema,
-    OpenApiExample,
-    OpenApiParameter,
-    inline_serializer,
-)
-from drf_spectacular.types import OpenApiTypes
-from rest_framework import serializers
-
 
 logger = logging.getLogger(__name__)
 
@@ -155,20 +142,20 @@ def process_payment(request, amount, service_data, service_name, description=Non
     reference_id = service_data.get("request_id")
     try:
         from .models import (
-            AirtimeTopUp,
-            MTNDataTopUp,
             AirtelDataTopUp,
-            GloDataTopUp,
-            EtisalatDataTopUp,
+            Airtime2Cash,
+            AirtimeTopUp,
             DSTVPayment,
-            GOTVPayment,
-            StartimesPayment,
-            ShowMaxPayment,
             ElectricityPayment,
+            EtisalatDataTopUp,
+            GloDataTopUp,
+            GOTVPayment,
+            JAMBRegistration,
+            MTNDataTopUp,
+            ShowMaxPayment,
+            StartimesPayment,
             WAECRegitration,
             WAECResultChecker,
-            JAMBRegistration,
-            Airtime2Cash,
         )
 
         for m in (
@@ -2372,8 +2359,8 @@ class WithdrawalView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        summary="Request a withdrawal",
-        description="Withdraw wallet funds to a bank account. Requires JWT and transaction PIN; validates PIN, bank details, and minimum amount (N500). Returns a withdrawal record (status pending).",
+        summary="Request an automatic withdrawal via Paystack",
+        description="Withdraw wallet funds to a bank account. Validates PIN, bank details, and minimum amount (N500). Creates withdrawal record with status pending and automatically initiates Paystack transfer. Status updates to successful/failed via webhook at POST /transactions/webhook/paystack/ handling transfer.success, transfer.failed, transfer.reversed.",
         request=WithdrawalRequestSerializer,
         responses={
             201: WithdrawalResponseSerializer,
@@ -2390,14 +2377,14 @@ class WithdrawalView(APIView):
                     "amount": "5000.00",
                     "bank_code": "058",
                     "bank_name": "GTBank",
-                    "transaction_pin": "1234",
+                    "transaction_pin": "encrypted_pin_string",
                 },
                 request_only=True,
             ),
             OpenApiExample(
                 "Response Example",
                 value={
-                    "message": "Withdrawal initiated successfully",
+                    "message": "Withdrawal request submitted and transfer initiated",
                     "state": True,
                     "withdrawal": {
                         "account_name": "John Doe",
@@ -2406,9 +2393,11 @@ class WithdrawalView(APIView):
                         "bank_code": "058",
                         "bank_name": "GTBank",
                         "completed_at": None,
-                        "created_at": "2026-08-20T00:00:00Z",
+                        "created_at": "2026-09-10T00:00:00Z",
                         "id": 1,
-                        "payment_reference": "WD-20260820ABCD",
+                        "payment_reference": "BS-WIT-20260910XXXX-ABCD",
+                        "recipient_code": None,
+                        "transfer_code": None,
                         "status": "pending",
                     },
                 },
@@ -2489,10 +2478,40 @@ class WithdrawalView(APIView):
                 except Exception as e:
                     logger.error(f"Error sending withdrawal notification: {str(e)}")
 
+                # Auto-initiate Paystack transfer
+                try:
+                    from .paystack import create_transfer_recipient, initiate_transfer
+
+                    recipient_success, recipient_result = create_transfer_recipient(
+                        name=account_name,
+                        account_number=account_number,
+                        bank_code=bank_code,
+                        bank_name=bank_name,
+                    )
+                    if recipient_success:
+                        withdrawal.recipient_code = recipient_result
+                        withdrawal.save(update_fields=["recipient_code"])
+
+                    transfer_success, transfer_result = initiate_transfer(
+                        recipient_code=withdrawal.recipient_code,
+                        amount=amount,
+                        reference=reference_id,
+                        reason=f"Withdrawal to {account_name} ({account_number})",
+                    )
+                    if transfer_success:
+                        withdrawal.transfer_code = transfer_result
+                        withdrawal.save(update_fields=["transfer_code"])
+                    else:
+                        logger.error(
+                            f"Paystack transfer initiation failed: {transfer_result}"
+                        )
+                except Exception as e:
+                    logger.error(f"Paystack auto-transfer error: {str(e)}")
+
                 response_serializer = WithdrawalResponseSerializer(
                     {
                         "state": True,
-                        "message": "Withdrawal request submitted",
+                        "message": "Withdrawal request submitted and transfer initiated",
                         "withdrawal": withdrawal,
                     }
                 )
@@ -2508,7 +2527,7 @@ class WithdrawalView(APIView):
 
 
 class PaymentStatusView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Get payment status by reference_id",
@@ -2525,24 +2544,25 @@ class PaymentStatusView(APIView):
         tags=["Payments"],
     )
     def get(self, request, reference_id):
+        from django.db.models import Q
+
         from .models import (
-            AirtimeTopUp,
-            MTNDataTopUp,
             AirtelDataTopUp,
-            GloDataTopUp,
-            EtisalatDataTopUp,
+            Airtime2Cash,
+            AirtimeTopUp,
             DSTVPayment,
-            GOTVPayment,
-            StartimesPayment,
-            ShowMaxPayment,
             ElectricityPayment,
+            EtisalatDataTopUp,
+            GloDataTopUp,
+            GOTVPayment,
+            GroupPayment,
+            JAMBRegistration,
+            MTNDataTopUp,
+            ShowMaxPayment,
+            StartimesPayment,
             WAECRegitration,
             WAECResultChecker,
-            JAMBRegistration,
-            Airtime2Cash,
-            GroupPayment,
         )
-        from django.db.models import Q
 
         models = (
             AirtimeTopUp,

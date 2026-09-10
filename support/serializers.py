@@ -104,3 +104,64 @@ class CreateTicketResponse(serializers.Serializer):
 class AddMessageResponse(serializers.Serializer):
     success = serializers.BooleanField()
     message = SupportMessageSerializer()
+
+
+class AdminMessageSerializer(serializers.ModelSerializer):
+    sender_name = serializers.SerializerMethodField()
+    attachments = SupportAttachmentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = SupportMessage
+        fields = [
+            "id",
+            "sender_name",
+            "message",
+            "is_admin",
+            "created_at",
+            "attachments",
+        ]
+
+    @extend_schema_field(serializers.CharField())
+    def get_sender_name(self, obj):
+        return f"{obj.sender.surname} {obj.sender.other_names}"
+
+
+class AdminTicketSerializer(serializers.ModelSerializer):
+    messages = AdminMessageSerializer(many=True, read_only=True)
+    user_name = serializers.SerializerMethodField()
+    user_email = serializers.SerializerMethodField()
+    message_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = SupportTicket
+        fields = [
+            "id",
+            "subject",
+            "description",
+            "status",
+            "priority",
+            "created_at",
+            "updated_at",
+            "messages",
+            "user_name",
+            "user_email",
+            "message_count",
+        ]
+        read_only_fields = ["created_at", "updated_at", "messages", "message_count"]
+
+    @extend_schema_field(serializers.CharField())
+    def get_user_name(self, obj):
+        return f"{obj.user.surname} {obj.user.other_names}"
+
+    @extend_schema_field(serializers.EmailField())
+    def get_user_email(self, obj):
+        return obj.user.user.email
+
+
+class AdminTicketUpdateSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(
+        choices=SupportTicket.STATUS_CHOICES, required=False
+    )
+    priority = serializers.ChoiceField(
+        choices=SupportTicket.PRIORITY_CHOICES, required=False
+    )

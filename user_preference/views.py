@@ -1,29 +1,30 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    extend_schema,
+    inline_serializer,
+)
+from rest_framework import serializers, status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from accounts.models import Profile
+
+from .models import UpdateUserModel
 from .serializers import (
     CurrentUserSerializer,
     UpdateUserSerializer,
     UserPreferenceSerializer,
 )
-from .models import UpdateUserModel
-from rest_framework import status
-from rest_framework.parsers import MultiPartParser, FormParser
-from accounts.models import Profile
-from drf_spectacular.utils import (
-    extend_schema,
-    OpenApiExample,
-    OpenApiParameter,
-    inline_serializer,
-)
-from drf_spectacular.types import OpenApiTypes
-from rest_framework import serializers
 
 
 class CurrentUserView(APIView):
     # Ensure only authenticated users can access this view
-    permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]  # Needed for file uploads
+    permission_classes =(IsAuthenticated,)
+    parser_classes =(MultiPartParser, FormParser)  # Needed for file uploads
 
     @extend_schema(
         summary="Get current user profile",

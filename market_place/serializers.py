@@ -1,18 +1,16 @@
-from rest_framework import serializers
-from drf_spectacular.utils import extend_schema_field
-from .models import (
-    EventInfo,
-    TicketType,
-    IssuedTicket,
-    TicketVendor,
-    VendorKYC,
-    EventScanner,
-)
+import base64
 
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-import base64
-from django.core.files.base import ContentFile
+from drf_spectacular.utils import extend_schema_field
+from rest_framework import serializers
+
+from .models import (
+    EventInfo,
+    IssuedTicket,
+    TicketType,
+    TicketVendor,
+)
 
 User = get_user_model()
 
@@ -22,7 +20,7 @@ class TicketTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TicketType
-        fields = [
+        fields = (
             "id",
             "name",
             "price",
@@ -30,8 +28,8 @@ class TicketTypeSerializer(serializers.ModelSerializer):
             "initial_quantity",
             "description",
             "created_at",
-        ]
-        read_only_fields = ["id", "created_at"]
+        )
+        read_only_fields = ("id", "created_at")
 
 
 class VendorSerializer(serializers.ModelSerializer):
@@ -40,7 +38,7 @@ class VendorSerializer(serializers.ModelSerializer):
     class Meta:
         model = TicketVendor
         fields = "__all__"
-        read_only_fields = ["id", "is_verified"]
+        read_only_fields = ("id", "is_verified")
 
 
 class VendorPublicSerializer(serializers.ModelSerializer):
@@ -48,13 +46,13 @@ class VendorPublicSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TicketVendor
-        fields = [
+        fields = (
             "id",
             "brand_name",
             "business_type",
             "is_verified",
             "verification_status",
-        ]
+        )
         read_only_fields = fields
 
 
@@ -68,7 +66,7 @@ class EventInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EventInfo
-        fields = [
+        fields = (
             "id",
             "vendor",
             "event_title",
@@ -88,8 +86,8 @@ class EventInfoSerializer(serializers.ModelSerializer):
             "total_tickets",
             "tickets_sold",
             "created_at",
-        ]
-        read_only_fields = ["id", "vendor", "is_approved", "ticket_types", "created_at"]
+        )
+        read_only_fields = ("id", "vendor", "is_approved", "ticket_types", "created_at")
 
     @extend_schema_field(serializers.IntegerField())
     def get_total_tickets(self, obj):
@@ -131,7 +129,7 @@ class CreateEventSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EventInfo
-        fields = [
+        fields = (      
             "vendor",
             "event_title",
             "event_description",
@@ -146,7 +144,7 @@ class CreateEventSerializer(serializers.ModelSerializer):
             "event_banner",
             "ticket_image",
             "ticket_types",
-        ]
+        )
 
     def create(self, validated_data):
         # 1. Pop the validated ticket data
@@ -396,7 +394,7 @@ class IssuedTicketSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = IssuedTicket
-        fields = [
+        fields = (
             "id",
             "ticket_type",
             "event_title",
@@ -410,8 +408,8 @@ class IssuedTicketSerializer(serializers.ModelSerializer):
             "qr_code",
             "status",
             "created_at",
-        ]
-        read_only_fields = ["id", "qr_code", "status", "created_at"]
+        )
+        read_only_fields = ("id", "qr_code", "status", "created_at")
 
     @extend_schema_field(serializers.URLField(allow_null=True))
     def get_event_banner(self, obj):
@@ -460,7 +458,7 @@ class TicketListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = IssuedTicket
-        fields = [
+        fields = (
             "id",
             "event_title",
             "event_date",
@@ -476,7 +474,7 @@ class TicketListSerializer(serializers.ModelSerializer):
             "created_at",
             "transferred_at",
             "canceled_at",
-        ]
+        )
 
     @extend_schema_field(serializers.URLField(allow_null=True))
     def get_event_banner(self, obj):
@@ -527,7 +525,7 @@ class TicketDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = IssuedTicket
-        fields = [
+        fields = (
             "id",
             "event",
             "ticket_type",
@@ -551,7 +549,7 @@ class TicketDetailSerializer(serializers.ModelSerializer):
             "can_transfer",
             "can_cancel",
             "refund_info",
-        ]
+        )
 
     @extend_schema_field(serializers.CharField(allow_null=True))
     def get_qr_code_base64(self, obj):
@@ -580,7 +578,7 @@ class TicketDetailSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(TicketActionStatusSerializer())
     def get_can_cancel(self, obj):
-        can_cancel, refund_amount, message = obj.can_cancel()
+        can_cancel, _refund_amount, message = obj.can_cancel()
         return {"allowed": can_cancel, "message": message}
 
     @extend_schema_field(RefundInfoSerializer(allow_null=True))
@@ -623,7 +621,7 @@ class EventWithdrawalSerializer(serializers.ModelSerializer):
         model = __import__(
             "market_place.models", fromlist=["EventWithdrawal"]
         ).EventWithdrawal
-        fields = [
+        fields = (
             "id",
             "event",
             "amount",
@@ -633,14 +631,14 @@ class EventWithdrawalSerializer(serializers.ModelSerializer):
             "payment_reference",
             "created_at",
             "completed_at",
-        ]
-        read_only_fields = [
+        )
+        read_only_fields = (
             "id",
             "status",
             "payment_reference",
             "created_at",
             "completed_at",
-        ]
+        )
 
 
 class VerifyAccountNameSerializer(serializers.Serializer):

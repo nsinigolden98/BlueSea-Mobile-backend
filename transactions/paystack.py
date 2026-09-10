@@ -7,49 +7,37 @@ BASE_URL = "https://api.paystack.co"
 
 HEADERS = {
     "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
 }
-
 
 
 def checkout(payload):
     url = f"{BASE_URL}/transaction/initialize"
-    
+
     try:
         response = requests.post(url, json=payload, headers=HEADERS)
-        # data = response.json()
-        # print("Paystack response:", data)
-
         response_data = response.json()
-
-        if response_data.get('status') == True:
-            return True, response_data['data']['authorization_url']
+        if response_data.get("status") == True:
+            return True, response_data["data"]["authorization_url"]
         else:
             return False, "Failed to initiate payment! Please try again later"
     except Exception as e:
-        # print("Paystack error:", str(e))
-        return False, "An error occurred while processing the payment. Please try again later."
-        
+        return (
+            False,
+            "An error occurred while processing the payment. Please try again later.",
+        )
 
 
 def get_nigerian_banks():
-    response = requests.get(
-       url= f"{BASE_URL}/bank",
-        headers = HEADERS
-    )
+    response = requests.get(url=f"{BASE_URL}/bank", headers=HEADERS)
     banks = response.json()["data"]
     return {bank["name"]: bank["code"] for bank in banks}
 
 
 def get_account_name(account_number: str, bank_code: str):
     url = f"{BASE_URL}/bank/resolve"
-    params = {
-        "account_number": account_number,
-        "bank_code": bank_code
-    }
-    
-    response = requests.get(url, params=params , headers=HEADERS)
-    
+    params = {"account_number": account_number, "bank_code": bank_code}
+    response = requests.get(url, params=params, headers=HEADERS)
     if response.status_code == 200:
         data = response.json()
         if data.get("status"):
@@ -60,3 +48,43 @@ def get_account_name(account_number: str, bank_code: str):
     else:
         return {"success": False, "message": "Network error"}
 
+
+def create_transfer_recipient(name, account_number, bank_code, bank_name):
+    payload = {
+        "type": "nuban",
+        "name": name,
+        "account_number": account_number,
+        "bank_code": bank_code,
+        "description": f"Withdrawal to {name} ({account_number})",
+        "currency": "NGN",
+    }
+    try:
+        response = requests.post(
+            f"{BASE_URL}/transferrecipient", json=payload, headers=HEADERS
+        )
+        data = response.json()
+        if data.get("status"):
+            return True, data["data"]["recipient_code"]
+        return False, data.get("message", "Failed to create recipient")
+    except Exception as e:
+        return False, str(e)
+
+
+def initiate_transfer(recipient_code, amount, reference, reason):
+    amount_in_kobo = int(amount * 100)
+    payload = {
+        "source": "balance",
+        "amount": amount_in_kobo,
+        "reference": reference,
+        "recipient": recipient_code,
+        "reason": reason,
+        "currency": "NGN",
+    }
+    try:
+        response = requests.post(f"{BASE_URL}/transfer", json=payload, headers=HEADERS)
+        data = response.json()
+        if data.get("status"):
+            return True, data["data"]["transfer_code"]
+        return False, data.get("message", "Failed to initiate transfer")
+    except Exception as e:
+        return False, str(e)

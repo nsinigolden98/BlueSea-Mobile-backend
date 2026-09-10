@@ -3,7 +3,7 @@ import os
 
 from cryptography.exceptions import InvalidKey
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from cryptography.hazmat.primitives.asymmetric import padding
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
@@ -29,14 +29,14 @@ def _load_private_key():
         # Treat as base64-encoded PEM (single-line, .env friendly).
         try:
             pem = base64.b64decode(raw)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  
             raise ImproperlyConfigured(
                 "PIN_RSA_PRIVATE_KEY is not valid base64 or PEM."
             ) from exc
 
     try:
         return serialization.load_pem_private_key(pem, password=None)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  
         raise ImproperlyConfigured("Failed to load PIN_RSA_PRIVATE_KEY.") from exc
 
 
@@ -47,7 +47,7 @@ def decrypt_pin(ciphertext_b64: str) -> str:
 
     try:
         cipher_bytes = base64.b64decode(ciphertext_b64)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  
         raise PinDecryptionError("Ciphertext is not valid base64.") from exc
 
     try:
@@ -62,7 +62,7 @@ def decrypt_pin(ciphertext_b64: str) -> str:
         )
     except InvalidKey as exc:
         raise PinDecryptionError("Invalid ciphertext.") from exc
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  
         raise PinDecryptionError("Failed to decrypt PIN.") from exc
 
     try:
