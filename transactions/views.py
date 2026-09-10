@@ -206,44 +206,36 @@ class PaymentWebhook(APIView):
             ]:
                 try:
                     from accounts.models import PaystackDedicatedAccount
-                    logger.info("Processing webhook event: %s", event)
-                    logger.info(f"Webhook event: {event}, data: {data}")
+                    # logger.info("Processing webhook event: %s", event)
+                    # logger.info(f"Webhook event: {event}, data: {data}")
                     
 
                     payload_data = data.get("data")
-                    # Per docs: DVA events contain customer, dedicated_account, etc.
-                    # For dedicatedaccount.assign.success: data: {customer: {customer_code, id, ...}, dedicated_account: {account_number, account_name, bank: {name, slug, id}, id, active, ...}, ...}
-                    # For customeridentification.success: data: {customer_id, customer_code, ...}
-                    customer_code = None
-                    dedicated = None
-                    if isinstance(payload_data.get("customer"), dict):
-                        customer_code = payload_data["customer"].get("customer_code")
-                    elif payload_data.get("customer_code"):
-                        customer_code = payload_data.get("customer_code")
-                    if payload_data.get("dedicated_account"):
-                        dedicated = payload_data.get("dedicated_account")
-                    elif payload_data.get("account_number"):
-                        dedicated = payload_data
+                    
 
-                    if event == "dedicatedaccount.assign.success" and dedicated:
-                        account_number = dedicated.get("account_number")
-                        # Find DVA by customer_code or account_number
-                        dva = None
-                        if customer_code:
-                            dva = PaystackDedicatedAccount.objects.filter(
-                                customer_code=customer_code
-                            ).first()
-                        if not dva and account_number:
-                            dva = PaystackDedicatedAccount.objects.filter(
-                                account_number=account_number
+                    if event == "dedicatedaccount.assign.success":
+
+                        dedicated = payload_data.get("dedicated_account",{})
+                        customer = payload_data.get("customer",{})
+                        
+                        dva = PaystackDedicatedAccount.objects.filter(
+                                user__email=customer.get("email")
                             ).first()
                         if dva:
                             dva.active = dedicated.get("active", True)
                             dva.paystack_response = payload_data
+                            dva.dva_account_number = dedicated.get("account_number")
+                            dva.dva_account_name = dedicated.get("account_name")
+                            dva.customer_code = customer.get("customer_code")
+                            dva.dedicated_account_id = dedicated.get("id")
                             dva.save(
                                 update_fields=[
                                     "active",
                                     "paystack_response",
+                                    "dva_account_number",
+                                    "dva_account_name",
+                                    "customer_code",
+                                    "dedicated_account_id",
                                     "updated_at",
                                 ]
                             )
@@ -258,7 +250,7 @@ class PaymentWebhook(APIView):
                                 send_notification(
                                     user=dva.user,
                                     title="Dedicated Account Active",
-                                    message=f"Your Wema DVA {dva.account_number} is now active via webhook and ready to receive funds.",
+                                    message=f"Your Wema DVA {dva.dva_account_number} is now active and ready to receive funds.",
                                     notification_type="dva_assigned",
                                     email_subject="BlueSea - DVA Active",
                                 )
@@ -267,13 +259,9 @@ class PaymentWebhook(APIView):
                                     f"DVA webhook notify failed {event}: {e}"
                                 )
                     elif event == "dedicatedaccount.assign.failed":
-                        reason = (
-                            payload_data.get("reason")
-                            or data.get("reason")
-                            or "Unknown"
-                        )
+
                         logger.warning(
-                            f"DVA assign failed: {reason} customer_code={customer_code} data={payload_data}"
+                            f"DVA assign failed: customer_code={payload_data.get('customer_code')} data={payload_data}"
                         )
 
                     if event in [
@@ -281,7 +269,7 @@ class PaymentWebhook(APIView):
                         "customeridentification.failed",
                     ]:
                         logger.info(
-                            f"Customer identification {event} for customer_code={customer_code}: {payload_data.get('reason', '')}"
+                            f"Customer identification {event} for customer_code={payload_data.get('customer_code')}: {payload_data.get('reason', '')}"
                         )
 
                     return Response({"success": True})
@@ -408,7 +396,7 @@ class PaymentWebhook(APIView):
                                     PaystackDedicatedAccount.objects.select_related(
                                         "user"
                                     )
-                                    .filter(account_number=acct_num)
+                                    .filter(dva_account_number=acct_num)
                                     .first()
                                 )
 
@@ -437,20 +425,20 @@ class PaymentWebhook(APIView):
                             # Use wallet.credit for atomic F() update + idempotency
                             wallet.credit(
                                 amount=amount,
-                                description=f"DVA Wema {dva.account_number} from {auth.get('sender_name')} {auth.get('sender_bank_name', '')} via {dva.bank_name}",
+                                description=f"DVA Wema {dva.dva_account_number} from {auth.get('sender_name')} {auth.get('sender_bank_name', '')} via {dva.bank_name}",
                                 reference=reference,
                             )
                             logger.info(
-                                f"DVA credited {amount} to {dva.user.email} ref={reference} account={dva.account_number}"
+                                f"DVA credited {amount} to {dva.user.email} ref={reference} account={dva.dva_account_number}"
                             )
                             try:
                                 sender = f"{auth.get('sender_bank_name')} in {auth.get('sender_name')}"
                                 send_notification(
                                     user=dva.user,
-                                    title="Dedicated Virtual Account Deposite Received",
-                                    message=f"₦{amount} received via Wema DVA {dva.account_number} from {sender} (ref {reference}) — your BlueSea wallet has been credited.",
+                                    title="Dedicated Virtual Account Deposit Received",
+                                    message=f"₦{amount} received via Wema DVA {dva.dva_account_number} from {sender} (ref {reference}) — your BlueSea wallet has been credited.",
                                     notification_type="payment_success",
-                                    email_subject="BlueSea Mobile- Dedicated Virtual Account Deposite Received",
+                                    email_subject="BlueSea Mobile- Dedicated Virtual Account Deposit Received",
                                 )
                             except Exception as e:
                                 logger.warning(f"DVA notify failed {reference}: {e}")
@@ -467,7 +455,7 @@ class PaymentWebhook(APIView):
                                             "type": "wallet_update",
                                             "amount": str(amount),
                                             "reference": reference,
-                                            "account_number": dva.account_number,
+                                            "account_number": dva.dva_account_number,
                                         },
                                     )
                             except Exception:
@@ -493,122 +481,123 @@ class PaymentWebhook(APIView):
                 # logger.info("Processing successful charge - Reference: %s, Raw Amount: %s, Converted Amount: %s",
                 #           reference, raw_amount, amount)
 
-                try:
-                    with transaction.atomic():
-                        # Get funding request with lock
-                        funding_request = FundWallet.objects.select_for_update().get(
-                            payment_reference=reference, status="PENDING"
-                        )
-
-                        # logger.info("Found pending funding request: Amount: %s, User: %s",
-                        #           funding_request.amount,
-                        #           funding_request.user.email if funding_request.user else 'None')
-
-                        # Get wallet with lock
-                        try:
-                            wallet = Wallet.objects.select_for_update().get(
-                                user=funding_request.user
-                            )
-                            logger.info(
-                                "Found wallet for user: %s, Current balance: %s",
-                                funding_request.user.email,
-                                wallet.balance,
-                            )
-                        except Wallet.DoesNotExist:
-                            logger.error(
-                                "Wallet not found for user: %s",
-                                funding_request.user.email,
-                            )
-                            funding_request.status = "FAILED"
-                            funding_request.save()
-                            return Response(
-                                {"success": False, "error": "Wallet not found"},
-                                status=status.HTTP_404_NOT_FOUND,
+                else:
+                    try:
+                        with transaction.atomic():
+                            # Get funding request with lock
+                            funding_request = FundWallet.objects.select_for_update().get(
+                                payment_reference=reference, status="PENDING"
                             )
 
-                        request_amount = Decimal(str(funding_request.amount))
-                        webhook_amount = Decimal(str(amount))
+                            # logger.info("Found pending funding request: Amount: %s, User: %s",
+                            #           funding_request.amount,
+                            #           funding_request.user.email if funding_request.user else 'None')
 
-                        if abs(request_amount - webhook_amount) > Decimal("0.01"):
-                            logger.error(
-                                "Amount mismatch - Expected: %s, Got: %s",
-                                request_amount,
-                                webhook_amount,
-                            )
-                            funding_request.status = "FAILED"
-                            funding_request.save()
-                            return Response(
-                                {
-                                    "success": False,
-                                    "error": f"Amount mismatch. Expected {request_amount}, got {webhook_amount}",
-                                },
-                                status=status.HTTP_400_BAD_REQUEST,
-                            )
+                            # Get wallet with lock
+                            try:
+                                wallet = Wallet.objects.select_for_update().get(
+                                    user=funding_request.user
+                                )
+                                logger.info(
+                                    "Found wallet for user: %s, Current balance: %s",
+                                    funding_request.user.email,
+                                    wallet.balance,
+                                )
+                            except Wallet.DoesNotExist:
+                                logger.error(
+                                    "Wallet not found for user: %s",
+                                    funding_request.user.email,
+                                )
+                                funding_request.status = "FAILED"
+                                funding_request.save()
+                                return Response(
+                                    {"success": False, "error": "Wallet not found"},
+                                    status=status.HTTP_404_NOT_FOUND,
+                                )
 
-                        try:
-                            # Update status to processing
-                            funding_request.status = "PROCESSING"
-                            funding_request.save()
+                            request_amount = Decimal(str(funding_request.amount))
+                            webhook_amount = Decimal(str(amount))
 
-                            # Update wallet balance directly
-                            old_balance = wallet.balance
-                            wallet.balance += webhook_amount
-                            wallet.save(update_fields=["balance", "updated_at"])
-
-                            # Create transaction record
-                            WalletTransaction.objects.create(
-                                wallet=wallet,
-                                amount=webhook_amount,
-                                transaction_type="CREDIT",
-                                description="Wallet Funding",
-                                reference=reference,
-                            )
-
-                            # Update funding request status
-                            funding_request.status = "COMPLETED"
-                            funding_request.completed_at = timezone.now()
-                            funding_request.save()
-
-                            # logger.info(
-                            #     "Wallet funded successfully. Old balance: %s, New balance: %s",
-                            #     old_balance, wallet.balance
-                            # )
+                            if abs(request_amount - webhook_amount) > Decimal("0.01"):
+                                logger.error(
+                                    "Amount mismatch - Expected: %s, Got: %s",
+                                    request_amount,
+                                    webhook_amount,
+                                )
+                                funding_request.status = "FAILED"
+                                funding_request.save()
+                                return Response(
+                                    {
+                                        "success": False,
+                                        "error": f"Amount mismatch. Expected {request_amount}, got {webhook_amount}",
+                                    },
+                                    status=status.HTTP_400_BAD_REQUEST,
+                                )
 
                             try:
-                                send_notification(
-                                    user=funding_request.user,
-                                    title="Deposite To Bluesea Account",
-                                    message=f"Successful Deposite of ₦{webhook_amount}",
-                                    notification_type="payment_success",
-                                    email_subject="BlueSea Mobile - Checkout Deposite",
+                                # Update status to processing
+                                funding_request.status = "PROCESSING"
+                                funding_request.save()
+
+                                # Update wallet balance directly
+                                old_balance = wallet.balance
+                                wallet.balance += webhook_amount
+                                wallet.save(update_fields=["balance", "updated_at"])
+
+                                # Create transaction record
+                                WalletTransaction.objects.create(
+                                    wallet=wallet,
+                                    amount=webhook_amount,
+                                    transaction_type="CREDIT",
+                                    description="Wallet Funding",
+                                    reference=reference,
                                 )
+
+                                # Update funding request status
+                                funding_request.status = "COMPLETED"
+                                funding_request.completed_at = timezone.now()
+                                funding_request.save()
+
+                                # logger.info(
+                                #     "Wallet funded successfully. Old balance: %s, New balance: %s",
+                                #     old_balance, wallet.balance
+                                # )
+
+                                try:
+                                    send_notification(
+                                        user=funding_request.user,
+                                        title="Deposite To Bluesea Account",
+                                        message=f"Successful Deposite of ₦{webhook_amount}",
+                                        notification_type="payment_success",
+                                        email_subject="BlueSea Mobile - Checkout Deposite",
+                                    )
+                                except Exception as e:
+                                    logger.error(f"Error awarding bonus points: {str(e)}")
+
+                                return Response(
+                                    {
+                                        "success": True,
+                                        "message": "Payment processed successfully",
+                                        "old_balance": str(old_balance),
+                                        "new_balance": str(wallet.balance),
+                                    }
+                                )
+
                             except Exception as e:
-                                logger.error(f"Error awarding bonus points: {str(e)}")
+                                # logger.error("Error updating wallet: %s", str(e), exc_info=True)
+                                funding_request.status = "FAILED"
+                                funding_request.save()
+                                return Response(
+                                    {"success": False, "error": str(e)},
+                                    status=status.HTTP_400_BAD_REQUEST,
+                                )
 
-                            return Response(
-                                {
-                                    "success": True,
-                                    "message": "Payment processed successfully",
-                                    "old_balance": str(old_balance),
-                                    "new_balance": str(wallet.balance),
-                                }
-                            )
-
-                        except Exception as e:
-                            # logger.error("Error updating wallet: %s", str(e), exc_info=True)
-                            funding_request.status = "FAILED"
-                            funding_request.save()
-                            return Response(
-                                {"success": False, "error": str(e)},
-                                status=status.HTTP_400_BAD_REQUEST,
-                            )
-
-                except FundWallet.DoesNotExist:
-                    # logger.error("Invalid payment reference: %s", reference)
-                    return Response(
-                        {"success": False, "error": "Invalid payment reference"},
-                        status=status.HTTP_404_NOT_FOUND,
-                    )
+                    except FundWallet.DoesNotExist:
+                        # logger.error("Invalid payment reference: %s", reference)
+                        return Response(
+                            {"success": False, "error": "Invalid payment reference"},
+                            status=status.HTTP_404_NOT_FOUND,
+                        )
 
             return Response({"success": True})
 
