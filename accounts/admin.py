@@ -1,25 +1,31 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
-from django.contrib import messages
-from .models import Profile, EmailVerification, ResetPassword, ResetPasswordValuationToken
+
+from .models import (
+    EmailVerification,
+    PaystackDedicatedAccount,
+    Profile,
+    ResetPassword,
+    ResetPasswordValuationToken,
+)
 
 
 @admin.register(Profile)
 class ProfileAdmin(UserAdmin):
-    list_display = [
+    list_display = (
         'email', 'full_name', 'phone', 'role_badge',
         'email_verified_display', 'is_active_display', 'is_staff', 'created_on', 
-        'referral_code'
-    ]
+        'referral_code', 'has_DVA'
+    )
     # list_editable =['referral_code']
-    list_filter = ['role', 'email_verified', 'is_active', 'is_staff', 'created_on']
-    search_fields = ['email', 'surname', 'other_names', 'phone']
-    readonly_fields = ['created_on', 'profile_photo']
-    ordering = ['-created_on']
+    list_filter = ('role', 'email_verified', 'is_active', 'is_staff', 'created_on')
+    search_fields = ('email', 'surname', 'other_names', 'phone')
+    readonly_fields = ('created_on', 'profile_photo', 'image', 'full_name', 'role_badge', 'email_verified_display', 'is_active_display', 'email', 'referral_code', 'is_staff', 'is_admin', 'is_superuser', 'groups', 'user_permissions', 'role', 'pin_is_set', 'pin_failed_attempts', 'pin_locked_until', 'has_DVA', 'surname', 'other_names', 'phone', 'email_verified')
+    ordering = ('-created_on',)
     list_per_page = 25
-    list_display_links = ['email', 'full_name']
-    actions = ['activate_users', 'deactivate_users', 'verify_emails']
+    list_display_links = ('email', 'full_name')
+    actions = ('activate_users', 'deactivate_users', 'verify_emails')
 
     fieldsets = (
         ('Account Credentials', {'fields': ('email', 'password')}),
@@ -28,7 +34,7 @@ class ProfileAdmin(UserAdmin):
         ('Permissions & Role', {
             'fields': ('role', 'email_verified', 'is_active', 'is_staff', 'is_admin', 'is_superuser', 'groups', 'user_permissions')
         }),
-        ('PIN Settings', {'fields': ('pin_is_set',)}),
+        ('PIN Settings', {'fields': ('pin_is_set','pin_failed_attempts', 'pin_locked_until')}),
         ('Timestamps', {'fields': ('created_on',), 'classes': ('collapse',)}),
     )
     add_fieldsets = (
@@ -113,22 +119,29 @@ class ProfileAdmin(UserAdmin):
 
 @admin.register(EmailVerification)
 class EmailVerificationAdmin(admin.ModelAdmin):
-    list_display = ['email', 'otp', 'timestamp']
-    search_fields = ['email']
-    readonly_fields = ['timestamp']
+    list_display = ('email', 'otp', 'timestamp')
+    search_fields = ('email',)
+    readonly_fields = ('timestamp',)    
     list_per_page = 25
 
 
 @admin.register(ResetPassword)
 class ResetPasswordAdmin(admin.ModelAdmin):
-    list_display = ['profile', 'otp', 'timestamp']
-    search_fields = ['profile__email']
-    readonly_fields = ['timestamp']
+    list_display = ('profile', 'otp', 'timestamp')
+    search_fields = ('profile__email',)
+    readonly_fields = ('timestamp',)
     list_per_page = 25
 
 
 @admin.register(ResetPasswordValuationToken)
 class ResetPasswordValuationTokenAdmin(admin.ModelAdmin):
-    list_display = ['reset_token', 'created_on']
-    readonly_fields = ['created_on']
+    list_display = ('reset_token', 'created_on')
+    readonly_fields = ('created_on',)
+    list_per_page = 25
+
+@admin.register(PaystackDedicatedAccount)
+class PaystackDedicatedAccountAdmin(admin.ModelAdmin):
+    list_display = ('user', 'account_name', 'account_number', 'bank_name','bank_id','dedicated_account_id', 'dva_account_number', 'dva_account_name', 'customer_code', 'customer_id', 'phone', 'active', 'bvn_encrypted', 'created_at', 'updated_at')
+    search_fields = ('account_name', 'account_number', 'bank_name', 'bank_code')
+    readonly_fields = list(list_display) + ['paystack_response']
     list_per_page = 25

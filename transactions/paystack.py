@@ -1,7 +1,5 @@
-import json
 import requests
 from django.conf import settings
-
 
 BASE_URL = "https://api.paystack.co"
 
