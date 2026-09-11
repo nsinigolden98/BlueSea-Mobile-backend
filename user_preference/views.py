@@ -49,8 +49,8 @@ class CurrentUserView(APIView):
                     "dva_account": inline_serializer(
                         name="DvaAccount",
                         fields={
-                            "account_number": serializers.CharField(),
-                            "account_name": serializers.CharField(),
+                            "dva_account_number": serializers.CharField(),
+                            "dva_account_name": serializers.CharField(),
                             "bank_name": serializers.CharField(),
                             "bank_slug": serializers.CharField(),
                             "bank_id": serializers.IntegerField(allow_null=True),
