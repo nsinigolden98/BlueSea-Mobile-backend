@@ -152,8 +152,8 @@ class CurrentUserView(APIView):
                 dva = PaystackDedicatedAccount.objects.filter(user=request.user).first()
                 if dva:
                     data["dva_account"] = {
-                        "account_number": dva.account_number,
-                        "account_name": dva.account_name,
+                        "account_number": dva.dva_account_number,
+                        "account_name": dva.dva_account_name,
                         "bank_name": dva.bank_name,
                         "bank_slug": dva.bank_slug,
                         "bank_id": dva.bank_id,
