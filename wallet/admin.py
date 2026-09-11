@@ -1,21 +1,21 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.utils.html import format_html
-from django.contrib import messages
+
 from .models import Wallet
 
 
 @admin.register(Wallet)
 class WalletAdmin(admin.ModelAdmin):
-    list_display = [
+    list_display = (
         'user_email', 'balance_display', 'locked_balance_display',
         'available_balance_display', 'status_badge', 'created_at'
-    ]
-    list_filter = ['is_active', 'created_at']
-    search_fields = ['user__email', 'user__surname', 'user__other_names']
-    readonly_fields = ['created_at', 'updated_at', 'available_balance_display']
+    )
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('user__email', 'user__surname', 'user__other_names')
+    readonly_fields = ('created_at', 'updated_at', 'available_balance_display', 'balance_display', 'locked_balance_display', 'user', 'status_badge', 'balance', 'locked_balance')
     list_per_page = 25
     date_hierarchy = 'created_at'
-    actions = ['freeze_wallets', 'unfreeze_wallets']
+    actions = ('freeze_wallets', 'unfreeze_wallets')
 
     fieldsets = (
         ('Account', {'fields': ('user',)}),
