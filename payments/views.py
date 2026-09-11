@@ -230,52 +230,52 @@ class Airtime2CashViews(APIView):
             serializer.save(request_id=request_id, user=request.user)
 
             with transaction.atomic():
-                amount = int(serializer.data["amount"])
+                _amount = int(serializer.data["amount"])
 
-                user_data = {
+                _user_data = {
                     "apikey": "",
                     "serviceName": "Airtime2Cash",
                     "network": serializer.data["network"],
                 }
 
-                sitephone = top_up2(user_data, "merchant-verify")
-                if sitephone != "Unavailable":
-                    user_data = {
-                        "apikey": "",
-                        "network": serializer.data["network"],
-                        "sender": "",
-                        "sendernumber": serializer.data["phone_number"],
-                        "amount": amount,
-                        "ref": request_id,
-                        "sitephone": sitephone,
-                    }
+                # sitephone = top_up2(user_data, "merchant-verify")
+                # if sitephone != "Unavailable":
+                #     user_data = {
+                #         "apikey": "",
+                #         "network": serializer.data["network"],
+                #         "sender": "",
+                #         "sendernumber": serializer.data["phone_number"],
+                #         "amount": _amount,
+                #         "ref": request_id,
+                #         "sitephone": sitephone,
+                #     }
 
-                    topup_response = top_up2(user_data, "airtime2cash")
+                #     topup_response = top_up2(_user_data, "airtime2cash")
 
-                    if topup_response.get("success"):
-                        user_wallet = request.user.wallet
-                        user_wallet.credit(amount=amount, reference=request_id)
+                #     if topup_response.get("success"):
+                #         user_wallet = request.user.wallet
+                #         user_wallet.credit(amount=_amount, reference=request_id)
 
-                        try:
-                            send_notification(
-                                user=request.user,
-                                title="Airtime Converted",
-                                message=f"₦{amount} converted to cash successfully",
-                                notification_type="payment_success",
-                                email_subject="BlueSea - Airtime Converted",
-                            )
-                        except Exception as e:
-                            logger.error(f"Error sending notification: {str(e)}")
+                #         try:
+                #             send_notification(
+                #                 user=request.user,
+                #                 title="Airtime Converted",
+                #                 message=f"₦{_amount} converted to cash successfully",
+                #                 notification_type="payment_success",
+                #                 email_subject="BlueSea - Airtime Converted",
+                #             )
+                #         except Exception as e:
+                #             logger.error(f"Error sending notification: {str(e)}")
 
-                        return Response(
-                            {
-                                "success": True,
-                                "message": "Airtime converted successfully",
-                            },
-                            status=status.HTTP_200_OK,
-                        )
+                        # return Response(
+                        #     {
+                        #         "success": True,
+                        #         "message": "Airtime converted successfully",
+                        #     },
+                        #     status=status.HTTP_200_OK,
+                        # )
 
-                    return Response(
+                return Response(
                         {"success": False, "error": "Conversion failed"},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
@@ -287,7 +287,7 @@ class Airtime2CashViews(APIView):
 
 
 class GroupPaymentViews(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Create group payment",
@@ -960,7 +960,7 @@ class MTNDataTopUpViews(APIView):
 
 
 class AirtelDataTopUpViews(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Purchase Airtel data",
@@ -1069,7 +1069,7 @@ class AirtelDataTopUpViews(APIView):
 
 
 class EtisalatDataTopUpViews(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Purchase 9Mobile data",
@@ -2480,7 +2480,10 @@ class WithdrawalView(APIView):
 
                 # Auto-initiate Paystack transfer
                 try:
-                    from .paystack import create_transfer_recipient, initiate_transfer
+                    from transactions.paystack import (
+                        create_transfer_recipient,
+                        initiate_transfer,
+                    )
 
                     recipient_success, recipient_result = create_transfer_recipient(
                         name=account_name,

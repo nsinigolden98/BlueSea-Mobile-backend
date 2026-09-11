@@ -16,8 +16,6 @@ import uuid
 from .paystack import (
     checkout,
     get_account_name,
-    create_transfer_recipient,
-    initiate_transfer,
 )
 from django.utils import timezone
 from django.conf import settings
@@ -228,6 +226,7 @@ class PaymentWebhook(APIView):
                             dva.dva_account_name = dedicated.get("account_name")
                             dva.customer_code = customer.get("customer_code")
                             dva.dedicated_account_id = dedicated.get("id")
+                            dva.customer_id = customer.get("id")
                             dva.save(
                                 update_fields=[
                                     "active",
