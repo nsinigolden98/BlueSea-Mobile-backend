@@ -327,6 +327,40 @@ def _inject_websocket_docs(result, generator, request, public):
                     "x-websocket": True,
                 }
             }
+    wallet_desc = (
+        "Real-time WebSocket for wallet balance. "
+        "Connect with `?token=<JWT access token>` or `Authorization: Bearer <token>` header. "
+        'Server pushes `{"type":"balance_update","balance":"63900.00","balance_formatted":"₦63,900.00","available_balance":"...","locked_balance":"...","amount":"500.00","reference":"BS-...","description":"...","transaction_type":"CREDIT|DEBIT"}` '
+        "on every Wallet.credit/debit (DVA funding, withdrawal, internal transfer, VTpass, bonus). "
+        'On connect you receive `{"type":"connected","user_id":7,"balance":"...","balance_formatted":"..."}`. '
+        'Send `{"type":"ping"}` → `{"type":"pong"}`, `{"type":"balance_request"}` → balance_update.'
+    )
+    for ws_path in ["/ws/wallet/", "/ws/wallet/balance/"]:
+        if ws_path not in paths:
+            paths[ws_path] = {
+                "get": {
+                    "tags": ["Wallet"],
+                    "summary": "Wallet Balance WebSocket (real-time)",
+                    "description": wallet_desc,
+                    "operationId": f"wallet_ws_{'base' if ws_path == '/ws/wallet/' else 'balance'}_retrieve",
+                    "parameters": [
+                        {
+                            "name": "token",
+                            "in": "query",
+                            "required": False,
+                            "description": "JWT access token (alternative to Authorization header)",
+                            "schema": {"type": "string"},
+                        }
+                    ],
+                    "responses": {
+                        "101": {
+                            "description": "Switching Protocols - WebSocket established"
+                        },
+                        "401": {"description": "Missing/invalid JWT"},
+                    },
+                    "x-websocket": True,
+                }
+            }
     return result
 
 

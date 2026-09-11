@@ -20,8 +20,13 @@ django_asgi = get_asgi_application()
 try:
     import payments.routing
     import support.routing
+    import wallet.routing
 
-    ws_patterns = payments.routing.websocket_urlpatterns + support.routing.websocket_urlpatterns
+    ws_patterns = (
+        payments.routing.websocket_urlpatterns
+        + support.routing.websocket_urlpatterns
+        + wallet.routing.websocket_urlpatterns
+    )
 except Exception:
     ws_patterns = []
 

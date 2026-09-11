@@ -35,6 +35,35 @@ class Wallet(models.Model):
     def available_balance(self):
         return self.balance
 
+    def _push_balance_update(
+        self, amount=None, reference=None, description=None, transaction_type=None
+    ):
+        try:
+            from asgiref.sync import async_to_sync
+            from channels.layers import get_channel_layer
+
+            channel_layer = get_channel_layer()
+            if not channel_layer:
+                return
+            async_to_sync(channel_layer.group_send)(
+                f"wallet_user_{self.user_id}",
+                {
+                    "type": "wallet_update",
+                    "balance": str(self.balance),
+                    "balance_formatted": f"₦{self.balance:,.2f}",
+                    "locked_balance": str(self.locked_balance),
+                    "locked_balance_formatted": f"₦{self.locked_balance:,.2f}",
+                    "available_balance": str(self.available_balance),
+                    "available_balance_formatted": f"₦{self.available_balance:,.2f}",
+                    "amount": str(amount) if amount is not None else None,
+                    "reference": reference,
+                    "description": description,
+                    "transaction_type": transaction_type,
+                },
+            )
+        except Exception:
+            pass
+
     def credit(self, amount, description="Credit", reference=None):
         if amount is None or Decimal(str(amount)) <= 0:
             raise ValueError("Amount must be positive")
@@ -50,7 +79,7 @@ class Wallet(models.Model):
             ):
                 return
             Wallet.objects.filter(pk=self.pk).update(balance=F("balance") + amount)
-            self.refresh_from_db(fields=["balance"])
+            self.refresh_from_db(fields=["balance", "locked_balance"])
             WalletTransaction.objects.create(
                 wallet=self,
                 amount=amount,
@@ -58,6 +87,12 @@ class Wallet(models.Model):
                 description=description,
                 reference=reference or str(uuid.uuid4()),
             )
+        self._push_balance_update(
+            amount=amount,
+            reference=reference,
+            description=description,
+            transaction_type="CREDIT",
+        )
 
     def debit(self, amount, description="Debit", reference=None):
         if amount is None or Decimal(str(amount)) <= 0:
@@ -77,7 +112,7 @@ class Wallet(models.Model):
             if wallet.balance < amount:
                 raise ValueError("Insufficient funds")
             Wallet.objects.filter(pk=self.pk).update(balance=F("balance") - amount)
-            self.refresh_from_db(fields=["balance"])
+            self.refresh_from_db(fields=["balance", "locked_balance"])
             WalletTransaction.objects.create(
                 wallet=self,
                 amount=amount,
@@ -85,3 +120,9 @@ class Wallet(models.Model):
                 description=description,
                 reference=reference or str(uuid.uuid4()),
             )
+        self._push_balance_update(
+            amount=amount,
+            reference=reference,
+            description=description,
+            transaction_type="DEBIT",
+        )
