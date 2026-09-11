@@ -36,17 +36,24 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
-# django-silk: always enabled (per-request profiling)
+DEBUG = os.environ.get("DEBUG", "False") == "True"
+
 SILKY_AUTHENTICATION = True
 SILKY_AUTHORISATION = True
-SILKY_PYTHON_PROFILER = True
-SILKY_PYTHON_PROFILER_BINARY = True
-SILKY_PYTHON_PROFILER_EXTENDED_FILE_NAME = True
-SILKY_META = True
+SILKY_PYTHON_PROFILER = DEBUG
+SILKY_PYTHON_PROFILER_BINARY = DEBUG
+SILKY_PYTHON_PROFILER_EXTENDED_FILE_NAME = DEBUG
+SILKY_META = DEBUG
+
+
+def _silky_intercept(request):
+    return not request.path.startswith("/ws/")
+
+
+SILKY_INTERCEPT_FUNC = _silky_intercept
 SILKY_MAX_REQUEST_BODY_SIZE = 1 * 1024 * 1024
 SILKY_MAX_RESPONSE_BODY_SIZE = 1 * 1024 * 1024
 SILKY_MAX_RECORDED_REQUESTS = 10**4
-DEBUG = os.environ.get("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 
