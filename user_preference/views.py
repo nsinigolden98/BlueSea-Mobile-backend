@@ -107,8 +107,8 @@ class CurrentUserView(APIView):
                     "created_on": "2026-01-01T12:00:00Z",
                     "has_DVA": True,
                     "dva_account": {
-                        "account_number": "0123456789",
-                        "account_name": "Test / John Doe",
+                        "dva_account_number": "0123456789",
+                        "dva_account_name": "Test / John Doe",
                         "bank_name": "Wema Bank",
                         "bank_slug": "wema-bank",
                         "bank_id": 20,
@@ -135,35 +135,18 @@ class CurrentUserView(APIView):
         tags=["User Profile"],
     )
     def get(self, request):
-        serializer = CurrentUserSerializer(request.user)
-        data = dict(serializer.data)
+        try:
+            serializer = CurrentUserSerializer(request.user)
+            data = dict(serializer.data)
 
-        preference, _ = UpdateUserModel.objects.get_or_create(user=request.user)
-        data["preference"] = UserPreferenceSerializer(preference).data
+            preference, _ = UpdateUserModel.objects.get_or_create(user=request.user)
+            data["preference"] = UserPreferenceSerializer(preference).data
 
-        if not data.get("has_DVA"):
-            data["dva_account"] = None
-        elif data.get("dva_account") is None and getattr(
-            request.user, "has_DVA", False
-        ):
-            try:
-                from accounts.models import PaystackDedicatedAccount
-
-                dva = PaystackDedicatedAccount.objects.filter(user=request.user).first()
-                if dva:
-                    data["dva_account"] = {
-                        "account_number": dva.dva_account_number,
-                        "account_name": dva.dva_account_name,
-                        "bank_name": dva.bank_name,
-                        "bank_slug": dva.bank_slug,
-                        "bank_id": dva.bank_id,
-                        "customer_code": dva.customer_code,
-                        "active": dva.active,
-                    }
-            except Exception:
-                pass
-
-        return Response(data, status=status.HTTP_200_OK)
+            return Response(data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+            )
 
     @extend_schema(
         summary="Update current user profile",

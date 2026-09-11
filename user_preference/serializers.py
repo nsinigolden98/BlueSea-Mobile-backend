@@ -1,13 +1,14 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+
 from .models import UpdateUserModel
 
 User = get_user_model()
 
 
 class DvaInfoSerializer(serializers.Serializer):
-    account_number = serializers.CharField()
-    account_name = serializers.CharField()
+    dva_account_number = serializers.CharField()
+    dva_account_name = serializers.CharField()
     bank_name = serializers.CharField()
     bank_slug = serializers.CharField()
     bank_id = serializers.IntegerField(allow_null=True)
@@ -21,7 +22,7 @@ class CurrentUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = [
+        fields = (
             "id",
             "other_names",
             "email",
@@ -33,7 +34,7 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             "created_on",
             "has_DVA",
             "dva_account",
-        ]
+        )
 
     def get_dva_account(self, obj):
         if not getattr(obj, "has_DVA", False):
@@ -47,8 +48,8 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             if not dva:
                 return None
             return {
-                "account_number": dva.account_number,
-                "account_name": dva.account_name,
+                "dva_account_number": dva.dva_account_number,
+                "dva_account_name": dva.dva_account_name,
                 "bank_name": dva.bank_name,
                 "bank_slug": dva.bank_slug,
                 "bank_id": dva.bank_id,
@@ -64,7 +65,7 @@ class UpdateUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UpdateUserModel
-        fields = [
+        fields = (
             "image",
             "phone",
             "nickname",
@@ -77,13 +78,13 @@ class UpdateUserSerializer(serializers.ModelSerializer):
             "landmark",
             "postal_code",
             "updated_on",
-        ]
+        )
 
 
 class UserPreferenceSerializer(serializers.ModelSerializer):
     class Meta:
         model = UpdateUserModel
-        fields = [
+        fields = (
             "image",
             "nickname",
             "gender",
@@ -95,4 +96,4 @@ class UserPreferenceSerializer(serializers.ModelSerializer):
             "landmark",
             "postal_code",
             "updated_on",
-        ]
+        )
