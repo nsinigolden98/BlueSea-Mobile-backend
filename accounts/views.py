@@ -1371,7 +1371,7 @@ class DedicatedVirtualAccountAssignView(APIView):
         user = request.user
 
         # Idempotent: check has_DVA true (do not query Paystack, just local has_DVA)
-        if user.get("has_DVA", False):
+        if getattr(user, "has_DVA", False):
             existing = PaystackDedicatedAccount.objects.filter(user=user).first()
             if existing:
                 return Response(
