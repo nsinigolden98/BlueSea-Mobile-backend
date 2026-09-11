@@ -441,24 +441,7 @@ class PaymentWebhook(APIView):
                                 )
                             except Exception as e:
                                 logger.warning(f"DVA notify failed {reference}: {e}")
-                            # Also push real-time update via WebSocket if needed (wallet balance)
-                            try:
-                                from asgiref.sync import async_to_sync
-                                from channels.layers import get_channel_layer
-
-                                channel_layer = get_channel_layer()
-                                if channel_layer:
-                                    async_to_sync(channel_layer.group_send)(
-                                        f"wallet_user_{dva.user.id}",
-                                        {
-                                            "type": "wallet_update",
-                                            "amount": str(amount),
-                                            "reference": reference,
-                                            "account_number": dva.dva_account_number,
-                                        },
-                                    )
-                            except Exception:
-                                pass
+                           
                         return Response(
                             {"success": True, "message": "DVA transfer credited"}
                         )

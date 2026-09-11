@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from django.contrib import messages
-from .models import WalletTransaction, FundWallet, AccountName
+
+from .models import AccountName, FundWallet, WalletTransaction
 
 
 def _status_badge(status):
@@ -39,13 +39,13 @@ def _amount_display(amount, tx_type=None):
 
 @admin.register(WalletTransaction)
 class WalletTransactionAdmin(admin.ModelAdmin):
-    list_display = [
+    list_display = (
         'wallet_user', 'transaction_type_badge', 'amount_display',
         'status_display', 'reference', 'created_at'
-    ]
-    list_filter = ['transaction_type', 'status', 'created_at']
-    search_fields = ['wallet__user__email', 'reference', 'description']
-    readonly_fields = ['created_at']
+    )
+    list_filter = ('transaction_type', 'status', 'created_at')
+    search_fields = ('wallet__user__email', 'reference', 'description')
+    readonly_fields = ('created_at','wallet', 'amount', 'transaction_type', 'status', 'description', 'reference')
     date_hierarchy = 'created_at'
     list_per_page = 30
 
@@ -79,13 +79,13 @@ class WalletTransactionAdmin(admin.ModelAdmin):
 
 @admin.register(FundWallet)
 class FundWalletAdmin(admin.ModelAdmin):
-    list_display = [
+    list_display = (
         'user', 'amount_display', 'status_display',
         'payment_reference', 'created_at', 'completed_at'
-    ]
-    list_filter = ['status', 'created_at']
-    search_fields = ['user__email', 'payment_reference', 'gateway_reference']
-    readonly_fields = ['created_at']
+    )
+    list_filter = ('status', 'created_at')
+    search_fields = ('user__email', 'payment_reference', 'gateway_reference')
+    readonly_fields = ('created_at','completed_at', 'payment_reference', 'gateway_reference','user', 'amount', 'status')
     date_hierarchy = 'created_at'
     list_per_page = 30
 
@@ -104,6 +104,6 @@ class FundWalletAdmin(admin.ModelAdmin):
 
 @admin.register(AccountName)
 class AccountNameAdmin(admin.ModelAdmin):
-    list_display = ['account_number', 'bank_code']
-    search_fields = ['account_number', 'bank_code']
+    list_display = ('account_number', 'bank_code')
+    search_fields = ('account_number', 'bank_code')
     list_per_page = 25

@@ -1,8 +1,9 @@
-from django.db import models
+from decimal import Decimal
+
 from django.conf import settings
 from django.core.validators import MinValueValidator
-from decimal import Decimal
-import uuid
+from django.db import models
+
 # from wallet.models import Wallet
 
 TRANSACTION_TYPES = [
@@ -26,7 +27,7 @@ class WalletTransaction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ('-created_at',)
 
     def __str__(self):
         return f"{self.transaction_type} - {self.amount} - {self.status} - {self.wallet.user.username}"
