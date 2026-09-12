@@ -9,23 +9,24 @@ https://docs.djangoproject.com/en/5.2/howto/deployment/asgi/
 
 import os
 
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "bluesea_mobile.settings")
+
+from django.core.asgi import get_asgi_application
+
+django_asgi = get_asgi_application()
+
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
-from django.core.asgi import get_asgi_application
 
 import payments.routing
 import support.routing
 import wallet.routing
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "bluesea_mobile.settings")
-
-django_asgi = get_asgi_application()
-    
 ws_patterns = (
-        payments.routing.websocket_urlpatterns
-        + support.routing.websocket_urlpatterns
-        + wallet.routing.websocket_urlpatterns
-    )
+    payments.routing.websocket_urlpatterns
+    + support.routing.websocket_urlpatterns
+    + wallet.routing.websocket_urlpatterns
+)
 
 application = ProtocolTypeRouter(
     {

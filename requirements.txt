@@ -23,7 +23,6 @@ dj-database-url==3.0.1
 Django==5.2.6
 django-anymail==13.1
 django-celery-beat==2.8.1
-django-channels==0.7.0
 django-cors-headers==4.9.0
 django-jazzmin==3.0.3
 django-debug-toolbar==6.1.0
