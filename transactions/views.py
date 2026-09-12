@@ -422,6 +422,7 @@ class PaymentWebhook(APIView):
                                 user=dva.user
                             )
                             # Use wallet.credit for atomic F() update + idempotency
+                            amount  = round((amount * 0.99), 2)
                             wallet.credit(
                                 amount=amount,
                                 description=f"DVA Wema {dva.dva_account_number} from {auth.get('sender_name')} {auth.get('sender_bank_name', '')} via {dva.bank_name}",
