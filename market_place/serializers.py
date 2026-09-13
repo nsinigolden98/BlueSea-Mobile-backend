@@ -652,3 +652,11 @@ class EventWithdrawalRequestSerializer(serializers.Serializer):
     """Request serializer for event earnings withdrawal"""
 
     event_id = serializers.UUIDField(help_text="ID of the event to withdraw from")
+
+class VerifyAccountNameResponse200Serializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    account_name = serializers.CharField(help_text="User account name")
+
+class VerifyAccountNameResponse404Serializer(serializers.Serializer):
+    success = serializers.BooleanField(default=False, read_only=True)
+    message = serializers.CharField(help_text="Error Message")

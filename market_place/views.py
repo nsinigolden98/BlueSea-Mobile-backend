@@ -9,7 +9,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -30,13 +30,13 @@ from .serializers import (
     TicketDetailSerializer,
     TicketListSerializer,
     VendorSerializer,
+    VerifyAccountNameResponse200Serializer,
+    VerifyAccountNameResponse404Serializer,
     VerifyAccountNameSerializer,
 )
 from .utils import generate_ticket_qr_code, parse_qr_data
 
 logger = logging.getLogger(__name__)
-
-# ============= TICKETING SYSTEM VIEWS =============
 
 
 class CreateEventView(APIView):
@@ -2126,18 +2126,34 @@ class VendorTicketsList(APIView):
 
 
 class VerifyAccountNameView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Verify bank account name",
         description="Verify the account name for a Nigerian bank account using the account number and bank code.",
         request=VerifyAccountNameSerializer,
         responses={
-            200: OpenApiTypes.OBJECT,
-            400: OpenApiTypes.OBJECT,
-            404: OpenApiTypes.OBJECT,
+            200: VerifyAccountNameResponse200Serializer,
+            404: VerifyAccountNameResponse404Serializer,
         },
         tags=["Withdrawal"],
+        examples=[
+            OpenApiExample(
+                "Request Example",
+                value={"account_number": "1234567890", "bank_code": "007"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Reponse Example",
+                value={"success": "true", "account_name": "John Doe"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Reponse Example",
+                value={"success": "false", "message": "User not found"},
+                request_only=True,
+            ),
+        ],
     )
     def post(self, request):
         from transactions.paystack import get_account_name
@@ -2158,7 +2174,7 @@ class VerifyAccountNameView(APIView):
 
 
 class EventWithdrawalView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Withdraw event earnings",
@@ -2173,10 +2189,11 @@ class EventWithdrawalView(APIView):
         tags=["Withdrawal"],
     )
     def post(self, request):
-        from .models import EventWithdrawal
-        from .serializers import EventWithdrawalSerializer
         import uuid
         from decimal import Decimal
+
+        from .models import EventWithdrawal
+        from .serializers import EventWithdrawalSerializer
 
         event_id = request.data.get("event_id")
 
@@ -2200,7 +2217,7 @@ class EventWithdrawalView(APIView):
             )
 
         # Calculate total earnings from ticket sales
-        total_earned = Decimal("0")
+        total_earned = 0
         total_tickets_created = 0
         tickets_available = 0
 

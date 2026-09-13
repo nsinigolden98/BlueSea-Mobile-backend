@@ -196,7 +196,7 @@ def process_payment(request, amount, service_data, service_name, description=Non
 
 
 class Airtime2CashViews(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Convert airtime to cash",
@@ -2356,10 +2356,10 @@ class InternalTransferView(APIView):
 
 
 class WithdrawalView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
-        summary="Request an automatic withdrawal via Paystack",
+        summary="Withdrawal via Paystack",
         description="Withdraw wallet funds to a bank account. Validates PIN, bank details, and minimum amount (N500). Creates withdrawal record with status pending and automatically initiates Paystack transfer. Status updates to successful/failed via webhook at POST /transactions/webhook/paystack/ handling transfer.success, transfer.failed, transfer.reversed.",
         request=WithdrawalRequestSerializer,
         responses={
@@ -2367,7 +2367,7 @@ class WithdrawalView(APIView):
             400: OpenApiTypes.OBJECT,
             500: OpenApiTypes.OBJECT,
         },
-        tags=["Payments"],
+        tags=["Withdrawal"],
         examples=[
             OpenApiExample(
                 "Request Example",

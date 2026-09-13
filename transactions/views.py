@@ -367,6 +367,8 @@ class PaymentWebhook(APIView):
                             customer_code = payload["customer"].get("customer_code")
                         elif payload.get("customer_code"):
                             customer_code = payload.get("customer_code")
+                        
+                        reference = f"BS-DVA-DEP-{reference}"  # Append DVA to avoid collision with other funding references
 
                         # Idempotent: if transaction already exists, ack
                         if WalletTransaction.objects.filter(
@@ -377,32 +379,26 @@ class PaymentWebhook(APIView):
                             )
                             return Response({"success": True})
 
-                        dva = None
                         if customer_code:
                             dva = (
                                 PaystackDedicatedAccount.objects.select_related("user")
                                 .filter(customer_code=customer_code)
                                 .first()
                             )
-                        if not dva:
+                        else:
+                        
                             acct_num = (
-                                auth.get("receiver_bank_account_number")
-                                or auth.get("account_number")
-                                or payload.get("receiver_bank_account_number")
-                            )
-                            if acct_num:
-                                dva = (
-                                    PaystackDedicatedAccount.objects.select_related(
-                                        "user"
-                                    )
-                                    .filter(dva_account_number=acct_num)
-                                    .first()
+                                    auth.get("receiver_bank_account_number")
+                                    or payload.get("receiver_bank_account_number")
                                 )
-
-                        if not dva:
+                                
+                            dva = (
+                                PaystackDedicatedAccount.objects.select_related("user")
+                                .filter(dva_account_number=acct_num).first()
+                                )
                             logger.warning(
-                                f"DVA charge.success no matching DVA customer_code={customer_code} acct={auth.get('receiver_bank_account_number')} ref={reference}"
-                            )
+                                    f"DVA charge.success no matching DVA customer_code={customer_code} acct={auth.get('receiver_bank_account_number')} ref={reference}"
+                                )
                             return Response({"success": True})
 
                         # Ensure has_DVA true
@@ -414,10 +410,7 @@ class PaymentWebhook(APIView):
                                 pass
 
                         with transaction.atomic():
-                            if WalletTransaction.objects.filter(
-                                reference=reference
-                            ).exists():
-                                return Response({"success": True})
+                            
                             wallet = Wallet.objects.select_for_update().get(
                                 user=dva.user
                             )
