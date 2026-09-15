@@ -1,21 +1,14 @@
-from django.contrib.auth.backends import ModelBackend
-from django.contrib.auth import get_user_model
-from django.db.models import Q
-from django.contrib import messages
-from django.template.loader import render_to_string
-from django.core.mail import send_mail , EmailMessage
-from django.contrib import messages
-from django.utils.html import strip_tags
-from django.conf import settings
-import secrets
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.utils.crypto import constant_time_compare, salted_hmac
-from datetime import timedelta
 import random
+import secrets
+from datetime import timedelta
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core import signing
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-
+from django.utils.crypto import constant_time_compare
 
 UserModel = get_user_model()
 

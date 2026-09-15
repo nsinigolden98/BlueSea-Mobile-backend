@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views import (
     AirtelDataTopUpViews,
-    Airtime2CashViews,
+    # Airtime2CashViews,
     AirtimeTopUpViews,
     DSTVPaymentViews,
     ElectricityPaymentCustomerViews,
@@ -43,7 +43,7 @@ urlpatterns = [
         "waec-registration/", WAECRegitrationViews.as_view(), name="waec-registration"
     ),
     path("group-payment/", GroupPaymentViews.as_view(), name="group-payment"),
-    path("airtime-buyback/", Airtime2CashViews.as_view(), name="airtime-buyback"),
+    # path("airtime-buyback/", Airtime2CashViews.as_view(), name="airtime-buyback"),
     path(
         "group-payment/history/",
         GroupPaymentHistory.as_view(),

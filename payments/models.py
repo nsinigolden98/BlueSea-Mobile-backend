@@ -1,7 +1,8 @@
-from django.db import models
-from django.contrib.auth import get_user_model
-from group_payment.models import Group, GroupMember
 from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.db import models
+
+from group_payment.models import Group, GroupMember
 
 User = get_user_model()
 

@@ -1,16 +1,18 @@
 import logging
-import uuid
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.pin_security import verify_pin_with_lockout
+
+from .tasks import call_vtpass_task
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -18,24 +20,20 @@ logger = logging.getLogger(__name__)
 import logging
 
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    extend_schema,
+)
 
 from bluesea_mobile.utils import InsufficientFundsException
-from bonus.models import Referral
-from bonus.utils import (
-    award_referral_bonus,
-    award_vtu_purchase_points,
-)
 from group_payment.models import Group, GroupMember
 from notifications.utils import (
-    contribution_notification,
     group_payment_failed,
-    group_payment_success,
     send_notification,
 )
 
 from .models import GroupPayment, GroupPaymentContribution, Withdrawal
-from wallet.models import Wallet
 from .serializers import (
     AirtelDataTopUpSerializer,
     Airtime2CashSerializer,
@@ -137,149 +135,159 @@ def get_payment_description(
 
 
 def process_payment(request, amount, service_data, service_name, description=None):
-    """
-    Helper function to process payments consistently.
-    Returns (response, success) tuple.
-    """
-    user_wallet = Wallet.objects.select_for_update().get(pk=request.user.wallet.pk)
-
+    user_wallet = request.user.wallet
     if user_wallet.balance < amount:
         return {"error": "Insufficient Funds", "success": False}, False
-
     response = top_up(service_data)
+    reference_id = service_data.get("request_id")
+    try:
+        from .models import (
+            AirtelDataTopUp,
+            Airtime2Cash,
+            AirtimeTopUp,
+            DSTVPayment,
+            ElectricityPayment,
+            EtisalatDataTopUp,
+            GloDataTopUp,
+            GOTVPayment,
+            JAMBRegistration,
+            MTNDataTopUp,
+            ShowMaxPayment,
+            StartimesPayment,
+            WAECRegitration,
+            WAECResultChecker,
+        )
 
-    if response.get("response_description") == "TRANSACTION SUCCESSFUL":
-        with transaction.atomic():
-            user_wallet = Wallet.objects.select_for_update().get(
-                pk=request.user.wallet.pk
-            )
-            user_wallet.debit(
-                amount=amount,
-                reference=service_data.get("request_id"),
-                description=description or f"{service_name} Payment",
-            )
-
-        # Award bonus points
-        try:
-            award_vtu_purchase_points(
-                user=request.user,
-                purchase_amount=amount,
-                reference=service_data.get("request_id"),
-            )
-
-            # Check for referral bonus
+        for m in (
+            AirtimeTopUp,
+            MTNDataTopUp,
+            AirtelDataTopUp,
+            GloDataTopUp,
+            EtisalatDataTopUp,
+            DSTVPayment,
+            GOTVPayment,
+            StartimesPayment,
+            ShowMaxPayment,
+            ElectricityPayment,
+            WAECRegitration,
+            WAECResultChecker,
+            JAMBRegistration,
+            Airtime2Cash,
+        ):
             try:
-                referral = Referral.objects.get(
-                    referred_user=request.user,
-                    status="pending",
-                    first_transaction_completed=False,
-                )
-                referral.first_transaction_completed = True
-                referral.save()
-                award_referral_bonus(referral.referrer, request.user)
-            except Referral.DoesNotExist:
-                pass
-        except Exception as e:
-            logger.error(f"Error awarding bonus points: {str(e)}")
-
-        return response, True
-
+                o = m.objects.filter(request_id=reference_id).first()
+                if o:
+                    o.vtpass_transaction_id = (
+                        response.get("transactionId")
+                        or (response.get("content") or {})
+                        .get("transactions", {})
+                        .get("transactionId")
+                        if isinstance(response.get("content"), dict)
+                        else None
+                    )
+                    if o.vtpass_transaction_id:
+                        o.save(update_fields=["vtpass_transaction_id", "updated_at"])
+                    break
+            except Exception:
+                continue
+    except Exception:
+        pass
     return response, False
 
 
-# class Airtime2CashViews(APIView):
-#     permission_classes = [IsAuthenticated]
+class Airtime2CashViews(APIView):
+    permission_classes = (IsAuthenticated,)
 
-#     @extend_schema(
-#         summary="Convert airtime to cash",
-#         description="Convert airtime to wallet cash balance. Requires JWT; validates PIN and wallet.",
-#         request=Airtime2CashSerializer,
-#         responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
-#         tags=["Payments"],
-#         examples=[
-#             OpenApiExample(
-#                 "Request Example",
-#                 value={"amount": 100, "network": "mtn", "phone_number": "08012345678"},
-#                 request_only=True,
-#             ),
-#             OpenApiExample(
-#                 "Response Example",
-#                 value={
-#                     "message": "Airtime converted to wallet balance",
-#                     "request_id": "20260820ABCD1234",
-#                     "response_description": "TRANSACTION SUCCESSFUL",
-#                     "state": True,
-#                 },
-#                 response_only=True,
-#             ),
-#         ],
-#     )
-#     def post(self, request):
-#         serializer = Airtime2CashSerializer(data=request.data)
+    @extend_schema(
+        summary="Convert airtime to cash",
+        description="Convert airtime to wallet cash balance. Requires JWT; validates PIN and wallet.",
+        request=Airtime2CashSerializer,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        tags=["Payments"],
+        examples=[
+            OpenApiExample(
+                "Request Example",
+                value={"amount": 100, "network": "mtn", "phone_number": "08012345678"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Response Example",
+                value={
+                    "message": "Airtime converted to wallet balance",
+                    "request_id": "20260820ABCD1234",
+                    "response_description": "TRANSACTION SUCCESSFUL",
+                    "state": True,
+                },
+                response_only=True,
+            ),
+        ],
+    )
+    def post(self, request):
+        serializer = Airtime2CashSerializer(data=request.data)
 
-#         if serializer.is_valid(raise_exception=True):
-#             request_id = generate_reference_id()
-#             serializer.save(request_id=request_id, user=request.user)
+        if serializer.is_valid(raise_exception=True):
+            request_id = generate_reference_id()
+            serializer.save(request_id=request_id, user=request.user)
 
-#             with transaction.atomic():
-#                 amount = int(serializer.data["amount"])
+            with transaction.atomic():
+                _amount = int(serializer.data["amount"])
 
-#                 user_data = {
-#                     "apikey": "",
-#                     "serviceName": "Airtime2Cash",
-#                     "network": serializer.data["network"],
-#                 }
+                _user_data = {
+                    "apikey": "",
+                    "serviceName": "Airtime2Cash",
+                    "network": serializer.data["network"],
+                }
 
-#                 sitephone = top_up2(user_data, "merchant-verify")
-#                 if sitephone != "Unavailable":
-#                     user_data = {
-#                         "apikey": "",
-#                         "network": serializer.data["network"],
-#                         "sender": "",
-#                         "sendernumber": serializer.data["phone_number"],
-#                         "amount": amount,
-#                         "ref": request_id,
-#                         "sitephone": sitephone,
-#                     }
+                # sitephone = top_up2(user_data, "merchant-verify")
+                # if sitephone != "Unavailable":
+                #     user_data = {
+                #         "apikey": "",
+                #         "network": serializer.data["network"],
+                #         "sender": "",
+                #         "sendernumber": serializer.data["phone_number"],
+                #         "amount": _amount,
+                #         "ref": request_id,
+                #         "sitephone": sitephone,
+                #     }
 
-#                     topup_response = top_up2(user_data, "airtime2cash")
+                #     topup_response = top_up2(_user_data, "airtime2cash")
 
-#                     if topup_response.get("success"):
-#                         user_wallet = request.user.wallet
-#                         user_wallet.credit(amount=amount, reference=request_id)
+                #     if topup_response.get("success"):
+                #         user_wallet = request.user.wallet
+                #         user_wallet.credit(amount=_amount, reference=request_id)
 
-#                         try:
-#                             send_notification(
-#                                 user=request.user,
-#                                 title="Airtime Converted",
-#                                 message=f"₦{amount} converted to cash successfully",
-#                                 notification_type="payment_success",
-#                                 email_subject="BlueSea - Airtime Converted",
-#                             )
-#                         except Exception as e:
-#                             logger.error(f"Error sending notification: {str(e)}")
+                #         try:
+                #             send_notification(
+                #                 user=request.user,
+                #                 title="Airtime Converted",
+                #                 message=f"₦{_amount} converted to cash successfully",
+                #                 notification_type="payment_success",
+                #                 email_subject="BlueSea - Airtime Converted",
+                #             )
+                #         except Exception as e:
+                #             logger.error(f"Error sending notification: {str(e)}")
 
-#                         return Response(
-#                             {
-#                                 "success": True,
-#                                 "message": "Airtime converted successfully",
-#                             },
-#                             status=status.HTTP_200_OK,
-#                         )
+                        # return Response(
+                        #     {
+                        #         "success": True,
+                        #         "message": "Airtime converted successfully",
+                        #     },
+                        #     status=status.HTTP_200_OK,
+                        # )
 
-#                     return Response(
-#                         {"success": False, "error": "Conversion failed"},
-#                         status=status.HTTP_400_BAD_REQUEST,
-#                     )
+                return Response(
+                        {"success": False, "error": "Conversion failed"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
-#                 return Response(
-#                     {"success": False, "error": "Service unavailable"},
-#                     status=status.HTTP_400_BAD_REQUEST,
-#                 )
+                return Response(
+                    {"success": False, "error": "Service unavailable"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
 
 class GroupPaymentViews(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Create group payment",
@@ -394,44 +402,23 @@ class GroupPaymentViews(APIView):
         )
 
         try:
-            group_payment = GroupPayment.objects.create(
-                group=group,
-                initiated_by=request.user,
-                payment_type=payment_type,
-                total_amount=total_amount,
-                service_details=service_details,
-                status="processing",
-            )
-
-            # Process each member's contribution
-            for member in members:
-                amount = member_amounts.get(member)
-                wallet = Wallet.objects.select_for_update().get(
-                    pk=member.user.wallet.pk
+            with transaction.atomic():
+                group_payment = GroupPayment.objects.create(
+                    group=group,
+                    initiated_by=request.user,
+                    payment_type=payment_type,
+                    total_amount=total_amount,
+                    service_details=service_details,
+                    status="pending",
                 )
 
-                if wallet.balance < amount:
-                    raise InsufficientFundsException(
-                        f"Insufficient funds for {member.user.email}"
-                    )
-
-                # Create UNIQUE reference for each member's contribution
-                unique_reference = (
-                    f"GP-{group_payment.id}-{member.user.id}-{uuid.uuid4().hex[:8]}"
-                )
-
-                with transaction.atomic():
-                    wallet = Wallet.objects.select_for_update().get(
-                        pk=member.user.wallet.pk
-                    )
-                    # Debit wallet with unique reference
-                    wallet.debit(
-                        amount=amount,
-                        description=f"Group payment contribution - {payment_type}",
-                        reference=unique_reference,
-                    )
-
-                    # Create contribution record with pending status
+                for member in members:
+                    amount = member_amounts.get(member)
+                    wallet = member.user.wallet
+                    if wallet.balance < amount:
+                        raise InsufficientFundsException(
+                            f"Insufficient funds for {member.user.email}"
+                        )
                     GroupPaymentContribution.objects.create(
                         group_payment=group_payment,
                         member=member,
@@ -439,91 +426,35 @@ class GroupPaymentViews(APIView):
                         status="pending",
                     )
 
-                # Send notification
+                from .vtpass import generate_reference_id
+
+                vtu_ref = generate_reference_id()
+                group_payment.vtu_reference = vtu_ref
+                if isinstance(group_payment.service_details, dict):
+                    group_payment.service_details["request_id"] = vtu_ref
+                group_payment.save(
+                    update_fields=["vtu_reference", "service_details", "updated_at"]
+                )
                 try:
-                    contribution_notification(
-                        member=member,
-                        amount=amount,
-                        group_name=group.name,
-                        payment_type=payment_type,
+                    from .tasks import call_group_vtpass_task
+
+                    call_group_vtpass_task.delay(
+                        group_payment.id,
+                        payment_type,
+                        service_details,
+                        str(total_amount),
                     )
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to send notification to {member.user.email}: {str(e)}"
-                    )
-
-            # All debits successful, now call VTU API
-            vtu_response = self.vtu_api(payment_type, service_details, total_amount)
-
-            if vtu_response.get("response_description") == "TRANSACTION SUCCESSFUL":
-                group_payment.status = "completed"
-                group_payment.vtu_reference = vtu_response.get(
-                    "requestId", vtu_response.get("reference")
-                )
-                group_payment.save()
-
-                # Update all contributions to completed
-                for member in members:
-                    GroupPaymentContribution.objects.filter(
-                        group_payment=group_payment, member=member
-                    ).update(status="completed")
-
-                # Notify all members of success
-                for member in members:
-                    try:
-                        group_payment_success(
-                            member=member,
-                            amount=member_amounts.get(member),
-                            group_name=group.name,
-                            payment_type=payment_type,
-                            vtu_reference=vtu_response.get("requestId"),
-                        )
-                    except Exception as e:
-                        logger.warning(f"Failed to send success notification: {str(e)}")
-
+                except Exception:
+                    pass
                 return Response(
                     {
-                        "success": True,
-                        "message": "Group payment completed successfully",
+                        "reference_id": vtu_ref,
+                        "status": "pending",
+                        "message": "Group payment queued, awaiting webhook confirmation",
                         "payment_id": group_payment.id,
-                        "vtu_reference": group_payment.vtu_reference,
-                        "total_amount": str(total_amount),
-                        "member_contributions": {
-                            member.user.email: str(member_amounts.get(member))
-                            for member in members
-                        },
+                        "vtu_reference": vtu_ref,
                     },
-                    status=status.HTTP_200_OK,
-                )
-            else:
-                # VTU API failed
-                group_payment.status = "failed"
-                group_payment.save()
-
-                # Reverse all debits by crediting back and update contributions to "reversed"
-                for member in members:
-                    amount = member_amounts.get(member)
-                    wallet = Wallet.objects.select_for_update().get(
-                        pk=member.user.wallet.pk
-                    )
-                    reversal_reference = f"REV-{group_payment.id}-{member.user.id}-{uuid.uuid4().hex[:8]}"
-
-                    wallet.credit(
-                        amount=amount,
-                        description=f"Reversal - Group payment failed",
-                        reference=reversal_reference,
-                    )
-                    GroupPaymentContribution.objects.filter(
-                        group_payment=group_payment, member=member
-                    ).update(status="reversed")
-
-                return Response(
-                    {
-                        "success": False,
-                        "error": f"VTU service failed: {vtu_response.get('response_description', 'Unknown error')}. All debits have been reversed.",
-                        "payment_id": group_payment.id,
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
+                    status=status.HTTP_202_ACCEPTED,
                 )
 
         except InsufficientFundsException as e:
@@ -647,8 +578,6 @@ class GroupPaymentViews(APIView):
                         "amount": amount,
                         "phone": service_details.get("phone_number"),
                     }
-                subscription_response = top_up(details)
-                return subscription_response
 
         elif payment_type == "electricity":
             # return vtu_service.purchase_electricity(
@@ -778,13 +707,11 @@ class GroupPaymentHistory(APIView):
             is_member = GroupMember.objects.filter(
                 group_id=group_id, user=request.user
             ).exists()
-
             if not is_member:
                 return Response(
                     {"error": "You are not a member of this group"},
                     status=status.HTTP_403_FORBIDDEN,
                 )
-
             payments = (
                 GroupPayment.objects.filter(group_id=group_id)
                 .select_related("group", "initiated_by")
@@ -802,6 +729,14 @@ class GroupPaymentHistory(APIView):
                 .order_by("-created_at")
             )
 
+        paginator = PageNumberPagination()
+        paginator.page_size = 20
+        paginator.page_size_query_param = "page_size"
+        paginator.max_page_size = 50
+        page = paginator.paginate_queryset(payments, request)
+        if page is not None:
+            serializer = GroupPaymentSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
         serializer = GroupPaymentSerializer(payments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -876,78 +811,36 @@ class AirtimeTopUpViews(APIView):
                 request_id = f"BS-AIRT{generate_reference_id()}"
                 serializer.save(request_id=request_id, user=request.user)
 
-                user_wallet = Wallet.objects.select_for_update().get(
-                    pk=request.user.wallet.pk
-                )
-                amount = int(serializer.data["amount"])
-                data = {
-                    "request_id": request_id,
-                    "serviceID": serializer.data["network"],
-                    "amount": amount,
-                    "phone": serializer.data["phone_number"],
-                }
+                with transaction.atomic():
+                    amount = int(serializer.data["amount"])
+                    data = {
+                        "request_id": request_id,
+                        "serviceID": serializer.data["network"],
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                    }
+                    user_wallet = request.user.wallet
 
-                if user_wallet.balance < amount:
+                    if user_wallet.balance < amount:
+                        return Response(
+                            {"error": "Insufficient Funds", "success": False},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    try:
+                        call_vtpass_task.delay(
+                            request_id, data, "AirtimeTopUp", serializer.instance.pk
+                        )
+                    except Exception:
+                        pass
                     return Response(
-                        {"error": "Insufficient Funds", "success": False},
-                        status=status.HTTP_400_BAD_REQUEST,
+                        {
+                            "reference_id": request_id,
+                            "status": "pending",
+                            "message": "Transaction queued, awaiting webhook confirmation",
+                        },
+                        status=status.HTTP_202_ACCEPTED,
                     )
-
-                buy_airtime_response = top_up(data)
-                if (
-                    buy_airtime_response.get("response_description")
-                    == "TRANSACTION SUCCESSFUL"
-                ):
-                    phone = serializer.data.get("phone_number", "")
-                    network = serializer.data.get("network", "")
-                    desc = get_payment_description(
-                        payment_type="airtime",
-                        network=network,
-                        phone=phone,
-                        amount=amount,
-                    )
-                    with transaction.atomic():
-                        user_wallet = Wallet.objects.select_for_update().get(
-                            pk=request.user.wallet.pk
-                        )
-                        user_wallet.debit(
-                            amount=amount,
-                            description=desc["full"],
-                            reference=request_id,
-                        )
-
-                    try:
-                        award_vtu_purchase_points(
-                            user=request.user,
-                            purchase_amount=amount,
-                            reference=request_id,
-                        )
-                        try:
-                            referral = Referral.objects.get(
-                                referred_user=request.user,
-                                status="pending",
-                                first_transaction_completed=False,
-                            )
-                            referral.first_transaction_completed = True
-                            referral.save()
-                            award_referral_bonus(referral.referrer, request.user)
-                        except Referral.DoesNotExist:
-                            pass
-                    except Exception as e:
-                        logger.error(f"Error awarding bonus points: {str(e)}")
-
-                    try:
-                        send_notification(
-                            user=request.user,
-                            title="Airtime Purchase Successful",
-                            message=f"₦{amount} airtime purchased for {serializer.data['phone_number']}",
-                            notification_type="payment_success",
-                            email_subject="BlueSea - Airtime Purchase",
-                        )
-                    except Exception as e:
-                        logger.error(f"Error sending notification: {str(e)}")
-
-                    return Response(buy_airtime_response)
 
         except Exception as e:
             return Response(
@@ -1024,83 +917,40 @@ class MTNDataTopUpViews(APIView):
             if serializer.is_valid(raise_exception=True):
                 request_id = f"BS-DAT-MTN{generate_reference_id()}"
                 serializer.save(request_id=request_id, user=request.user)
+                with transaction.atomic():
+                    amount = mtn_dict[serializer.data["plan"]][1]
+                    variation_code = mtn_dict[serializer.data["plan"]][0]
+                    data = {
+                        "request_id": request_id,
+                        "serviceID": "mtn-data",
+                        "billersCode": serializer.data["billersCode"],
+                        "variation_code": variation_code,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                    }
+                    # Wallet.debit(amount)
+                    user_wallet = request.user.wallet
 
-                user_wallet = Wallet.objects.select_for_update().get(
-                    pk=request.user.wallet.pk
-                )
-                amount = mtn_dict[serializer.data["plan"]][1]
-                variation_code = mtn_dict[serializer.data["plan"]][0]
-                data = {
-                    "request_id": request_id,
-                    "serviceID": "mtn-data",
-                    "billersCode": serializer.data["billersCode"],
-                    "variation_code": variation_code,
-                    "amount": amount,
-                    "phone": serializer.data["phone_number"],
-                }
+                    if user_wallet.balance < amount:
+                        return Response(
+                            {"error": "Insufficient Funds", "success": False},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
 
-                if user_wallet.balance < amount:
+                    try:
+                        call_vtpass_task.delay(
+                            request_id, data, "MTNDataTopUp", serializer.instance.pk
+                        )
+                    except Exception:
+                        pass
                     return Response(
-                        {"error": "Insufficient Funds", "success": False},
-                        status=status.HTTP_400_BAD_REQUEST,
+                        {
+                            "reference_id": request_id,
+                            "status": "pending",
+                            "message": "Transaction queued, awaiting webhook confirmation",
+                        },
+                        status=status.HTTP_202_ACCEPTED,
                     )
-
-                subscription_response = top_up(data)
-                if (
-                    subscription_response.get("response_description")
-                    == "TRANSACTION SUCCESSFUL"
-                ):
-                    phone = serializer.data.get("billersCode", "")
-                    plan = serializer.data.get("plan", "")
-                    desc = get_payment_description(
-                        payment_type="data",
-                        network="MTN",
-                        phone=phone,
-                        plan=plan,
-                        amount=amount,
-                    )
-                    with transaction.atomic():
-                        user_wallet = Wallet.objects.select_for_update().get(
-                            pk=request.user.wallet.pk
-                        )
-                        user_wallet.debit(
-                            amount=amount,
-                            description=desc["full"],
-                            reference=request_id,
-                        )
-
-                    try:
-                        award_vtu_purchase_points(
-                            user=request.user,
-                            purchase_amount=amount,
-                            reference=request_id,
-                        )
-                        try:
-                            referral = Referral.objects.get(
-                                referred_user=request.user,
-                                status="pending",
-                                first_transaction_completed=False,
-                            )
-                            referral.first_transaction_completed = True
-                            referral.save()
-                            award_referral_bonus(referral.referrer, request.user)
-                        except Referral.DoesNotExist:
-                            pass
-                    except Exception as e:
-                        logger.error(f"Error awarding bonus points: {str(e)}")
-
-                    try:
-                        send_notification(
-                            user=request.user,
-                            title="MTN Data Purchase Successful",
-                            message=f"₦{amount} MTN data purchased for {serializer.data['phone_number']}",
-                            notification_type="payment_success",
-                            email_subject="BlueSea - Data Purchase",
-                        )
-                    except Exception as e:
-                        logger.error(f"Error sending notification: {str(e)}")
-
-                    return Response(subscription_response)
 
         except Exception as e:
             return Response(
@@ -1110,7 +960,7 @@ class MTNDataTopUpViews(APIView):
 
 
 class AirtelDataTopUpViews(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Purchase Airtel data",
@@ -1177,83 +1027,39 @@ class AirtelDataTopUpViews(APIView):
             if serializer.is_valid(raise_exception=True):
                 request_id = f"BS-DAT-AIR{generate_reference_id()}"
                 serializer.save(request_id=request_id, user=request.user)
-                user_wallet = Wallet.objects.select_for_update().get(
-                    pk=request.user.wallet.pk
-                )
-                amount = airtel_dict[serializer.data["plan"]][1]
-                variation_code = airtel_dict[serializer.data["plan"]][0]
-                data = {
-                    "request_id": request_id,
-                    "serviceID": "airtel-data",
-                    "billersCode": serializer.data["billersCode"],
-                    "variation_code": variation_code,
-                    "amount": amount,
-                    "phone": serializer.data["phone_number"],
-                }
+                with transaction.atomic():
+                    amount = airtel_dict[serializer.data["plan"]][1]
+                    variation_code = airtel_dict[serializer.data["plan"]][0]
+                    data = {
+                        "request_id": request_id,
+                        "serviceID": "airtel-data",
+                        "billersCode": serializer.data["billersCode"],
+                        "variation_code": variation_code,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                    }
+                    user_wallet = request.user.wallet
 
-                if user_wallet.balance < amount:
+                    if user_wallet.balance < amount:
+                        return Response(
+                            {"error": "Insufficient Funds", "success": False},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    try:
+                        call_vtpass_task.delay(
+                            request_id, data, "AirtelDataTopUp", serializer.instance.pk
+                        )
+                    except Exception:
+                        pass
                     return Response(
-                        {"error": "Insufficient Funds", "success": False},
-                        status=status.HTTP_400_BAD_REQUEST,
+                        {
+                            "reference_id": request_id,
+                            "status": "pending",
+                            "message": "Transaction queued, awaiting webhook confirmation",
+                        },
+                        status=status.HTTP_202_ACCEPTED,
                     )
-
-                subscription_response = top_up(data)
-                if (
-                    subscription_response.get("response_description")
-                    == "TRANSACTION SUCCESSFUL"
-                ):
-                    phone = serializer.data.get("billersCode", "")
-                    plan = serializer.data.get("plan", "")
-                    desc = get_payment_description(
-                        payment_type="data",
-                        network="Airtel",
-                        phone=phone,
-                        plan=plan,
-                        amount=amount,
-                    )
-                    with transaction.atomic():
-                        user_wallet = Wallet.objects.select_for_update().get(
-                            pk=request.user.wallet.pk
-                        )
-                        user_wallet.debit(
-                            amount=amount,
-                            description=desc["full"],
-                            reference=request_id,
-                        )
-
-                    try:
-                        award_vtu_purchase_points(
-                            user=request.user,
-                            purchase_amount=amount,
-                            reference=request_id,
-                        )
-
-                        try:
-                            referral = Referral.objects.get(
-                                referred_user=request.user,
-                                status="pending",
-                                first_transaction_completed=False,
-                            )
-                            referral.first_transaction_completed = True
-                            referral.save()
-                            award_referral_bonus(referral.referrer, request.user)
-                        except Referral.DoesNotExist:
-                            pass
-                    except Exception as e:
-                        logger.error(f"Error awarding bonus points: {str(e)}")
-
-                    try:
-                        send_notification(
-                            user=request.user,
-                            title="Airtel Data Purchase Successful",
-                            message=f"₦{amount} Airtel data purchased for {serializer.data['phone_number']}",
-                            notification_type="payment_success",
-                            email_subject="BlueSea - Data Purchase",
-                        )
-                    except Exception as e:
-                        logger.error(f"Error sending notification: {str(e)}")
-
-                return Response(subscription_response)
 
         except Exception as e:
             return Response(
@@ -1263,7 +1069,7 @@ class AirtelDataTopUpViews(APIView):
 
 
 class EtisalatDataTopUpViews(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Purchase 9Mobile data",
@@ -1330,83 +1136,42 @@ class EtisalatDataTopUpViews(APIView):
             if serializer.is_valid(raise_exception=True):
                 request_id = f"BS-DAT-ETI{generate_reference_id()}"
                 serializer.save(request_id=request_id, user=request.user)
-                user_wallet = Wallet.objects.select_for_update().get(
-                    pk=request.user.wallet.pk
-                )
-                amount = etisalat_dict[serializer.data["plan"]][1]
-                variation_code = etisalat_dict[serializer.data["plan"]][0]
-                data = {
-                    "request_id": request_id,
-                    "serviceID": "etisalat-data",
-                    "billersCode": serializer.data["billersCode"],
-                    "variation_code": variation_code,
-                    "amount": amount,
-                    "phone": serializer.data["phone_number"],
-                }
+                with transaction.atomic():
+                    amount = etisalat_dict[serializer.data["plan"]][1]
+                    variation_code = etisalat_dict[serializer.data["plan"]][0]
+                    data = {
+                        "request_id": request_id,
+                        "serviceID": "etisalat-data",
+                        "billersCode": serializer.data["billersCode"],
+                        "variation_code": variation_code,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                    }
+                    user_wallet = request.user.wallet
 
-                if user_wallet.balance < amount:
+                    if user_wallet.balance < amount:
+                        return Response(
+                            {"error": "Insufficient Funds", "success": False},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    try:
+                        call_vtpass_task.delay(
+                            request_id,
+                            data,
+                            "EtisalatDataTopUp",
+                            serializer.instance.pk,
+                        )
+                    except Exception:
+                        pass
                     return Response(
-                        {"error": "Insufficient Funds", "success": False},
-                        status=status.HTTP_400_BAD_REQUEST,
+                        {
+                            "reference_id": request_id,
+                            "status": "pending",
+                            "message": "Transaction queued, awaiting webhook confirmation",
+                        },
+                        status=status.HTTP_202_ACCEPTED,
                     )
-
-                subscription_response = top_up(data)
-                if (
-                    subscription_response.get("response_description")
-                    == "TRANSACTION SUCCESSFUL"
-                ):
-                    phone = serializer.data.get("billersCode", "")
-                    plan = serializer.data.get("plan", "")
-                    desc = get_payment_description(
-                        payment_type="data",
-                        network="9Mobile",
-                        phone=phone,
-                        plan=plan,
-                        amount=amount,
-                    )
-                    with transaction.atomic():
-                        user_wallet = Wallet.objects.select_for_update().get(
-                            pk=request.user.wallet.pk
-                        )
-                        user_wallet.debit(
-                            amount=amount,
-                            description=desc["full"],
-                            reference=request_id,
-                        )
-
-                    try:
-                        award_vtu_purchase_points(
-                            user=request.user,
-                            purchase_amount=amount,
-                            reference=request_id,
-                        )
-
-                        try:
-                            referral = Referral.objects.get(
-                                referred_user=request.user,
-                                status="pending",
-                                first_transaction_completed=False,
-                            )
-                            referral.first_transaction_completed = True
-                            referral.save()
-                            award_referral_bonus(referral.referrer, request.user)
-                        except Referral.DoesNotExist:
-                            pass
-                    except Exception as e:
-                        logger.error(f"Error awarding bonus points: {str(e)}")
-
-                    try:
-                        send_notification(
-                            user=request.user,
-                            title="9Mobile Data Purchase Successful",
-                            message=f"₦{amount} 9Mobile data purchased for {serializer.data['phone_number']}",
-                            notification_type="payment_success",
-                            email_subject="BlueSea - Data Purchase",
-                        )
-                    except Exception as e:
-                        logger.error(f"Error sending notification: {str(e)}")
-
-                return Response(subscription_response)
 
         except Exception as e:
             return Response(
@@ -1416,7 +1181,7 @@ class EtisalatDataTopUpViews(APIView):
 
 
 class GloDataTopUpViews(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Purchase Glo data",
@@ -1483,86 +1248,40 @@ class GloDataTopUpViews(APIView):
             if serializer.is_valid(raise_exception=True):
                 request_id = f"BS-DAT-GLO{generate_reference_id()}"
                 serializer.save(request_id=request_id, user=request.user)
-                user_wallet = Wallet.objects.select_for_update().get(
-                    pk=request.user.wallet.pk
-                )
-                amount = glo_dict[serializer.data["plan"]][1]
-                variation_code = glo_dict[serializer.data["plan"]][0]
-                data = {
-                    "request_id": request_id,
-                    "serviceID": "glo-data",
-                    "billersCode": serializer.data["billersCode"],
-                    "variation_code": variation_code,
-                    "amount": amount,
-                    "phone": serializer.data["phone_number"],
-                }
+                with transaction.atomic():
+                    amount = glo_dict[serializer.data["plan"]][1]
+                    variation_code = glo_dict[serializer.data["plan"]][0]
+                    data = {
+                        "request_id": request_id,
+                        "serviceID": "glo-data",
+                        "billersCode": serializer.data["billersCode"],
+                        "variation_code": variation_code,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                    }
+                    # Wallet.debit(amount)
+                    user_wallet = request.user.wallet
 
-                if user_wallet.balance < amount:
+                    if user_wallet.balance < amount:
+                        return Response(
+                            {"error": "Insufficient Funds", "success": False},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    try:
+                        call_vtpass_task.delay(
+                            request_id, data, "GloDataTopUp", serializer.instance.pk
+                        )
+                    except Exception:
+                        pass
                     return Response(
-                        {"error": "Insufficient Funds", "success": False},
-                        status=status.HTTP_400_BAD_REQUEST,
+                        {
+                            "reference_id": request_id,
+                            "status": "pending",
+                            "message": "Transaction queued, awaiting webhook confirmation",
+                        },
+                        status=status.HTTP_202_ACCEPTED,
                     )
-
-                subscription_response = top_up(data)
-                if (
-                    subscription_response.get("response_description")
-                    == "TRANSACTION SUCCESSFUL"
-                ):
-                    phone = serializer.data.get("billersCode", "")
-                    plan = serializer.data.get("plan", "")
-                    desc = get_payment_description(
-                        payment_type="data",
-                        network="Glo",
-                        phone=phone,
-                        plan=plan,
-                        amount=amount,
-                    )
-                    with transaction.atomic():
-                        user_wallet = Wallet.objects.select_for_update().get(
-                            pk=request.user.wallet.pk
-                        )
-                        user_wallet.debit(
-                            amount=amount,
-                            description=desc["full"],
-                            reference=request_id,
-                        )
-
-                    try:
-                        award_vtu_purchase_points(
-                            user=request.user,
-                            purchase_amount=amount,
-                            reference=request_id,
-                        )
-
-                        # Check for referral bonus (first transaction)
-                        try:
-                            referral = Referral.objects.get(
-                                referred_user=request.user,
-                                status="pending",
-                                first_transaction_completed=False,
-                            )
-                            referral.first_transaction_completed = True
-                            referral.save()
-
-                            award_referral_bonus(referral.referrer, request.user)
-                        except Referral.DoesNotExist:
-                            pass
-
-                    except Exception as e:
-                        logger.error(f"Error awarding bonus points: {str(e)}")
-
-                    try:
-                        send_notification(
-                            user=request.user,
-                            title="Glo Data Purchase Successful",
-                            message=f"₦{amount} Glo data purchased for {serializer.data['phone_number']}",
-                            notification_type="payment_success",
-                            email_subject="BlueSea - Data Purchase",
-                        )
-                    except Exception as e:
-                        logger.error(f"Error sending notification: {str(e)}")
-
-                return Response(subscription_response)
         except Exception as e:
             return Response(
                 {"success": False, "error": f"Payment failed: {str(e)}."},
@@ -1571,7 +1290,7 @@ class GloDataTopUpViews(APIView):
 
 
 class DSTVPaymentViews(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Pay for DSTV subscription",
@@ -1659,63 +1378,20 @@ class DSTVPaymentViews(APIView):
                             status=status.HTTP_400_BAD_REQUEST,
                         )
 
-                    subscription_response = top_up(data)
-                    if (
-                        subscription_response.get("response_description")
-                        == "TRANSACTION SUCCESSFUL"
-                    ):
-                        phone = serializer.data.get("phone_number", "")
-                        plan = serializer.data.get("showmax_plan", "")
-                        desc = get_payment_description(
-                            payment_type="showmax",
-                            phone=phone,
-                            plan=plan,
-                            amount=amount,
+                    try:
+                        call_vtpass_task.delay(
+                            request_id, data, "DSTVPayment", serializer.instance.pk
                         )
-                        user_wallet.debit(
-                            amount=amount,
-                            description=desc["full"],
-                            reference=request_id,
-                        )
-
-                        # Award bonus points
-                        try:
-                            award_vtu_purchase_points(
-                                user=request.user,
-                                purchase_amount=amount,
-                                reference=request_id,
-                            )
-
-                            # Check for referral bonus (first transaction)
-                            try:
-                                referral = Referral.objects.get(
-                                    referred_user=request.user,
-                                    status="pending",
-                                    first_transaction_completed=False,
-                                )
-                                referral.first_transaction_completed = True
-                                referral.save()
-
-                                award_referral_bonus(referral.referrer, request.user)
-                            except Referral.DoesNotExist:
-                                pass
-
-                        except Exception as e:
-                            logger.error(f"Error awarding bonus points: {str(e)}")
-
-                        # Send notification
-                        try:
-                            send_notification(
-                                user=request.user,
-                                title="DSTV Subscription Successful",
-                                message=f"DSTV subscription purchased for {serializer.data['billersCode']}",
-                                notification_type="payment_success",
-                                email_subject="BlueSea - DSTV Subscription",
-                            )
-                        except Exception as e:
-                            logger.error(f"Error sending notification: {str(e)}")
-
-                    return Response(subscription_response)
+                    except Exception:
+                        pass
+                    return Response(
+                        {
+                            "reference_id": request_id,
+                            "status": "pending",
+                            "message": "Transaction queued, awaiting webhook confirmation",
+                        },
+                        status=status.HTTP_202_ACCEPTED,
+                    )
 
         except Exception as e:
             return Response(
@@ -1813,63 +1489,20 @@ class GOTVPaymentViews(APIView):
                             status=status.HTTP_400_BAD_REQUEST,
                         )
 
-                    subscription_response = top_up(data)
-                    if (
-                        subscription_response.get("response_description")
-                        == "TRANSACTION SUCCESSFUL"
-                    ):
-                        phone = serializer.data.get("billersCode", "")
-                        plan = serializer.data.get("gotv_plan", "")
-                        desc = get_payment_description(
-                            payment_type="gotv",
-                            phone=phone,
-                            plan=plan,
-                            amount=amount,
+                    try:
+                        call_vtpass_task.delay(
+                            request_id, data, "GOTVPayment", serializer.instance.pk
                         )
-                        user_wallet.debit(
-                            amount=amount,
-                            description=desc["full"],
-                            reference=request_id,
-                        )
-
-                        # Award bonus points
-                        try:
-                            award_vtu_purchase_points(
-                                user=request.user,
-                                purchase_amount=amount,
-                                reference=request_id,
-                            )
-
-                            # Check for referral bonus (first transaction)
-                            try:
-                                referral = Referral.objects.get(
-                                    referred_user=request.user,
-                                    status="pending",
-                                    first_transaction_completed=False,
-                                )
-                                referral.first_transaction_completed = True
-                                referral.save()
-
-                                award_referral_bonus(referral.referrer, request.user)
-                            except Referral.DoesNotExist:
-                                pass
-
-                        except Exception as e:
-                            logger.error(f"Error awarding bonus points: {str(e)}")
-
-                        # Send notification
-                        try:
-                            send_notification(
-                                user=request.user,
-                                title="GOTV Subscription Successful",
-                                message=f"GOTV subscription purchased for {serializer.data['billersCode']}",
-                                notification_type="payment_success",
-                                email_subject="BlueSea - GOTV Subscription",
-                            )
-                        except Exception as e:
-                            logger.error(f"Error sending notification: {str(e)}")
-
-                    return Response(subscription_response)
+                    except Exception:
+                        pass
+                    return Response(
+                        {
+                            "reference_id": request_id,
+                            "status": "pending",
+                            "message": "Transaction queued, awaiting webhook confirmation",
+                        },
+                        status=status.HTTP_202_ACCEPTED,
+                    )
 
         except Exception as e:
             return Response(
@@ -1946,85 +1579,42 @@ class StartimesPaymentViews(APIView):
             if serializer.is_valid(raise_exception=True):
                 request_id = f"BS-TV-STA{generate_reference_id()}"
                 serializer.save(request_id=request_id, user=request.user)
-                user_wallet = Wallet.objects.select_for_update().get(
-                    pk=request.user.wallet.pk
-                )
-                amount = startimes_dict[serializer.data["startimes_plan"]][1]
-                variation_code = startimes_dict[serializer.data["startimes_plan"]][0]
-                data = {
-                    "request_id": request_id,
-                    "serviceID": "startimes",
-                    "billersCode": serializer.data["billersCode"],
-                    "variation_code": variation_code,
-                    "amount": amount,
-                    "phone": serializer.data["phone_number"],
-                }
+                with transaction.atomic():
+                    amount = startimes_dict[serializer.data["startimes_plan"]][1]
+                    variation_code = startimes_dict[serializer.data["startimes_plan"]][
+                        0
+                    ]
+                    data = {
+                        "request_id": request_id,
+                        "serviceID": "startimes",
+                        "billersCode": serializer.data["billersCode"],
+                        "variation_code": variation_code,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                    }
 
-                if user_wallet.balance < amount:
+                    user_wallet = request.user.wallet
+
+                    if user_wallet.balance < amount:
+                        return Response(
+                            {"error": "Insufficient Funds", "success": False},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    try:
+                        call_vtpass_task.delay(
+                            request_id, data, "StartimesPayment", serializer.instance.pk
+                        )
+                    except Exception:
+                        pass
                     return Response(
-                        {"error": "Insufficient Funds", "success": False},
-                        status=status.HTTP_400_BAD_REQUEST,
+                        {
+                            "reference_id": request_id,
+                            "status": "pending",
+                            "message": "Transaction queued, awaiting webhook confirmation",
+                        },
+                        status=status.HTTP_202_ACCEPTED,
                     )
-
-                subscription_response = top_up(data)
-                if (
-                    subscription_response.get("response_description")
-                    == "TRANSACTION SUCCESSFUL"
-                ):
-                    phone = serializer.data.get("billersCode", "")
-                    plan = serializer.data.get("startimes_plan", "")
-                    desc = get_payment_description(
-                        payment_type="startimes",
-                        phone=phone,
-                        plan=plan,
-                        amount=amount,
-                    )
-                    with transaction.atomic():
-                        user_wallet = Wallet.objects.select_for_update().get(
-                            pk=request.user.wallet.pk
-                        )
-                        user_wallet.debit(
-                            amount=amount,
-                            description=desc["full"],
-                            reference=request_id,
-                        )
-
-                    try:
-                        award_vtu_purchase_points(
-                            user=request.user,
-                            purchase_amount=amount,
-                            reference=request_id,
-                        )
-
-                        # Check for referral bonus (first transaction)
-                        try:
-                            referral = Referral.objects.get(
-                                referred_user=request.user,
-                                status="pending",
-                                first_transaction_completed=False,
-                            )
-                            referral.first_transaction_completed = True
-                            referral.save()
-
-                            award_referral_bonus(referral.referrer, request.user)
-                        except Referral.DoesNotExist:
-                            pass
-
-                    except Exception as e:
-                        logger.error(f"Error awarding bonus points: {str(e)}")
-
-                    try:
-                        send_notification(
-                            user=request.user,
-                            title="Startimes Subscription Successful",
-                            message=f"Startimes subscription purchased for {serializer.data['billersCode']}",
-                            notification_type="payment_success",
-                            email_subject="BlueSea - Startimes Subscription",
-                        )
-                    except Exception as e:
-                        logger.error(f"Error sending notification: {str(e)}")
-
-                return Response(subscription_response)
 
         except Exception as e:
             return Response(
@@ -2100,85 +1690,40 @@ class ShowMaxPaymentViews(APIView):
             if serializer.is_valid(raise_exception=True):
                 request_id = f"BS-TV-SM{generate_reference_id()}"
                 serializer.save(request_id=request_id, user=request.user)
-                user_wallet = Wallet.objects.select_for_update().get(
-                    pk=request.user.wallet.pk
-                )
-                amount = showmax_dict[serializer.data["showmax_plan"]][1]
-                variation_code = showmax_dict[serializer.data["showmax_plan"]][0]
-                data = {
-                    "request_id": request_id,
-                    "serviceID": "showmax",
-                    "billersCode": serializer.data["phone_number"],
-                    "variation_code": variation_code,
-                    "amount": amount,
-                    "phone": serializer.data["phone_number"],
-                }
+                with transaction.atomic():
+                    amount = showmax_dict[serializer.data["showmax_plan"]][1]
+                    variation_code = showmax_dict[serializer.data["showmax_plan"]][0]
+                    data = {
+                        "request_id": request_id,
+                        "serviceID": "showmax",
+                        "billersCode": serializer.data["phone_number"],
+                        "variation_code": variation_code,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                    }
 
-                if user_wallet.balance < amount:
+                    user_wallet = request.user.wallet
+
+                    if user_wallet.balance < amount:
+                        return Response(
+                            {"error": "Insufficient Funds", "success": False},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    try:
+                        call_vtpass_task.delay(
+                            request_id, data, "ShowMaxPayment", serializer.instance.pk
+                        )
+                    except Exception:
+                        pass
                     return Response(
-                        {"error": "Insufficient Funds", "success": False},
-                        status=status.HTTP_400_BAD_REQUEST,
+                        {
+                            "reference_id": request_id,
+                            "status": "pending",
+                            "message": "Transaction queued, awaiting webhook confirmation",
+                        },
+                        status=status.HTTP_202_ACCEPTED,
                     )
-
-                subscription_response = top_up(data)
-                if (
-                    subscription_response.get("response_description")
-                    == "TRANSACTION SUCCESSFUL"
-                ):
-                    phone = serializer.data.get("billersCode", "")
-                    plan = serializer.data.get("showmax_plan", "")
-                    desc = get_payment_description(
-                        payment_type="showmax",
-                        phone=phone,
-                        plan=plan,
-                        amount=amount,
-                    )
-                    with transaction.atomic():
-                        user_wallet = Wallet.objects.select_for_update().get(
-                            pk=request.user.wallet.pk
-                        )
-                        user_wallet.debit(
-                            amount=amount,
-                            description=desc["full"],
-                            reference=request_id,
-                        )
-
-                    try:
-                        award_vtu_purchase_points(
-                            user=request.user,
-                            purchase_amount=amount,
-                            reference=request_id,
-                        )
-
-                        # Check for referral bonus (first transaction)
-                        try:
-                            referral = Referral.objects.get(
-                                referred_user=request.user,
-                                status="pending",
-                                first_transaction_completed=False,
-                            )
-                            referral.first_transaction_completed = True
-                            referral.save()
-
-                            award_referral_bonus(referral.referrer, request.user)
-                        except Referral.DoesNotExist:
-                            pass
-
-                    except Exception as e:
-                        logger.error(f"Error awarding bonus points: {str(e)}")
-
-                    try:
-                        send_notification(
-                            user=request.user,
-                            title="ShowMax Subscription Successful",
-                            message=f"ShowMax subscription purchased for {serializer.data['billersCode']}",
-                            notification_type="payment_success",
-                            email_subject="BlueSea - ShowMax Subscription",
-                        )
-                    except Exception as e:
-                        logger.error(f"Error sending notification: {str(e)}")
-
-                return Response(subscription_response)
         except Exception as e:
             return Response(
                 {"success": False, "error": f"Payment failed: {str(e)}."},
@@ -2255,77 +1800,41 @@ class ElectricityPaymentViews(APIView):
             if serializer.is_valid(raise_exception=True):
                 request_id = f"BS-LIB{generate_reference_id()}"
                 serializer.save(request_id=request_id, user=request.user)
-                user_wallet = Wallet.objects.select_for_update().get(
-                    pk=request.user.wallet.pk
-                )
-                amount = int(serializer.data["amount"])
-                data = {
-                    "request_id": request_id,
-                    "serviceID": serializer.data.get("biller_name"),
-                    "billersCode": serializer.data["billerCode"],
-                    "variation_code": serializer.data["meter_type"],
-                    "amount": amount,
-                    "phone": request.user.phone,
-                }
+                with transaction.atomic():
+                    amount = int(serializer.data["amount"])
+                    data = {
+                        "request_id": request_id,
+                        "serviceID": serializer.data.get("biller_name"),
+                        "billersCode": serializer.data["billerCode"],
+                        "variation_code": serializer.data["meter_type"],
+                        "amount": amount,
+                        "phone": request.user.phone,
+                    }
+                    user_wallet = request.user.wallet
 
-                if user_wallet.balance < amount:
+                    if user_wallet.balance < amount:
+                        return Response(
+                            {"error": "Insufficient Funds", "success": False},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    try:
+                        call_vtpass_task.delay(
+                            request_id,
+                            data,
+                            "ElectricityPayment",
+                            serializer.instance.pk,
+                        )
+                    except Exception:
+                        pass
                     return Response(
-                        {"error": "Insufficient Funds", "success": False},
-                        status=status.HTTP_400_BAD_REQUEST,
+                        {
+                            "reference_id": request_id,
+                            "status": "pending",
+                            "message": "Transaction queued, awaiting webhook confirmation",
+                        },
+                        status=status.HTTP_202_ACCEPTED,
                     )
-
-                electricity_response = top_up(data)
-
-                if (
-                    electricity_response.get("response_description")
-                    == "TRANSACTION SUCCESSFUL"
-                ):
-                    with transaction.atomic():
-                        user_wallet = Wallet.objects.select_for_update().get(
-                            pk=request.user.wallet.pk
-                        )
-                        user_wallet.debit(
-                            amount=amount,
-                            reference=request_id,
-                            description=f"Electricity - {serializer.data['biller_name'].capitalize()} {electricity_response.get('purchased_code')}",
-                        )
-
-                    try:
-                        award_vtu_purchase_points(
-                            user=request.user,
-                            purchase_amount=amount,
-                            reference=request_id,
-                        )
-
-                        # Check for referral bonus (first transaction)
-                        try:
-                            referral = Referral.objects.get(
-                                referred_user=request.user,
-                                status="pending",
-                                first_transaction_completed=False,
-                            )
-                            referral.first_transaction_completed = True
-                            referral.save()
-
-                            award_referral_bonus(referral.referrer, request.user)
-                        except Referral.DoesNotExist:
-                            pass
-
-                    except Exception as e:
-                        logger.error(f"Error awarding bonus points: {str(e)}")
-
-                    try:
-                        send_notification(
-                            user=request.user,
-                            title="Electricity Payment Successful",
-                            message=f"₦{amount} electricity units purchased for {serializer.data['billersCode']}",
-                            notification_type="payment_success",
-                            email_subject="BlueSea - Electricity Payment",
-                        )
-                    except Exception as e:
-                        logger.error(f"Error sending notification: {str(e)}")
-
-                return Response(electricity_response)
 
         except Exception as e:
             return Response(
@@ -2392,79 +1901,38 @@ class WAECRegitrationViews(APIView):
         if serializer.is_valid(raise_exception=True):
             request_id = f"BS-WAC-{generate_reference_id()}"
             serializer.save(request_id=request_id, user=request.user)
-            user_wallet = Wallet.objects.select_for_update().get(
-                pk=request.user.wallet.pk
-            )
-            amount = 37500
-            data = {
-                "request_id": request_id,
-                "serviceID": "waec-registration",
-                "variation_code": "waec-registraion",
-                "quantity": 1,
-                "phone": serializer.data["phone_number"],
-            }
+            with transaction.atomic():
+                amount = 37500
+                data = {
+                    "request_id": request_id,
+                    "serviceID": "waec-registration",
+                    "variation_code": "waec-registraion",
+                    "quantity": 1,
+                    "phone": serializer.data["phone_number"],
+                }
 
-            if user_wallet.balance < amount:
+                user_wallet = request.user.wallet
+
+                if user_wallet.balance < amount:
+                    return Response(
+                        {"error": "Insufficient Funds", "success": False},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                try:
+                    call_vtpass_task.delay(
+                        request_id, data, "WAECRegitration", serializer.instance.pk
+                    )
+                except Exception:
+                    pass
                 return Response(
-                    {"error": "Insufficient Funds", "success": False},
-                    status=status.HTTP_400_BAD_REQUEST,
+                    {
+                        "reference_id": request_id,
+                        "status": "pending",
+                        "message": "Transaction queued, awaiting webhook confirmation",
+                    },
+                    status=status.HTTP_202_ACCEPTED,
                 )
-
-            registration_response = top_up(data)
-            if (
-                registration_response.get("response_description")
-                == "TRANSACTION SUCCESSFUL"
-            ):
-                desc = get_payment_description(
-                    payment_type="waec-registration",
-                    amount=amount,
-                )
-                with transaction.atomic():
-                    user_wallet = Wallet.objects.select_for_update().get(
-                        pk=request.user.wallet.pk
-                    )
-                    user_wallet.debit(
-                        amount=amount,
-                        description=f"{desc['full']} {registration_response.get('purchased_code')}",
-                        reference=request_id,
-                    )
-
-                try:
-                    award_vtu_purchase_points(
-                        user=request.user,
-                        purchase_amount=amount,
-                        reference=request_id,
-                    )
-
-                    # Check for referral bonus (first transaction)
-                    try:
-                        referral = Referral.objects.get(
-                            referred_user=request.user,
-                            status="pending",
-                            first_transaction_completed=False,
-                        )
-                        referral.first_transaction_completed = True
-                        referral.save()
-
-                        award_referral_bonus(referral.referrer, request.user)
-                    except Referral.DoesNotExist:
-                        pass
-
-                except Exception as e:
-                    logger.error(f"Error awarding bonus points: {str(e)}")
-
-                try:
-                    send_notification(
-                        user=request.user,
-                        title="WAEC Registration Successful",
-                        message=f"WAEC registration completed for {serializer.data['phone_number']}",
-                        notification_type="payment_success",
-                        email_subject="BlueSea - WAEC Registration",
-                    )
-                except Exception as e:
-                    logger.error(f"Error sending notification: {str(e)}")
-
-            return Response(registration_response)
 
 
 class WAECResultCheckerViews(APIView):
@@ -2525,79 +1993,38 @@ class WAECResultCheckerViews(APIView):
         if serializer.is_valid(raise_exception=True):
             request_id = f"BS-EPN-{generate_reference_id()}"
             serializer.save(request_id=request_id, user=request.user)
-            user_wallet = Wallet.objects.select_for_update().get(
-                pk=request.user.wallet.pk
-            )
-            amount = 5350
-            data = {
-                "request_id": request_id,
-                "serviceID": "waec",
-                "variation_code": "waecdirect",
-                "quantity": 1,
-                "phone": serializer.data["phone_number"],
-            }
+            with transaction.atomic():
+                amount = 5350
+                data = {
+                    "request_id": request_id,
+                    "serviceID": "waec",
+                    "variation_code": "waecdirect",
+                    "quantity": 1,
+                    "phone": serializer.data["phone_number"],
+                }
 
-            if user_wallet.balance < amount:
+                user_wallet = request.user.wallet
+
+                if user_wallet.balance < amount:
+                    return Response(
+                        {"error": "Insufficient Funds", "success": False},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                try:
+                    call_vtpass_task.delay(
+                        request_id, data, "WAECResultChecker", serializer.instance.pk
+                    )
+                except Exception:
+                    pass
                 return Response(
-                    {"error": "Insufficient Funds", "success": False},
-                    status=status.HTTP_400_BAD_REQUEST,
+                    {
+                        "reference_id": request_id,
+                        "status": "pending",
+                        "message": "Transaction queued, awaiting webhook confirmation",
+                    },
+                    status=status.HTTP_202_ACCEPTED,
                 )
-
-            registration_response = top_up(data)
-            if (
-                registration_response.get("response_description")
-                == "TRANSACTION SUCCESSFUL"
-            ):
-                desc = get_payment_description(
-                    payment_type="waec-registration",
-                    amount=amount,
-                )
-                with transaction.atomic():
-                    user_wallet = Wallet.objects.select_for_update().get(
-                        pk=request.user.wallet.pk
-                    )
-                    user_wallet.debit(
-                        amount=amount,
-                        description=f"{desc['full']} {registration_response.get('purchased_code')}",
-                        reference=request_id,
-                    )
-
-                try:
-                    award_vtu_purchase_points(
-                        user=request.user,
-                        purchase_amount=amount,
-                        reference=request_id,
-                    )
-
-                    # Check for referral bonus (first transaction)
-                    try:
-                        referral = Referral.objects.get(
-                            referred_user=request.user,
-                            status="pending",
-                            first_transaction_completed=False,
-                        )
-                        referral.first_transaction_completed = True
-                        referral.save()
-
-                        award_referral_bonus(referral.referrer, request.user)
-                    except Referral.DoesNotExist:
-                        pass
-
-                except Exception as e:
-                    logger.error(f"Error awarding bonus points: {str(e)}")
-
-                try:
-                    send_notification(
-                        user=request.user,
-                        title="WAEC Result Purchase Successful",
-                        message=f"WAEC result checker PIN purchased for {serializer.data['phone_number']}",
-                        notification_type="payment_success",
-                        email_subject="BlueSea - WAEC Result",
-                    )
-                except Exception as e:
-                    logger.error(f"Error sending notification: {str(e)}")
-
-            return Response(registration_response)
 
 
 class JAMBRegistrationViews(APIView):
@@ -2664,85 +2091,42 @@ class JAMBRegistrationViews(APIView):
             request_id = f"BS-JMB-{generate_reference_id()}"
             serializer.save(request_id=request_id, user=request.user)
 
-            user_wallet = Wallet.objects.select_for_update().get(
-                pk=request.user.wallet.pk
-            )
-            amount = 7700 if serializer.data["exam_type"] == "utme-mock" else 6200
-            data = {
-                "request_id": request_id,
-                "serviceID": "jamb",
-                "variation_code": serializer.data["exam_type"],
-                "billersCode": serializer.data["billerCode"],
-                "phone": serializer.data["phone_number"],
-            }
+            with transaction.atomic():
+                amount = 7700 if serializer.data["exam_type"] == "utme-mock" else 6200
+                data = {
+                    "request_id": request_id,
+                    "serviceID": "jamb",
+                    "variation_code": serializer.data["exam_type"],
+                    "billersCode": serializer.data["billerCode"],
+                    "phone": serializer.data["phone_number"],
+                }
 
-            if user_wallet.balance < amount:
+                user_wallet = request.user.wallet
+
+                if user_wallet.balance < amount:
+                    return Response(
+                        {"error": "Insufficient Funds", "success": False},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                try:
+                    call_vtpass_task.delay(
+                        request_id, data, "JAMBRegistration", serializer.instance.pk
+                    )
+                except Exception:
+                    pass
                 return Response(
-                    {"error": "Insufficient Funds", "success": False},
-                    status=status.HTTP_400_BAD_REQUEST,
+                    {
+                        "reference_id": request_id,
+                        "status": "pending",
+                        "message": "Transaction queued, awaiting webhook confirmation",
+                    },
+                    status=status.HTTP_202_ACCEPTED,
                 )
-
-            jamb_registration_response = top_up(data)
-            if (
-                jamb_registration_response.get("response_description")
-                == "TRANSACTION SUCCESSFUL"
-            ):
-                exam_type = serializer.data.get("exam_type", "")
-                desc = get_payment_description(
-                    payment_type="jamb",
-                    exam_type=exam_type,
-                    amount=amount,
-                )
-                with transaction.atomic():
-                    user_wallet = Wallet.objects.select_for_update().get(
-                        pk=request.user.wallet.pk
-                    )
-                    user_wallet.debit(
-                        amount=amount,
-                        description=f"{desc['full']} {jamb_registration_response.get('purchased_code')}",
-                        reference=request_id,
-                    )
-
-                try:
-                    award_vtu_purchase_points(
-                        user=request.user,
-                        purchase_amount=amount,
-                        reference=request_id,
-                    )
-
-                    # Check for referral bonus (first transaction)
-                    try:
-                        referral = Referral.objects.get(
-                            referred_user=request.user,
-                            status="pending",
-                            first_transaction_completed=False,
-                        )
-                        referral.first_transaction_completed = True
-                        referral.save()
-
-                        award_referral_bonus(referral.referrer, request.user)
-                    except Referral.DoesNotExist:
-                        pass
-
-                except Exception as e:
-                    logger.error(f"Error awarding bonus points: {str(e)}")
-
-                try:
-                    send_notification(
-                        user=request.user,
-                        title="JAMB Registration Successful",
-                        message=f"JAMB registration completed for {serializer.data['phone_number']}",
-                        notification_type="payment_success",
-                        email_subject="BlueSea - JAMB Registration",
-                    )
-                except Exception as e:
-                    logger.error(f"Error sending notification: {str(e)}")
-
-            return Response(jamb_registration_response)
 
 
 class ElectricityPaymentCustomerViews(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Verify electricity customer",
@@ -2808,7 +2192,7 @@ class ElectricityPaymentCustomerViews(APIView):
 
 
 class InternalTransferView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Transfer funds internally",

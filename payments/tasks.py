@@ -1,7 +1,8 @@
 import logging
+
 from celery import shared_task
-from requests.exceptions import RequestException
 from django.apps import apps
+from requests.exceptions import RequestException
 
 logger = logging.getLogger(__name__)
 
@@ -87,16 +88,16 @@ def call_group_vtpass_task(
     try:
         from .models import GroupPayment
         from .vtpass import (
-            top_up,
-            mtn_dict,
             airtel_dict,
-            glo_dict,
-            etisalat_dict,
             dstv_dict,
-            gotv_dict,
-            startimes_dict,
-            showmax_dict,
+            etisalat_dict,
             generate_reference_id,
+            glo_dict,
+            gotv_dict,
+            mtn_dict,
+            showmax_dict,
+            startimes_dict,
+            top_up,
         )
 
         gp = GroupPayment.objects.filter(pk=group_payment_id).first()

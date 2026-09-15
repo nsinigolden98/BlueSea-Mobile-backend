@@ -485,7 +485,7 @@ def _get_session():
 
 def top_up(user_data):
     session = _get_session()
-    response = session.post(f"{BASE_URL}/pay", json=user_data, timeout=(3, 10))
+    response = session.post(f"{BASE_URL}/pay", json=user_data, timeout=(3, 30))
     response.raise_for_status()
     return response.json()
 
