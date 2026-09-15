@@ -6,7 +6,7 @@ from drf_spectacular.utils import (
     inline_serializer,
 )
 from rest_framework import serializers, status
-from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -24,7 +24,11 @@ from .serializers import (
 class CurrentUserView(APIView):
     # Ensure only authenticated users can access this view
     permission_classes =(IsAuthenticated,)
-    parser_classes =(MultiPartParser, FormParser)  # Needed for file uploads
+    parser_classes = (
+        MultiPartParser,
+        FormParser,
+        JSONParser,
+    )  # Needed for file uploads
 
     @extend_schema(
         summary="Get current user profile",
