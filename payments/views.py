@@ -141,10 +141,11 @@ def process_payment(request, amount, service_data, service_name, description=Non
     Helper function to process payments consistently.
     Returns (response, success) tuple.
     """
-    user_wallet = Wallet.objects.select_for_update().get(pk=request.user.wallet.pk)
+    with transaction.atomic():
+        user_wallet = Wallet.objects.select_for_update().get(pk=request.user.wallet.pk)
 
-    if user_wallet.balance < amount:
-        return {"error": "Insufficient Funds", "success": False}, False
+        if user_wallet.balance < amount:
+            return {"error": "Insufficient Funds", "success": False}, False
 
     response = top_up(service_data)
 
@@ -406,14 +407,16 @@ class GroupPaymentViews(APIView):
             # Process each member's contribution
             for member in members:
                 amount = member_amounts.get(member)
-                wallet = Wallet.objects.select_for_update().get(
-                    pk=member.user.wallet.pk
-                )
 
-                if wallet.balance < amount:
-                    raise InsufficientFundsException(
-                        f"Insufficient funds for {member.user.email}"
+                with transaction.atomic():
+                    wallet = Wallet.objects.select_for_update().get(
+                        pk=member.user.wallet.pk
                     )
+
+                    if wallet.balance < amount:
+                        raise InsufficientFundsException(
+                            f"Insufficient funds for {member.user.email}"
+                        )
 
                 # Create UNIQUE reference for each member's contribution
                 unique_reference = (
@@ -503,19 +506,21 @@ class GroupPaymentViews(APIView):
                 # Reverse all debits by crediting back and update contributions to "reversed"
                 for member in members:
                     amount = member_amounts.get(member)
-                    wallet = Wallet.objects.select_for_update().get(
-                        pk=member.user.wallet.pk
-                    )
-                    reversal_reference = f"REV-{group_payment.id}-{member.user.id}-{uuid.uuid4().hex[:8]}"
 
-                    wallet.credit(
-                        amount=amount,
-                        description=f"Reversal - Group payment failed",
-                        reference=reversal_reference,
-                    )
-                    GroupPaymentContribution.objects.filter(
-                        group_payment=group_payment, member=member
-                    ).update(status="reversed")
+                    with transaction.atomic():
+                        wallet = Wallet.objects.select_for_update().get(
+                            pk=member.user.wallet.pk
+                        )
+                        reversal_reference = f"REV-{group_payment.id}-{member.user.id}-{uuid.uuid4().hex[:8]}"
+
+                        wallet.credit(
+                            amount=amount,
+                            description=f"Reversal - Group payment failed",
+                            reference=reversal_reference,
+                        )
+                        GroupPaymentContribution.objects.filter(
+                            group_payment=group_payment, member=member
+                        ).update(status="reversed")
 
                 return Response(
                     {
@@ -876,22 +881,23 @@ class AirtimeTopUpViews(APIView):
                 request_id = f"BS-AIRT{generate_reference_id()}"
                 serializer.save(request_id=request_id, user=request.user)
 
-                user_wallet = Wallet.objects.select_for_update().get(
-                    pk=request.user.wallet.pk
-                )
-                amount = int(serializer.data["amount"])
-                data = {
-                    "request_id": request_id,
-                    "serviceID": serializer.data["network"],
-                    "amount": amount,
-                    "phone": serializer.data["phone_number"],
-                }
-
-                if user_wallet.balance < amount:
-                    return Response(
-                        {"error": "Insufficient Funds", "success": False},
-                        status=status.HTTP_400_BAD_REQUEST,
+                with transaction.atomic():
+                    user_wallet = Wallet.objects.select_for_update().get(
+                        pk=request.user.wallet.pk
                     )
+                    amount = int(serializer.data["amount"])
+                    data = {
+                        "request_id": request_id,
+                        "serviceID": serializer.data["network"],
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                    }
+
+                    if user_wallet.balance < amount:
+                        return Response(
+                            {"error": "Insufficient Funds", "success": False},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
 
                 buy_airtime_response = top_up(data)
                 if (
@@ -1025,25 +1031,26 @@ class MTNDataTopUpViews(APIView):
                 request_id = f"BS-DAT-MTN{generate_reference_id()}"
                 serializer.save(request_id=request_id, user=request.user)
 
-                user_wallet = Wallet.objects.select_for_update().get(
-                    pk=request.user.wallet.pk
-                )
-                amount = mtn_dict[serializer.data["plan"]][1]
-                variation_code = mtn_dict[serializer.data["plan"]][0]
-                data = {
-                    "request_id": request_id,
-                    "serviceID": "mtn-data",
-                    "billersCode": serializer.data["billersCode"],
-                    "variation_code": variation_code,
-                    "amount": amount,
-                    "phone": serializer.data["phone_number"],
-                }
-
-                if user_wallet.balance < amount:
-                    return Response(
-                        {"error": "Insufficient Funds", "success": False},
-                        status=status.HTTP_400_BAD_REQUEST,
+                with transaction.atomic():
+                    user_wallet = Wallet.objects.select_for_update().get(
+                        pk=request.user.wallet.pk
                     )
+                    amount = mtn_dict[serializer.data["plan"]][1]
+                    variation_code = mtn_dict[serializer.data["plan"]][0]
+                    data = {
+                        "request_id": request_id,
+                        "serviceID": "mtn-data",
+                        "billersCode": serializer.data["billersCode"],
+                        "variation_code": variation_code,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                    }
+
+                    if user_wallet.balance < amount:
+                        return Response(
+                            {"error": "Insufficient Funds", "success": False},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
 
                 subscription_response = top_up(data)
                 if (
@@ -1177,25 +1184,26 @@ class AirtelDataTopUpViews(APIView):
             if serializer.is_valid(raise_exception=True):
                 request_id = f"BS-DAT-AIR{generate_reference_id()}"
                 serializer.save(request_id=request_id, user=request.user)
-                user_wallet = Wallet.objects.select_for_update().get(
-                    pk=request.user.wallet.pk
-                )
-                amount = airtel_dict[serializer.data["plan"]][1]
-                variation_code = airtel_dict[serializer.data["plan"]][0]
-                data = {
-                    "request_id": request_id,
-                    "serviceID": "airtel-data",
-                    "billersCode": serializer.data["billersCode"],
-                    "variation_code": variation_code,
-                    "amount": amount,
-                    "phone": serializer.data["phone_number"],
-                }
-
-                if user_wallet.balance < amount:
-                    return Response(
-                        {"error": "Insufficient Funds", "success": False},
-                        status=status.HTTP_400_BAD_REQUEST,
+                with transaction.atomic():
+                    user_wallet = Wallet.objects.select_for_update().get(
+                        pk=request.user.wallet.pk
                     )
+                    amount = airtel_dict[serializer.data["plan"]][1]
+                    variation_code = airtel_dict[serializer.data["plan"]][0]
+                    data = {
+                        "request_id": request_id,
+                        "serviceID": "airtel-data",
+                        "billersCode": serializer.data["billersCode"],
+                        "variation_code": variation_code,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                    }
+
+                    if user_wallet.balance < amount:
+                        return Response(
+                            {"error": "Insufficient Funds", "success": False},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
 
                 subscription_response = top_up(data)
                 if (
@@ -1330,25 +1338,26 @@ class EtisalatDataTopUpViews(APIView):
             if serializer.is_valid(raise_exception=True):
                 request_id = f"BS-DAT-ETI{generate_reference_id()}"
                 serializer.save(request_id=request_id, user=request.user)
-                user_wallet = Wallet.objects.select_for_update().get(
-                    pk=request.user.wallet.pk
-                )
-                amount = etisalat_dict[serializer.data["plan"]][1]
-                variation_code = etisalat_dict[serializer.data["plan"]][0]
-                data = {
-                    "request_id": request_id,
-                    "serviceID": "etisalat-data",
-                    "billersCode": serializer.data["billersCode"],
-                    "variation_code": variation_code,
-                    "amount": amount,
-                    "phone": serializer.data["phone_number"],
-                }
-
-                if user_wallet.balance < amount:
-                    return Response(
-                        {"error": "Insufficient Funds", "success": False},
-                        status=status.HTTP_400_BAD_REQUEST,
+                with transaction.atomic():
+                    user_wallet = Wallet.objects.select_for_update().get(
+                        pk=request.user.wallet.pk
                     )
+                    amount = etisalat_dict[serializer.data["plan"]][1]
+                    variation_code = etisalat_dict[serializer.data["plan"]][0]
+                    data = {
+                        "request_id": request_id,
+                        "serviceID": "etisalat-data",
+                        "billersCode": serializer.data["billersCode"],
+                        "variation_code": variation_code,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                    }
+
+                    if user_wallet.balance < amount:
+                        return Response(
+                            {"error": "Insufficient Funds", "success": False},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
 
                 subscription_response = top_up(data)
                 if (
@@ -1483,25 +1492,26 @@ class GloDataTopUpViews(APIView):
             if serializer.is_valid(raise_exception=True):
                 request_id = f"BS-DAT-GLO{generate_reference_id()}"
                 serializer.save(request_id=request_id, user=request.user)
-                user_wallet = Wallet.objects.select_for_update().get(
-                    pk=request.user.wallet.pk
-                )
-                amount = glo_dict[serializer.data["plan"]][1]
-                variation_code = glo_dict[serializer.data["plan"]][0]
-                data = {
-                    "request_id": request_id,
-                    "serviceID": "glo-data",
-                    "billersCode": serializer.data["billersCode"],
-                    "variation_code": variation_code,
-                    "amount": amount,
-                    "phone": serializer.data["phone_number"],
-                }
-
-                if user_wallet.balance < amount:
-                    return Response(
-                        {"error": "Insufficient Funds", "success": False},
-                        status=status.HTTP_400_BAD_REQUEST,
+                with transaction.atomic():
+                    user_wallet = Wallet.objects.select_for_update().get(
+                        pk=request.user.wallet.pk
                     )
+                    amount = glo_dict[serializer.data["plan"]][1]
+                    variation_code = glo_dict[serializer.data["plan"]][0]
+                    data = {
+                        "request_id": request_id,
+                        "serviceID": "glo-data",
+                        "billersCode": serializer.data["billersCode"],
+                        "variation_code": variation_code,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                    }
+
+                    if user_wallet.balance < amount:
+                        return Response(
+                            {"error": "Insufficient Funds", "success": False},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
 
                 subscription_response = top_up(data)
                 if (
@@ -1639,7 +1649,11 @@ class DSTVPaymentViews(APIView):
             if serializer.is_valid(raise_exception=True):
                 request_id = f"BS-TV-DS{generate_reference_id()}"
                 serializer.save(request_id=request_id, user=request.user)
+
                 with transaction.atomic():
+                    user_wallet = Wallet.objects.select_for_update().get(
+                        pk=request.user.wallet.pk
+                    )
                     amount = dstv_dict[serializer.data["dstv_plan"]][1]
                     variation_code = dstv_dict[serializer.data["dstv_plan"]][0]
                     data = {
@@ -1651,26 +1665,28 @@ class DSTVPaymentViews(APIView):
                         "phone": serializer.data["phone_number"],
                     }
 
-                    user_wallet = request.user.wallet
-
                     if user_wallet.balance < amount:
                         return Response(
                             {"error": "Insufficient Funds", "success": False},
                             status=status.HTTP_400_BAD_REQUEST,
                         )
 
-                    subscription_response = top_up(data)
-                    if (
-                        subscription_response.get("response_description")
-                        == "TRANSACTION SUCCESSFUL"
-                    ):
-                        phone = serializer.data.get("phone_number", "")
-                        plan = serializer.data.get("showmax_plan", "")
-                        desc = get_payment_description(
-                            payment_type="showmax",
-                            phone=phone,
-                            plan=plan,
-                            amount=amount,
+                subscription_response = top_up(data)
+                if (
+                    subscription_response.get("response_description")
+                    == "TRANSACTION SUCCESSFUL"
+                ):
+                    phone = serializer.data.get("phone_number", "")
+                    plan = serializer.data.get("dstv_plan", "")
+                    desc = get_payment_description(
+                        payment_type="dstv",
+                        phone=phone,
+                        plan=plan,
+                        amount=amount,
+                    )
+                    with transaction.atomic():
+                        user_wallet = Wallet.objects.select_for_update().get(
+                            pk=request.user.wallet.pk
                         )
                         user_wallet.debit(
                             amount=amount,
@@ -1678,42 +1694,38 @@ class DSTVPaymentViews(APIView):
                             reference=request_id,
                         )
 
-                        # Award bonus points
+                    # Award bonus points
+                    try:
+                        award_vtu_purchase_points(
+                            user=request.user,
+                            purchase_amount=amount,
+                            reference=request_id,
+                        )
                         try:
-                            award_vtu_purchase_points(
-                                user=request.user,
-                                purchase_amount=amount,
-                                reference=request_id,
+                            referral = Referral.objects.get(
+                                referred_user=request.user,
+                                status="pending",
+                                first_transaction_completed=False,
                             )
+                            referral.first_transaction_completed = True
+                            referral.save()
+                            award_referral_bonus(referral.referrer, request.user)
+                        except Referral.DoesNotExist:
+                            pass
+                    except Exception as e:
+                        logger.error(f"Error awarding bonus points: {str(e)}")
 
-                            # Check for referral bonus (first transaction)
-                            try:
-                                referral = Referral.objects.get(
-                                    referred_user=request.user,
-                                    status="pending",
-                                    first_transaction_completed=False,
-                                )
-                                referral.first_transaction_completed = True
-                                referral.save()
-
-                                award_referral_bonus(referral.referrer, request.user)
-                            except Referral.DoesNotExist:
-                                pass
-
-                        except Exception as e:
-                            logger.error(f"Error awarding bonus points: {str(e)}")
-
-                        # Send notification
-                        try:
-                            send_notification(
-                                user=request.user,
-                                title="DSTV Subscription Successful",
-                                message=f"DSTV subscription purchased for {serializer.data['billersCode']}",
-                                notification_type="payment_success",
-                                email_subject="BlueSea - DSTV Subscription",
-                            )
-                        except Exception as e:
-                            logger.error(f"Error sending notification: {str(e)}")
+                    # Send notification
+                    try:
+                        send_notification(
+                            user=request.user,
+                            title="DSTV Subscription Successful",
+                            message=f"DSTV subscription purchased for {serializer.data['billersCode']}",
+                            notification_type="payment_success",
+                            email_subject="BlueSea - DSTV Subscription",
+                        )
+                    except Exception as e:
+                        logger.error(f"Error sending notification: {str(e)}")
 
                     return Response(subscription_response)
 
@@ -1946,25 +1958,28 @@ class StartimesPaymentViews(APIView):
             if serializer.is_valid(raise_exception=True):
                 request_id = f"BS-TV-STA{generate_reference_id()}"
                 serializer.save(request_id=request_id, user=request.user)
-                user_wallet = Wallet.objects.select_for_update().get(
-                    pk=request.user.wallet.pk
-                )
-                amount = startimes_dict[serializer.data["startimes_plan"]][1]
-                variation_code = startimes_dict[serializer.data["startimes_plan"]][0]
-                data = {
-                    "request_id": request_id,
-                    "serviceID": "startimes",
-                    "billersCode": serializer.data["billersCode"],
-                    "variation_code": variation_code,
-                    "amount": amount,
-                    "phone": serializer.data["phone_number"],
-                }
-
-                if user_wallet.balance < amount:
-                    return Response(
-                        {"error": "Insufficient Funds", "success": False},
-                        status=status.HTTP_400_BAD_REQUEST,
+                with transaction.atomic():
+                    user_wallet = Wallet.objects.select_for_update().get(
+                        pk=request.user.wallet.pk
                     )
+                    amount = startimes_dict[serializer.data["startimes_plan"]][1]
+                    variation_code = startimes_dict[serializer.data["startimes_plan"]][
+                        0
+                    ]
+                    data = {
+                        "request_id": request_id,
+                        "serviceID": "startimes",
+                        "billersCode": serializer.data["billersCode"],
+                        "variation_code": variation_code,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                    }
+
+                    if user_wallet.balance < amount:
+                        return Response(
+                            {"error": "Insufficient Funds", "success": False},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
 
                 subscription_response = top_up(data)
                 if (
@@ -2100,25 +2115,26 @@ class ShowMaxPaymentViews(APIView):
             if serializer.is_valid(raise_exception=True):
                 request_id = f"BS-TV-SM{generate_reference_id()}"
                 serializer.save(request_id=request_id, user=request.user)
-                user_wallet = Wallet.objects.select_for_update().get(
-                    pk=request.user.wallet.pk
-                )
-                amount = showmax_dict[serializer.data["showmax_plan"]][1]
-                variation_code = showmax_dict[serializer.data["showmax_plan"]][0]
-                data = {
-                    "request_id": request_id,
-                    "serviceID": "showmax",
-                    "billersCode": serializer.data["phone_number"],
-                    "variation_code": variation_code,
-                    "amount": amount,
-                    "phone": serializer.data["phone_number"],
-                }
-
-                if user_wallet.balance < amount:
-                    return Response(
-                        {"error": "Insufficient Funds", "success": False},
-                        status=status.HTTP_400_BAD_REQUEST,
+                with transaction.atomic():
+                    user_wallet = Wallet.objects.select_for_update().get(
+                        pk=request.user.wallet.pk
                     )
+                    amount = showmax_dict[serializer.data["showmax_plan"]][1]
+                    variation_code = showmax_dict[serializer.data["showmax_plan"]][0]
+                    data = {
+                        "request_id": request_id,
+                        "serviceID": "showmax",
+                        "billersCode": serializer.data["phone_number"],
+                        "variation_code": variation_code,
+                        "amount": amount,
+                        "phone": serializer.data["phone_number"],
+                    }
+
+                    if user_wallet.balance < amount:
+                        return Response(
+                            {"error": "Insufficient Funds", "success": False},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
 
                 subscription_response = top_up(data)
                 if (
@@ -2255,24 +2271,25 @@ class ElectricityPaymentViews(APIView):
             if serializer.is_valid(raise_exception=True):
                 request_id = f"BS-LIB{generate_reference_id()}"
                 serializer.save(request_id=request_id, user=request.user)
-                user_wallet = Wallet.objects.select_for_update().get(
-                    pk=request.user.wallet.pk
-                )
-                amount = int(serializer.data["amount"])
-                data = {
-                    "request_id": request_id,
-                    "serviceID": serializer.data.get("biller_name"),
-                    "billersCode": serializer.data["billerCode"],
-                    "variation_code": serializer.data["meter_type"],
-                    "amount": amount,
-                    "phone": request.user.phone,
-                }
-
-                if user_wallet.balance < amount:
-                    return Response(
-                        {"error": "Insufficient Funds", "success": False},
-                        status=status.HTTP_400_BAD_REQUEST,
+                with transaction.atomic():
+                    user_wallet = Wallet.objects.select_for_update().get(
+                        pk=request.user.wallet.pk
                     )
+                    amount = int(serializer.data["amount"])
+                    data = {
+                        "request_id": request_id,
+                        "serviceID": serializer.data.get("biller_name"),
+                        "billersCode": serializer.data["billerCode"],
+                        "variation_code": serializer.data["meter_type"],
+                        "amount": amount,
+                        "phone": request.user.phone,
+                    }
+
+                    if user_wallet.balance < amount:
+                        return Response(
+                            {"error": "Insufficient Funds", "success": False},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
 
                 electricity_response = top_up(data)
 
@@ -2392,23 +2409,24 @@ class WAECRegitrationViews(APIView):
         if serializer.is_valid(raise_exception=True):
             request_id = f"BS-WAC-{generate_reference_id()}"
             serializer.save(request_id=request_id, user=request.user)
-            user_wallet = Wallet.objects.select_for_update().get(
-                pk=request.user.wallet.pk
-            )
-            amount = 37500
-            data = {
-                "request_id": request_id,
-                "serviceID": "waec-registration",
-                "variation_code": "waec-registraion",
-                "quantity": 1,
-                "phone": serializer.data["phone_number"],
-            }
-
-            if user_wallet.balance < amount:
-                return Response(
-                    {"error": "Insufficient Funds", "success": False},
-                    status=status.HTTP_400_BAD_REQUEST,
+            with transaction.atomic():
+                user_wallet = Wallet.objects.select_for_update().get(
+                    pk=request.user.wallet.pk
                 )
+                amount = 37500
+                data = {
+                    "request_id": request_id,
+                    "serviceID": "waec-registration",
+                    "variation_code": "waec-registraion",
+                    "quantity": 1,
+                    "phone": serializer.data["phone_number"],
+                }
+
+                if user_wallet.balance < amount:
+                    return Response(
+                        {"error": "Insufficient Funds", "success": False},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
             registration_response = top_up(data)
             if (
@@ -2525,23 +2543,24 @@ class WAECResultCheckerViews(APIView):
         if serializer.is_valid(raise_exception=True):
             request_id = f"BS-EPN-{generate_reference_id()}"
             serializer.save(request_id=request_id, user=request.user)
-            user_wallet = Wallet.objects.select_for_update().get(
-                pk=request.user.wallet.pk
-            )
-            amount = 5350
-            data = {
-                "request_id": request_id,
-                "serviceID": "waec",
-                "variation_code": "waecdirect",
-                "quantity": 1,
-                "phone": serializer.data["phone_number"],
-            }
-
-            if user_wallet.balance < amount:
-                return Response(
-                    {"error": "Insufficient Funds", "success": False},
-                    status=status.HTTP_400_BAD_REQUEST,
+            with transaction.atomic():
+                user_wallet = Wallet.objects.select_for_update().get(
+                    pk=request.user.wallet.pk
                 )
+                amount = 5350
+                data = {
+                    "request_id": request_id,
+                    "serviceID": "waec",
+                    "variation_code": "waecdirect",
+                    "quantity": 1,
+                    "phone": serializer.data["phone_number"],
+                }
+
+                if user_wallet.balance < amount:
+                    return Response(
+                        {"error": "Insufficient Funds", "success": False},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
             registration_response = top_up(data)
             if (
@@ -2664,23 +2683,24 @@ class JAMBRegistrationViews(APIView):
             request_id = f"BS-JMB-{generate_reference_id()}"
             serializer.save(request_id=request_id, user=request.user)
 
-            user_wallet = Wallet.objects.select_for_update().get(
-                pk=request.user.wallet.pk
-            )
-            amount = 7700 if serializer.data["exam_type"] == "utme-mock" else 6200
-            data = {
-                "request_id": request_id,
-                "serviceID": "jamb",
-                "variation_code": serializer.data["exam_type"],
-                "billersCode": serializer.data["billerCode"],
-                "phone": serializer.data["phone_number"],
-            }
-
-            if user_wallet.balance < amount:
-                return Response(
-                    {"error": "Insufficient Funds", "success": False},
-                    status=status.HTTP_400_BAD_REQUEST,
+            with transaction.atomic():
+                user_wallet = Wallet.objects.select_for_update().get(
+                    pk=request.user.wallet.pk
                 )
+                amount = 7700 if serializer.data["exam_type"] == "utme-mock" else 6200
+                data = {
+                    "request_id": request_id,
+                    "serviceID": "jamb",
+                    "variation_code": serializer.data["exam_type"],
+                    "billersCode": serializer.data["billerCode"],
+                    "phone": serializer.data["phone_number"],
+                }
+
+                if user_wallet.balance < amount:
+                    return Response(
+                        {"error": "Insufficient Funds", "success": False},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
             jamb_registration_response = top_up(data)
             if (
