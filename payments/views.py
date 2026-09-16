@@ -13,7 +13,6 @@ from accounts.pin_security import verify_pin_with_lockout
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
-import logging
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
@@ -67,7 +66,6 @@ from .vtpass import (
     top_up,
 )
 
-logger = logging.getLogger(__name__)
 
 
 def get_payment_description(
@@ -3078,7 +3076,7 @@ class WithdrawalView(APIView):
 
                     transfer_success, transfer_result = initiate_transfer(
                         recipient_code=withdrawal.recipient_code,
-                        amount=amount * 0.985,
+                        amount=amount * Decimal("0.985"),
                         reference=reference_id,
                         reason=f"Withdrawal to {account_name} ({account_number})",
                     )
