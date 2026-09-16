@@ -3048,27 +3048,7 @@ class WithdrawalView(APIView):
                     status="pending",
                 )
 
-                user_wallet.debit(
-                    amount=amount,
-                    description=f"Withdrawal to {account_name} ({account_number})",
-                    reference=reference_id,
-                )
-
-                # Notify the user that the request was received
-                try:
-                    send_notification(
-                        user=request.user,
-                        title="Withdrawal Request Received",
-                        message=(
-                            f"₦{amount} withdrawal to {account_name} "
-                            "received. It will be processed shortly."
-                        ),
-                        notification_type="payment",
-                        email_subject="BlueSea - Withdrawal Request Received",
-                    )
-                except Exception as e:
-                    logger.error(f"Error sending withdrawal notification: {str(e)}")
-
+                
                 # Auto-initiate Paystack transfer
                 try:
                     from transactions.paystack import (
@@ -3082,9 +3062,19 @@ class WithdrawalView(APIView):
                         bank_code=bank_code,
                         bank_name=bank_name,
                     )
-                    if recipient_success:
-                        withdrawal.recipient_code = recipient_result
-                        withdrawal.save(update_fields=["recipient_code"])
+                    if not recipient_success:
+                        withdrawal.status = "failed"
+                        withdrawal.save(update_fields=["status"])
+                        raise Exception(
+                            f"Recipient creation failed: {recipient_result}"
+                        )
+
+                        logger.error(
+                            f"Paystack recipient creation failed: {recipient_result}"
+                        )
+
+                    withdrawal.recipient_code = recipient_result
+                    withdrawal.save(update_fields=["recipient_code"])
 
                     transfer_success, transfer_result = initiate_transfer(
                         recipient_code=withdrawal.recipient_code,
@@ -3094,8 +3084,36 @@ class WithdrawalView(APIView):
                     )
                     if transfer_success:
                         withdrawal.transfer_code = transfer_result
-                        withdrawal.save(update_fields=["transfer_code"])
+                        withdrawal.status = "successful"
+                        withdrawal.save(update_fields=["status","transfer_code"])
+
+                        user_wallet.debit(
+                        amount=amount,
+                        description=f"Withdrawal to {account_name} ({account_number})",
+                        reference=reference_id,
+                    )
+
+                        # Notify the user that the request was received
+                        try:
+                            send_notification(
+                                user=request.user,
+                                title="Withdrawal Request Received",
+                                message=(
+                                    f"₦{amount} withdrawal to {account_name} "
+                                    "received. It will be processed shortly."
+                                ),
+                                notification_type="payment",
+                                email_subject="BlueSea - Withdrawal Request Received",
+                            )
+                        except Exception as e:
+                            logger.error(f"Error sending withdrawal notification: {str(e)}")
+
                     else:
+                        withdrawal.status = "failed"
+                        withdrawal.save(update_fields=["status"])
+                        raise Exception(
+                            f"Transfer initiation failed: {transfer_result}"
+                        )
                         logger.error(
                             f"Paystack transfer initiation failed: {transfer_result}"
                         )
