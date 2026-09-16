@@ -3078,7 +3078,7 @@ class WithdrawalView(APIView):
 
                     transfer_success, transfer_result = initiate_transfer(
                         recipient_code=withdrawal.recipient_code,
-                        amount=amount,
+                        amount=amount * 0.985,
                         reference=reference_id,
                         reason=f"Withdrawal to {account_name} ({account_number})",
                     )
