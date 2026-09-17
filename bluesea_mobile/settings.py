@@ -144,7 +144,6 @@ JAZZMIN_SETTINGS = {
         "payments.JAMBRegistration": "fas fa-graduation-cap",
         "payments.Airtime2Cash": "fas fa-money-bill-wave",
         "market_place.TicketVendor": "fas fa-store",
-        "market_place.VendorKYC": "fas fa-id-card",
         "market_place.EventInfo": "fas fa-calendar-alt",
         "market_place.TicketType": "fas fa-ticket-alt",
         "market_place.IssuedTicket": "fas fa-qrcode",

@@ -1,28 +1,27 @@
 from django.urls import path
+
 from .views import (
-    CreateEventView,
-    EventListView,
-    EventDetailView,
-    EventPublicView,
-    PurchaseTicketView,
-    MyTicketsView,
-    ScanTicketView,
-    ExportAttendeesView,
-    CreateTicketVendor,
-    VendorStatusView,
-    VerifyAccountNameView,
-    EventWithdrawalView,
-)
-from .views import (
-    TicketListView,
-    TicketDetailView,
-    MyTicketsListView,
-    TransferTicketView,
-    CancelTicketView,
-    ScannerDashboardView,
-    MyScannerAssignmentsView,
     AddEventScannerView,
+    CancelTicketView,
+    CreateEventView,
+    CreateTicketVendor,
+    EventDetailView,
+    EventListView,
+    EventPublicView,
+    EventWithdrawalView,
+    ExportAttendeesView,
+    MyScannerAssignmentsView,
+    MyTicketsListView,
+    MyTicketsView,
+    PurchaseTicketView,
+    ScannerDashboardView,
+    ScanTicketView,
+    TicketDetailView,
+    TicketListView,
+    TransferTicketView,
+    VendorStatusView,
     VendorTicketsList,
+    VerifyAccountNameView,
 )
 
 urlpatterns = [

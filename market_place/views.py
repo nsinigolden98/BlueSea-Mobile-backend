@@ -868,8 +868,8 @@ class ScannerRateThrottle(UserRateThrottle):
 
 
 class ScanTicketView(APIView):
-    permission_classes = [IsAuthenticated]
-    throttle_classes = [ScannerRateThrottle]
+    permission_classes = (IsAuthenticated,)
+    throttle_classes = (ScannerRateThrottle,)
 
     @extend_schema(
         summary="Scan and validate ticket QR code",
@@ -930,8 +930,7 @@ class ScanTicketView(APIView):
 
         # Check scanner authorization
         is_authorized = (
-            request.user.is_staff
-            or EventScanner.objects.filter(user=request.user, event=event).exists()
+            EventScanner.objects.filter(user=request.user, event=event).exists()
             or event.vendor.user == request.user  # Vendor can scan their own events
         )
 

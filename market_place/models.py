@@ -149,47 +149,6 @@ class TicketVendor(models.Model):
         super().save(*args, **kwargs)
 
 
-class VendorKYC(models.Model):
-    KYC_STATUS_CHOICES = (
-        ("pending", "Pending"),
-        ("approved", "Approved"),
-        ("rejected", "Rejected"),
-    )
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    vendor = models.ForeignKey(
-        TicketVendor, on_delete=models.CASCADE, related_name="vendor_kyc"
-    )
-    document_type = models.CharField(max_length=100)
-    document_number = models.CharField(max_length=100)
-    # Change to FileField to accept direct uploads (PDF, JPEG, PNG)
-    document_image = models.FileField(
-        upload_to="kyc_documents/%Y/%m/%d/",
-        validators=[
-            FileExtensionValidator(allowed_extensions=["pdf", "jpg", "jpeg", "png"])
-        ],
-        help_text="Upload document (PDF, JPEG, or PNG format)",
-    )
-
-    proof_of_address = models.FileField(
-        upload_to="kyc_proof_of_address/%Y/%m/%d/",
-        validators=[
-            FileExtensionValidator(allowed_extensions=["pdf", "jpg", "jpeg", "png"])
-        ],
-        null=True,
-        blank=True,
-        help_text="Upload proof of address (PDF, JPEG, or PNG format)",
-    )
-
-    status = models.CharField(
-        max_length=20, choices=KYC_STATUS_CHOICES, default="pending"
-    )
-    submitted_at = models.DateTimeField(auto_now_add=True)
-    reviewed_at = models.DateTimeField(null=True, blank=True)
-
-    def __str__(self):
-        return f"KYC for {self.vendor.brand_name}"
-
-
 class EventInfo(models.Model):
     CATEGORY_CHOICES = ( 
         ("Music", "Music"),

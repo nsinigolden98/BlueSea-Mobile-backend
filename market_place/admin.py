@@ -9,7 +9,6 @@ from .models import (
     IssuedTicket,
     TicketType,
     TicketVendor,
-    VendorKYC,
 )
 
 
@@ -75,93 +74,6 @@ class TicketVendorAdmin(admin.ModelAdmin):
         from django.http import HttpResponseRedirect
         return HttpResponseRedirect(f'/market_place/admin/reject-vendors/?ids={selected_ids}')
     reject_vendors_action.short_description = 'Reject selected vendors'
-
-
-@admin.register(VendorKYC)
-class VendorKYCAdmin(admin.ModelAdmin):
-    list_display = (
-        'vendor_link', 'document_type', 'document_number',
-        'kyc_status_badge', 'submitted_at', 'reviewed_at'
-    )
-    list_filter = ('status', 'submitted_at', 'reviewed_at')
-    search_fields = ('vendor__brand_name', 'document_type', 'document_number')
-    readonly_fields = ('id', 'submitted_at', 'document_image_preview', 'proof_of_address_preview')
-    list_per_page = 25
-    date_hierarchy = 'submitted_at'
-    actions = ('approve_kyc', 'reject_kyc')
-
-    fieldsets = (
-        ('Vendor', {'fields': ('id', 'vendor')}),
-        ('Document', {
-            'fields': ('document_type', 'document_number', 'document_image', 'document_image_preview')
-        }),
-        ('Proof of Address', {
-            'fields': ('proof_of_address', 'proof_of_address_preview')
-        }),
-        ('Review', {'fields': ('status',)}),
-        ('Timestamps', {'fields': ('submitted_at', 'reviewed_at'), 'classes': ('collapse',)}),
-    )
-
-    def vendor_link(self, obj):
-        url = reverse('admin:market_place_ticketvendor_change', args=[obj.vendor.id])
-        return format_html('<a href="{}">{}</a>', url, obj.vendor.brand_name)
-    vendor_link.short_description = 'Vendor'
-
-    def kyc_status_badge(self, obj):
-        status_colors = {
-            'approved': ('#d4edda', '#155724'),
-            'pending': ('#fff3cd', '#856404'),
-            'rejected': ('#f8d7da', '#721c24'),
-        }
-        bg, text = status_colors.get(obj.status.lower(), ('#e2e3e5', '#383d41'))
-        return format_html(
-            '<span style="background:{};color:{};padding:3px 10px;border-radius:12px;'
-            'font-size:11px;font-weight:600;text-transform:uppercase;">{}</span>',
-            bg, text, obj.status
-        )
-    kyc_status_badge.short_description = 'KYC Status'
-
-    def document_image_preview(self, obj):
-        if obj.document_image:
-            if obj.document_image.name.endswith('.pdf'):
-                return format_html('<a href="{}" target="_blank">View PDF Document</a>', obj.document_image.url)
-            return format_html(
-                '<a href="{}" target="_blank"><img src="{}" style="max-height:200px;border-radius:4px;"/></a>',
-                obj.document_image.url, obj.document_image.url
-            )
-        return 'No document uploaded'
-    document_image_preview.short_description = 'Document Preview'
-
-    def proof_of_address_preview(self, obj):
-        if obj.proof_of_address:
-            if obj.proof_of_address.name.endswith('.pdf'):
-                return format_html('<a href="{}" target="_blank">View PDF</a>', obj.proof_of_address.url)
-            return format_html(
-                '<a href="{}" target="_blank"><img src="{}" style="max-height:200px;border-radius:4px;"/></a>',
-                obj.proof_of_address.url, obj.proof_of_address.url
-            )
-        return 'No document uploaded'
-    proof_of_address_preview.short_description = 'Address Proof Preview'
-
-    def approve_kyc(self, request, queryset):
-        updated = queryset.update(status='approved', reviewed_at=timezone.now())
-        vendor_ids = queryset.values_list('vendor_id', flat=True)
-        vendors = TicketVendor.objects.filter(id__in=vendor_ids)
-        vendors.update(is_verified=True)
-        for vendor in vendors:
-            if vendor.user and vendor.user.role == "user":
-                vendor.user.role = "vendor"
-                vendor.user.save()
-        self.message_user(request, f'{updated} KYC application(s) approved.', messages.SUCCESS)
-    approve_kyc.short_description = 'Approve selected KYC applications'
-
-    def reject_kyc(self, request, queryset):
-        updated = queryset.update(status='rejected', reviewed_at=timezone.now())
-        vendor_ids = queryset.values_list('vendor_id', flat=True)
-        TicketVendor.objects.filter(id__in=vendor_ids).update(is_verified=False)
-        self.message_user(request, f'{updated} KYC application(s) rejected.', messages.WARNING)
-    reject_kyc.short_description = 'Reject selected KYC applications'
-
 
 class TicketTypeInline(admin.TabularInline):
     model = TicketType
@@ -364,8 +276,12 @@ class IssuedTicketAdmin(admin.ModelAdmin):
     event_link.short_description = 'Event'
 
     def ticket_type_link(self, obj):
-        url = reverse('admin:market_place_tickettype_change', args=[obj.ticket_type.id])
-        return format_html('<a href="{}">{}</a>', url, obj.ticket_type.name)
+        try:
+            ticket_type = obj.ticket_type.id 
+        except AttributeError:
+            ticket_type = obj.ticket_type 
+        url = reverse('admin:market_place_tickettype_change', args=[ticket_type])
+        return format_html('<a href="{}">{}</a>', url, ticket_type)
     ticket_type_link.short_description = 'Ticket Type'
 
     def purchased_by_link(self, obj):
