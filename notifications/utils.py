@@ -1,6 +1,6 @@
-from django.conf import settings
-from .models import Notification
 import logging
+
+from .models import Notification
 
 logger = logging.getLogger(__name__)
 

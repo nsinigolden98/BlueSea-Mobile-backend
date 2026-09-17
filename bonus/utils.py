@@ -1,11 +1,38 @@
+import logging
+from decimal import Decimal
+
 from django.db import transaction
 from django.utils import timezone
-from decimal import Decimal
-from .models import BonusPoint, BonusHistory, BonusCampaign, Referral
+
 from notifications.models import Notification
-import logging
+
+from .models import BonusCampaign, BonusHistory, BonusPoint, Referral
 
 logger = logging.getLogger(__name__)
+
+def send_points_notification(user, points, notification_type, description):
+    """
+    Helper function to send bonus points notification
+
+    Args:
+        user: User instance
+        points: Number of points
+        notification_type: 'earned' or 'redeemed'
+        description: Notification message
+    """
+    try:
+        if notification_type == "earned":
+            title = f"You earned {points} bonus points!"
+            notif_type = "info"
+        else:
+            title = f"{points} points redeemed"
+            notif_type = "wallet"
+
+        Notification.objects.create(
+            user=user, title=title, message=description, notification_type=notif_type
+        )
+    except Exception as e:
+        logger.error(f"Error sending notification to {user.email}: {str(e)}")
 
 
 def award_points(
@@ -19,7 +46,7 @@ def award_points(
 
     try:
         with transaction.atomic():
-            bonus_account, created = BonusPoint.objects.get_or_create(user=user)
+            bonus_account, _created = BonusPoint.objects.get_or_create(user=user)
 
             active_campaign = BonusCampaign.objects.filter(
                 is_active=True,
@@ -28,7 +55,7 @@ def award_points(
             ).first()
 
             # Apply campaign bonus if exists
-            original_points = points
+            _original_points = points
             if active_campaign:
                 points = active_campaign.calculate_points(points)
                 description += f" (Campaign: {active_campaign.name})"
@@ -54,12 +81,12 @@ def award_points(
             )
 
             # Send notification
-            # send_points_notification(
-            #     user=user,
-            #     points=points,
-            #     notification_type='earned',
-            #     description=description
-            # )
+            send_points_notification(
+                user=user,
+                points=points,
+                notification_type='earned',
+                description=description
+            )
 
             logger.info(f"Awarded {points} points to {user.email} for {reason}")
 
@@ -123,12 +150,12 @@ def redeem_points(user, points, description="Points redeemed to wallet"):
             )
 
             # Send notification
-            # send_points_notification(
-            #     user=user,
-            #     points=points,
-            #     notification_type='redeemed',
-            #     description=f"You redeemed {points} points for ₦{wallet_amount}"
-            # )
+            send_points_notification(
+                user=user,
+                points=points,
+                notification_type='redeemed',
+                description=f"You redeemed {points} points for ₦{wallet_amount}"
+            )
 
             logger.info(
                 f"User {user.email} redeemed {points} points for ₦{wallet_amount}"
@@ -151,7 +178,9 @@ def award_vtu_purchase_points(user, purchase_amount, reference):
     POINTS_PER_100 = 1
 
     purchase_amount = Decimal(str(purchase_amount))
-    points = round((purchase_amount / 100),1) * POINTS_PER_100
+    points = ((purchase_amount * POINTS_PER_100) / 100).quantize(
+        Decimal("0.01")
+    )
 
     if points > 0:
         return award_points(
@@ -277,34 +306,6 @@ def award_daily_login_bonus(user):
     except Exception as e:
         logger.error(f"Error awarding daily login bonus to {user.email}: {str(e)}")
         raise
-
-
-# def send_points_notification(user, points, notification_type, description):
-#     """
-#     Helper function to send bonus points notification
-
-#     Args:
-#         user: User instance
-#         points: Number of points
-#         notification_type: 'earned' or 'redeemed'
-#         description: Notification message
-#     """
-#     try:
-#         if notification_type == 'earned':
-#             title = f"You earned {points} bonus points!"
-#             notif_type = 'info'
-#         else:
-#             title = f"{points} points redeemed"
-#             notif_type = 'wallet'
-
-#         Notification.objects.create(
-#             user=user,
-#             title=title,
-#             message=description,
-#             notification_type=notif_type
-#         )
-#     except Exception as e:
-#         logger.error(f"Error sending notification to {user.email}: {str(e)}")
 
 
 def user_points_summary(user):

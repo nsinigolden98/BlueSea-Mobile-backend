@@ -1,11 +1,11 @@
-import qrcode
-from io import BytesIO
-from django.core.files.base import ContentFile
-import hmac
 import hashlib
-from django.conf import settings
+import hmac
 import uuid
-from PIL import Image, ImageDraw, ImageFont
+from io import BytesIO
+
+import qrcode
+from django.conf import settings
+from django.core.files.base import ContentFile
 
 
 def generate_qr_signature(ticket_uuid, event_uuid):

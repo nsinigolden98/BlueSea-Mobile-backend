@@ -30,6 +30,8 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             "surname",
             "pin_is_set",
             "image",
+            "is_staff",
+            "is_admin",
             "referral_code",
             "created_on",
             "has_DVA",

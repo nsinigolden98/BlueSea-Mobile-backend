@@ -50,6 +50,8 @@ class CurrentUserView(APIView):
                     "referral_code": serializers.CharField(allow_null=True),
                     "created_on": serializers.DateTimeField(),
                     "has_DVA": serializers.BooleanField(),
+                    "is_staff": serializers.BooleanField(),
+                    "is_admin": serializers.BooleanField(),
                     "dva_account": inline_serializer(
                         name="DvaAccount",
                         fields={
@@ -79,6 +81,8 @@ class CurrentUserView(APIView):
                     "image": "http://example.com/media/profiles/photo.jpg",
                     "referral_code": "REF123",
                     "created_on": "2026-01-01T12:00:00Z",
+                    "is_staff": False,
+                    "is_admin": False,
                     "has_DVA": False,
                     "dva_account": None,
                     "preference": {
@@ -109,6 +113,8 @@ class CurrentUserView(APIView):
                     "image": "http://example.com/media/profiles/photo.jpg",
                     "referral_code": "REF123",
                     "created_on": "2026-01-01T12:00:00Z",
+                    "is_staff": False,
+                    "is_admin": False,
                     "has_DVA": True,
                     "dva_account": {
                         "dva_account_number": "0123456789",

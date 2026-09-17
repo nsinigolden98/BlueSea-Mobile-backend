@@ -329,6 +329,8 @@ class LoginView(TokenObtainPairView):
                         "id": 1,
                         "email": "john@example.com",
                         "role": "user",
+                        "is_staff":False,
+                        "is_admin":False,
                         "email_verified": True,
                     },
                 },

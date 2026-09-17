@@ -1067,7 +1067,7 @@ class ScanTicketView(APIView):
 
                 # Optional: Validate event time (allow scanning 2 hours before event)
                 time_until_event = ticket.event.event_date - timezone.now()
-                if time_until_event.total_seconds() > 2 * 3600:  # 2 hours in seconds
+                if time_until_event.total_seconds() > 24 * 3600:  # 2 hours in seconds
                     hours_remaining = int(time_until_event.total_seconds() / 3600)
                     return Response(
                         {

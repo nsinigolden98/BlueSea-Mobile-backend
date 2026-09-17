@@ -1,6 +1,7 @@
-from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
-from .models import BonusPoint, BonusHistory, BonusCampaign, Referral
+from rest_framework import serializers
+
+from .models import BonusCampaign, BonusHistory, BonusPoint, Referral
 
 
 class BonusPointSerializer(serializers.ModelSerializer):
@@ -9,11 +10,11 @@ class BonusPointSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = BonusPoint
-        fields = [
+        fields = (
             'id', 'user_email', 'points', 'lifetime_earned', 
             'lifetime_redeemed', 'redeemable_amount', 'last_daily_login', 
             'created_at', 'updated_at'
-        ]
+        )
         read_only_fields = fields
     
     def get_redeemable_amount(self, obj):
@@ -26,12 +27,12 @@ class BonusHistorySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = BonusHistory
-        fields = [
+        fields = (
             'id', 'transaction_type', 'transaction_type_display', 
             'points', 'reason', 'reason_display', 'description', 
             'reference', 'balance_before', 'balance_after', 
             'created_at', 'metadata'
-        ]
+        )
         read_only_fields = fields
 
 
@@ -49,11 +50,11 @@ class BonusCampaignSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = BonusCampaign
-        fields = [
+        fields = (
             'id', 'name', 'description', 'campaign_type', 
             'multiplier', 'bonus_amount', 'is_active', 
             'is_running', 'start_date', 'end_date'
-        ]
+        )
         read_only_fields = fields
     
     @extend_schema_field(serializers.BooleanField())
@@ -68,17 +69,17 @@ class ReferralSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Referral
-        fields = [
+        fields = (
             'id', 'referrer_email', 'referred_user_email', 
             'referral_code', 'status', 'status_display', 
             'bonus_awarded', 'first_transaction_completed', 
             'created_at', 'completed_at'
-        ]
-        read_only_fields = [
+        )
+        read_only_fields = (
             'id', 'status', 'status_display', 'referral_code',
             'bonus_awarded', 'first_transaction_completed', 
             'created_at', 'completed_at'
-        ]
+        )
 
 
 class ReferralListResponse(serializers.Serializer):

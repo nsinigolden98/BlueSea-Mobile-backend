@@ -21,7 +21,7 @@ class ProfileAdmin(UserAdmin):
     # list_editable =['referral_code']
     list_filter = ('role', 'email_verified', 'is_active', 'is_staff', 'created_on','has_DVA')
     search_fields = ('email', 'surname', 'other_names', 'phone')
-    readonly_fields = ('created_on', 'profile_photo', 'image', 'full_name', 'role_badge', 'email_verified_display', 'is_active_display', 'email', 'referral_code', 'is_staff', 'is_admin', 'is_superuser', 'groups', 'user_permissions', 'role', 'pin_is_set', 'pin_failed_attempts', 'pin_locked_until', 'has_DVA', 'surname', 'other_names', 'phone', 'email_verified')
+    readonly_fields = ('created_on', 'profile_photo', 'image', 'full_name', 'role_badge', 'email_verified_display', 'is_active_display', 'email', 'referral_code', 'groups', 'user_permissions', 'role', 'pin_is_set', 'pin_failed_attempts', 'pin_locked_until', 'has_DVA', 'surname', 'other_names', 'phone', 'email_verified')
     ordering = ('-created_on',)
     list_per_page = 25
     list_display_links = ('email', 'full_name')

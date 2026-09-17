@@ -1,30 +1,29 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
-from django.db import transaction as db_transaction
+import logging
+
 from django.core.cache import cache
+from django.db.models import Count, Q
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from django.db.models import Count, Q
-from .models import BonusPoint, BonusHistory, BonusCampaign, Referral, User
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .models import BonusCampaign, BonusHistory, Referral, User
 from .serializers import (
-    BonusPointSerializer,
-    BonusHistorySerializer,
     # RedeemPointsSerializer,
     BonusCampaignSerializer,
-    ReferralSerializer,
+    BonusHistorySerializer,
     ReferralListResponse,
+    ReferralSerializer,
 )
 from .utils import (
-    redeem_points,
     award_daily_login_bonus,
-    user_points_summary,
     award_signup_bonus,
+    user_points_summary,
 )
-import logging
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
-from drf_spectacular.types import OpenApiTypes
 
 logger = logging.getLogger(__name__)
 
