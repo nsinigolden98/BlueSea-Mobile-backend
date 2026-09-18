@@ -3063,21 +3063,23 @@ class WithdrawalView(APIView):
                     )
                     if not recipient_success:
                         withdrawal.status = "failed"
-                        withdrawal.save(update_fields=["status"])
-                        raise Exception(
-                            f"Recipient creation failed: {recipient_result}"
+                        withdrawal.completed_at = timezone.now()
+                        withdrawal.save(
+                            update_fields=["status","completed_at"]
                         )
-
                         logger.error(
                             f"Paystack recipient creation failed: {recipient_result}"
                         )
+                        raise Exception(
+                            f"Recipient creation failed: {recipient_result}"
+                        )             
 
                     withdrawal.recipient_code = recipient_result
                     withdrawal.save(update_fields=["recipient_code"])
 
                     transfer_success, transfer_result = initiate_transfer(
                         recipient_code=withdrawal.recipient_code,
-                        amount=amount * Decimal("0.985"),
+                        amount=amount * Decimal("0.99"),
                         reference=reference_id,
                         reason=f"Withdrawal to {account_name} ({account_number})",
                     )
@@ -3141,7 +3143,8 @@ class WithdrawalView(APIView):
                
                 return Response(
                         {"state":False,
-                         "message": "Invalid Request"
+                         "message": "Invalid Request",
+                         "withdrawal": withdrawal
                         }
                         , status=status.HTTP_400_BAD_REQUEST
                 )
