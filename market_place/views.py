@@ -974,9 +974,10 @@ class ScanTicketView(APIView):
         try:
             with transaction.atomic():
                 ticket = (
-                    IssuedTicket.objects.select_for_update()
+                    IssuedTicket.objects.select_for_update(of=("self",))
                     .select_related(
-                        "event", "ticket_type", "purchased_by",
+                        "event","ticket_type"
+                        "purchased_by", "scanned_by"
                     )
                     .get(id=ticket_uuid)
                 )
