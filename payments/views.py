@@ -2,6 +2,7 @@ import logging
 import uuid
 from decimal import Decimal
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -3083,7 +3084,8 @@ class WithdrawalView(APIView):
                     if transfer_success:
                         withdrawal.transfer_code = transfer_result
                         withdrawal.status = "successful"
-                        withdrawal.save(update_fields=["status","transfer_code"])
+                        withdrawal.completed_at= timezone.now()
+                        withdrawal.save(update_fields=["status","transfer_code", "completed_at"])
 
                         user_wallet.debit(
                         amount=amount,
@@ -3106,27 +3108,42 @@ class WithdrawalView(APIView):
                         except Exception as e:
                             logger.error(f"Error sending withdrawal notification: {str(e)}")
 
+                        response_serializer = WithdrawalResponseSerializer(
+                            {
+                                "state": True,
+                                "message": "Withdrawal successful",
+                                "withdrawal": withdrawal,
+                            }
+                        )
+
                     else:
                         withdrawal.status = "failed"
-                        withdrawal.save(update_fields=["status"])
-                        raise Exception(
-                            f"Transfer initiation failed: {transfer_result}"
-                        )
+                        withdrawal.completed_at=timezone.now()
+                        withdrawal.save(update_fields=["status, completed_at"])
+                        
                         logger.error(
                             f"Paystack transfer initiation failed: {transfer_result}"
                         )
+                        response_serializer = WithdrawalResponseSerializer(
+                        {
+                            "state": False,
+                            "message": "Network Error, Withdrawal Failed Try Again Later",
+                            "withdrawal": withdrawal,
+                        }
+                    )
+
+                    return Response(
+                        response_serializer.data, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
                 except Exception as e:
                     logger.error(f"Paystack auto-transfer error: {str(e)}")
 
-                response_serializer = WithdrawalResponseSerializer(
-                    {
-                        "state": True,
-                        "message": "Withdrawal request submitted and transfer initiated",
-                        "withdrawal": withdrawal,
-                    }
-                )
+               
                 return Response(
-                    response_serializer.data, status=status.HTTP_201_CREATED
+                        {"state":False,
+                         "message": "Invalid Request"
+                        }
+                        , status=status.HTTP_400_BAD_REQUEST
                 )
         except Exception as e:
             logger.error(f"Error processing withdrawal: {str(e)}")
