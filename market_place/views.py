@@ -1088,6 +1088,13 @@ class ScanTicketView(APIView):
                 ticket.scanned_at = timezone.now()
                 ticket.scanned_by = request.user
                 ticket.save()
+                try: 
+                    ticket_dict = {
+                        "name": ticket.ticket_type.name,
+                        "price": float(ticket.ticket_type.price),
+                    }
+                except AttributeError:
+                    ticket_dict = {}
 
                 # Build successful response with full ticket details
                 return Response(
@@ -1099,10 +1106,7 @@ class ScanTicketView(APIView):
                             "ticket_id": str(ticket.id),
                             "owner_name": ticket.owner_name,
                             "owner_email": ticket.owner_email,
-                            "ticket_type": {
-                                "name": ticket.ticket_type.name,
-                                "price": float(ticket.ticket_type.price),
-                            },
+                            "ticket_type":ticket_dict,
                             "event": {
                                 "title": ticket.event.event_title,
                                 "date": ticket.event.event_date.strftime(
