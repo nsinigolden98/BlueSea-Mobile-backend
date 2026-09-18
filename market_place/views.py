@@ -976,7 +976,7 @@ class ScanTicketView(APIView):
                 ticket = (
                     IssuedTicket.objects.select_for_update(of=("self",))
                     .select_related(
-                        "event","ticket_type"
+                        "event","ticket_type",
                         "purchased_by", "scanned_by"
                     )
                     .get(id=ticket_uuid)
