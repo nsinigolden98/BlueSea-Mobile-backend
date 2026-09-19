@@ -155,7 +155,7 @@ class AdminTicketSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.EmailField())
     def get_user_email(self, obj):
-        return obj.user.user.email
+        return obj.user.email
 
 
 class AdminTicketUpdateSerializer(serializers.Serializer):
