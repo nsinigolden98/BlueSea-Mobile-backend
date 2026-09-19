@@ -740,11 +740,12 @@ class PurchaseTicketView(APIView):
                 reference_id = generate_reference_id()
                 user_wallet = request.user.wallet
 
-                user_wallet.debit(
-                    amount=total_cost,
-                    description=f" Bought {quantity} ticket for {event} - {ticket_type_obj}",
-                    reference=reference_id,
-                )
+                if total_cost > 0:
+                    user_wallet.debit(
+                        amount=total_cost,
+                        description=f" Bought {quantity} ticket for {event} - {ticket_type_obj}",
+                        reference=reference_id,
+                    )
 
                 # Reduce ticket quantity
                 ticket_type.quantity_available -= quantity
@@ -1203,11 +1204,15 @@ class ExportAttendeesView(APIView):
             )
 
             for ticket in tickets:
+                try :
+                    ticket_type_name = ticket.ticket_type.name
+                except AttributeError:
+                    ticket_type_name = "Free"
                 writer.writerow(
                     [
                         ticket.owner_name,
                         ticket.owner_email,
-                        ticket.ticket_type.name,
+                        ticket_type_name,
                         ticket.status,
                         ticket.qr_code,
                         ticket.created_at.strftime("%Y-%m-%d %H:%M:%S"),
@@ -1235,9 +1240,14 @@ class ExportAttendeesView(APIView):
             lines.append("")
 
             for ticket in tickets:
+                try :
+                    ticket_type_name = ticket.ticket_type.name
+                except AttributeError:
+                    ticket_type_name = "Free"
+
                 lines.append(f"Name: {ticket.owner_name}")
                 lines.append(f"Email: {ticket.owner_email}")
-                lines.append(f"Ticket Type: {ticket.ticket_type.name}")
+                lines.append(f"Ticket Type: {ticket_type_name}")
                 lines.append(f"Status: {ticket.status}")
                 lines.append(f"QR Code: {ticket.qr_code}")
                 lines.append(
