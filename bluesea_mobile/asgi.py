@@ -18,14 +18,11 @@ django_asgi = get_asgi_application()
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 
-import payments.routing
 import support.routing
 import wallet.routing
 
 ws_patterns = (
-    payments.routing.websocket_urlpatterns
-    + support.routing.websocket_urlpatterns
-    + wallet.routing.websocket_urlpatterns
+    support.routing.websocket_urlpatterns + wallet.routing.websocket_urlpatterns
 )
 
 application = ProtocolTypeRouter(
