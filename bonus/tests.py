@@ -18,6 +18,7 @@ from bonus.models import Referral
 class BonusReferralQueryCountTestCase(APITestCase):
     def setUp(self):
         self.referrer = Profile.objects.create_user(
+            username='',
             email="referrer@example.com",
             phone="08010000001",
             surname="Ref",
@@ -30,6 +31,7 @@ class BonusReferralQueryCountTestCase(APITestCase):
         # referrer.email / referred_user.email in ReferralSerializer.
         for i in range(5):
             referred = Profile.objects.create_user(
+                username='',
                 email=f"referred{i}@example.com",
                 phone=f"0801000000{i}",
                 surname="Refd",

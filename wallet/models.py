@@ -46,7 +46,7 @@ class Wallet(models.Model):
             if not channel_layer:
                 return
             async_to_sync(channel_layer.group_send)(
-                f"wallet_user_{self.user_id}",
+                f"wallet_user_{self.user.id}",
                 {
                     "type": "wallet_update",
                     "balance": str(self.balance),

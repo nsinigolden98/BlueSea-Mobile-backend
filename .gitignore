@@ -46,3 +46,4 @@ env
 pyproject.toml
 uv.lock
 test.py
+.vscode/

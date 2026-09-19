@@ -1067,9 +1067,9 @@ class ScanTicketView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
-                # Optional: Validate event time (allow scanning 2 hours before event)
+                # Optional: Validate event time (allow scanning 24 hours before event)
                 time_until_event = ticket.event.event_date - timezone.now()
-                if time_until_event.total_seconds() > 24 * 3600:  # 2 hours in seconds
+                if time_until_event.total_seconds() > 24 * 3600:  # 24 hours in seconds
                     hours_remaining = int(time_until_event.total_seconds() / 3600)
                     return Response(
                         {
@@ -1095,7 +1095,7 @@ class ScanTicketView(APIView):
                         "price": float(ticket.ticket_type.price),
                     }
                 except AttributeError:
-                    ticket_dict = {}
+                    ticket_dict = "Free"
 
                 # Build successful response with full ticket details
                 return Response(
@@ -1359,7 +1359,7 @@ class MyTicketsListView(APIView):
 
 
 class TicketDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Get single ticket details",
@@ -1398,7 +1398,7 @@ class TicketDetailView(APIView):
 
 
 class TransferTicketView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Transfer ticket to another person",
@@ -2235,6 +2235,8 @@ class EventWithdrawalView(APIView):
         total_tickets_created = 0
         tickets_available = 0
 
+        ###
+
         if not event.is_free and event.ticket_types.exists():
             for tt in event.ticket_types.all():
                 sold = tt.initial_quantity - tt.quantity_available
@@ -2257,8 +2259,8 @@ class EventWithdrawalView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Calculate 90% for wallet credit (10% platform fee)
-        platform_fee = available * Decimal("0.10")
+        # Calculate 90% for wallet credit (5% platform fee)
+        platform_fee = available * Decimal("0.05")
         wallet_credit = available - platform_fee
 
         # Credit the user's main wallet

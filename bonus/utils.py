@@ -213,7 +213,7 @@ def award_referral_bonus(referrer, referred_user):
             points=REFERRAL_BONUS,
             reason="referral",
             description=f"Referral bonus for {referred_user.email} completing first transaction",
-            reference=f"REF-{referral.id}",
+            reference=f"REF-{referral.referred_user.id}",
             metadata={"referred_user_id": referred_user.id},
         )
 
@@ -242,7 +242,7 @@ def award_signup_bonus(user):
         if BonusHistory.objects.filter(
             user=user,
             reason="signup_bonus",
-            reference__startswith=f"SIGNUP-{referral.id}",
+            reference__startswith=f"SIGNUP-{referral.referred_user.id}",
         ).exists():
             return None
 
@@ -252,7 +252,7 @@ def award_signup_bonus(user):
             points=SIGNUP_BONUS,
             reason="signup_bonus",
             description="Welcome bonus for signing up with a referral",
-            reference=f"SIGNUP-{referral.id}",
+            reference=f"SIGNUP-{referral.referred_user.id}",
             metadata={"referrer_id": referral.referrer.id},
         )
 
@@ -279,7 +279,7 @@ def award_daily_login_bonus(user):
 
     try:
         with transaction.atomic():
-            bonus_account, created = BonusPoint.objects.get_or_create(user=user)
+            bonus_account, _created = BonusPoint.objects.get_or_create(user=user)
 
             # Check if user can claim daily login bonus
             if not bonus_account.can_claim_daily_login():
@@ -335,7 +335,7 @@ def user_points_summary(user):
             "completed_referrals": completed_referrals,
             "recent_history": [
                 {
-                    "type": h.transaction_type,
+                    "bonus_type": h.transaction_type,
                     "points": h.points,
                     "description": h.description,
                     "date": h.created_at,

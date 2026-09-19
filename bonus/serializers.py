@@ -87,3 +87,9 @@ class ReferralListResponse(serializers.Serializer):
     data = ReferralSerializer(many=True)
     referral_count = serializers.IntegerField()
     completed_count = serializers.IntegerField()
+
+class RecentHistorySerializer(serializers.Serializer):
+    bonus_type = serializers.CharField()
+    points = serializers.DecimalField(max_digits=12, decimal_places=2)
+    description= serializers.CharField()
+    date = serializers.DateTimeField()

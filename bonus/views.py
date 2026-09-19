@@ -5,11 +5,12 @@ from django.db.models import Count, Q
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import serializers
 
 from .models import BonusCampaign, BonusHistory, Referral, User
 from .serializers import (
@@ -18,6 +19,7 @@ from .serializers import (
     BonusHistorySerializer,
     ReferralListResponse,
     ReferralSerializer,
+    RecentHistorySerializer
 )
 from .utils import (
     award_daily_login_bonus,
@@ -29,14 +31,46 @@ logger = logging.getLogger(__name__)
 
 
 class BonusPointsSummaryView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Get bonus points summary",
         description="Retrieve user's bonus points balance and statistics",
-        responses={200: OpenApiTypes.OBJECT, 500: OpenApiTypes.OBJECT},
-        tags=["Bonus & Rewards"],
+        responses={
+            200: inline_serializer(
+                name= "BonusPointSummary200",
+                fields={
+                    "success": serializers.BooleanField(),
+                    "data":inline_serializer(
+                        name="BonusSummaryData",
+                        fields={
+                            "current_points": serializers.DecimalField(max_digits=12, decimal_places=2),
+                            "lifetime_record": serializers.DecimalField(max_digits=12, decimal_places=2),
+                            "lifetime_redeemed":  serializers.DecimalField(max_digits=12, decimal_places=2),
+                            "redeemable_amount": serializers.CharField(),
+                            "can_claim_daily_login": serializers.BooleanField(),
+                            "last_daily_login":serializers.DateTimeField(),
+                            "referral_count": serializers.IntegerField(),
+                            "completed_referrals":serializers.IntegerField(),
+                            "recent_history":serializers.ListField(
+                                    child=RecentHistorySerializer()
+                                ),
+                            "cached": serializers.BooleanField(),
+                        }
+                    )
+                    }
+            ), 
+            500: inline_serializer(
+                name= "BounsPointSummary500",
+                fields={
+                    "success": serializers.BooleanField(default=False),
+                    "error": serializers.CharField(),
+                }
+            )
+            },
+        tags=["Bonus & Rewards"]
     )
+  
     def get(self, request):
         try:
             # Try to get from cache first
@@ -70,7 +104,7 @@ class BonusPointsSummaryView(APIView):
 
 
 class BonusHistoryView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Get bonus transaction history",
@@ -178,20 +212,73 @@ class BonusHistoryView(APIView):
 
 
 class ClaimDailyLoginView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Claim daily login bonus",
         description="Claim daily login bonus points (once per day)",
         request=None,
         responses={
-            200: OpenApiTypes.OBJECT,
-            400: OpenApiTypes.OBJECT,
-            500: OpenApiTypes.OBJECT,
+            200: inline_serializer(
+                name="ClaimDailyLogin200",
+                fields={
+                    "success": serializers.BooleanField(default=True),
+                    "message": serializers.CharField(
+                        default="Daily login bonus claimed"
+                    ),
+                    "data": inline_serializer(
+                        name="ClaimedDailyLoginData200",
+                        fields={
+                            "points_earned": serializers.DecimalField(
+                                max_digits=12, decimal_places=2
+                            ),
+                            "new_balance": serializers.DecimalField(
+                                max_digits=12, decimal_places=2
+                            ),
+                        },
+                    ),
+                },
+            ),
+            400: inline_serializer(
+                name="ClaimDailyLogin400",
+                fields={
+                    "success": serializers.BooleanField(default=False),
+                    "message": serializers.CharField(
+                        default="You have already claimed your daily bonus point"
+                    ),
+                },
+            ),
+            500: inline_serializer(
+                name="ClaimDailyLogin500",
+                fields={
+                    "success": serializers.BooleanField(default=False),
+                    "error": serializers.CharField(
+                        default="Failed to claim daily bonus"
+                    ),
+                },
+            ),
         },
+        examples=[
+            OpenApiExample(name="ClaimDailyLoginView200",value={
+                "success": True,
+                "message": "Daily login bonus claimed",
+                "data": {
+                    "points_earned":2.0,
+                    "new_balance":5.0
+                }
+            } ,response_only=True),
+            OpenApiExample(name="ClaimDailyLoginView400", value={      
+                "success": False,
+                "message": "You have already claimed your daily bonus today"
+            },
+            response_only=True),
+            OpenApiExample(name="ClaimDailyLoginView500", value={ 
+                "success": False,
+                "error": "Failed to claim daily point"},response_only=True),
+        ],
         tags=["Bonus & Rewards"],
     )
-    def post(self, request):
+    def get(self, request):
         try:
             history = award_daily_login_bonus(request.user)
 
@@ -227,7 +314,7 @@ class ClaimDailyLoginView(APIView):
 
 
 class ActiveCampaignsView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Get active campaigns",
@@ -263,7 +350,7 @@ class ActiveCampaignsView(APIView):
 
 
 class ReferralView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Get my referrals",
@@ -328,8 +415,8 @@ class ReferralView(APIView):
                     {"success": False, "error": "Invalid referral code"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-
-            if referrer.id == request.user.id:
+            user = request.user
+            if referral_code == user.referral_code:
                 return Response(
                     {"success": False, "error": "You cannot refer yourself"},
                     status=status.HTTP_400_BAD_REQUEST,

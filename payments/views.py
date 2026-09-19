@@ -1,14 +1,16 @@
 import logging
 import uuid
 from decimal import Decimal
+
+from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
-from django.contrib.auth import get_user_model
+
 from accounts.pin_security import verify_pin_with_lockout
 
 User = get_user_model()
@@ -66,7 +68,6 @@ from .vtpass import (
     startimes_dict,
     top_up,
 )
-
 
 
 def get_payment_description(
@@ -2868,7 +2869,7 @@ class InternalTransferView(APIView):
                 {"error": "Recipient not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
-
+        
         if recipient == request.user:
             return Response(
                 {"error": "Cannot transfer to yourself"},
@@ -3213,7 +3214,7 @@ class PaymentStatusView(APIView):
         for m in models:
             obj = m.objects.filter(request_id=reference_id).first()
             if obj:
-                if obj.user_id != request.user.id:
+                if obj.user.id != request.user.id:
                     return Response(
                         {"error": "Not found"}, status=status.HTTP_404_NOT_FOUND
                     )
@@ -3233,7 +3234,7 @@ class PaymentStatusView(APIView):
         ).first()
         if gp:
             if (
-                gp.initiated_by_id != request.user.id
+                gp.initiated_by.id != request.user.id
                 and not gp.group.members.filter(user=request.user).exists()
             ):
                 return Response(

@@ -1,8 +1,7 @@
-from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Count
-from django.shortcuts import render
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, extend_schema, extend_schema_view
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -55,16 +54,22 @@ from support.serializers import AdminTicketSerializer, AdminTicketUpdateSerializ
 class AdminTicketListView(APIView):
     permission_classes = (IsAuthenticated,)
     def get(self, request):
-        tickets = (
-            SupportTicket.objects.filter()
-            .prefetch_related("messages__sender", "messages__attachments")
-            .annotate(message_count=Count("messages"))
-            .order_by("-created_at")
-        )
-        serializer = AdminTicketSerializer(
-            tickets, many=True, context={"request": request}
-        )
-        return Response({"tickets": serializer.data})
+        if request.user.is_admin:
+            tickets = (
+                SupportTicket.objects.filter()
+                .prefetch_related("messages__sender", "messages__attachments")
+                .annotate(message_count=Count("messages"))
+                .order_by("-created_at")
+            )
+            serializer = AdminTicketSerializer(
+                tickets, many=True, context={"request": request}
+            )
+            return Response({"tickets": serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                "state": False,
+                "message": "User is not a staff"
+            },status= status.HTTP_401_UNAUTHORIZED )
 
 
 @extend_schema_view(
@@ -113,35 +118,44 @@ class AdminTicketDetailView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, ticket_id):
-        try:
-            ticket = SupportTicket.objects.get(id=ticket_id)
-            serializer = AdminTicketSerializer(ticket, context={"request": request})
-            return Response(serializer.data)
-        except SupportTicket.DoesNotExist:
-            return Response({"error": "Ticket not found"}, status=404)
-
+        if request.user.is_admin:
+            try:
+                ticket = SupportTicket.objects.get(id=ticket_id)
+                serializer = AdminTicketSerializer(ticket, context={"request": request})
+                return Response(serializer.data)
+            except SupportTicket.DoesNotExist:
+                return Response({"error": "Ticket not found"}, status=404)
+        else:
+            return Response({
+                            "state": False,
+                            "message": "User is not a staff"
+                        },status= status.HTTP_401_UNAUTHORIZED )
+            
     def patch(self, request, ticket_id):
-        try:
-            ticket = SupportTicket.objects.get(id=ticket_id)
-            serializer = AdminTicketUpdateSerializer(data=request.data, partial=True)
-            if serializer.is_valid():
-                if "status" in serializer.validated_data:
-                    ticket.status = serializer.validated_data["status"]
-                if "priority" in serializer.validated_data:
-                    ticket.priority = serializer.validated_data["priority"]
-                ticket.save(update_fields=["status", "priority"])
-                return Response(
-                    {
-                        "success": True,
-                        "status": ticket.status,
-                        "priority": ticket.priority,
-                    }
-                )
-            return Response({"error": serializer.errors}, status=400)
-        except SupportTicket.DoesNotExist:
-            return Response({"error": "Ticket not found"}, status=404)
+        if request.user.is_admin:
+            try:
+                ticket = SupportTicket.objects.get(id=ticket_id)
+                serializer = AdminTicketUpdateSerializer(data=request.data, partial=True)
+                if serializer.is_valid():
+                    if "status" in serializer.validated_data:
+                        ticket.status = serializer.validated_data["status"]
+                    if "priority" in serializer.validated_data:
+                        ticket.priority = serializer.validated_data["priority"]
+                    ticket.save(update_fields=["status", "priority"])
+                    return Response(
+                        {
+                            "success": True,
+                            "status": ticket.status,
+                            "priority": ticket.priority,
+                        }
+                    )
+                return Response({"error": serializer.errors}, status=400)
+            except SupportTicket.DoesNotExist:
+                return Response({"error": "Ticket not found"}, status=404)
+        else:
+            return Response({
+                        "state": False,
+                        "message": "User is not a staff"
+                    },status= status.HTTP_401_UNAUTHORIZED )
+        
 
-
-@staff_member_required
-def admin_support(request):
-    return render(request, "support/admin_support.html", {})

@@ -1,19 +1,20 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework import status
-from drf_spectacular.utils import extend_schema, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
-from .models import SupportTicket, SupportMessage, SupportAttachment
+from drf_spectacular.utils import OpenApiExample, extend_schema
+from rest_framework import status
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .models import SupportAttachment, SupportMessage, SupportTicket
 from .serializers import (
-    SupportTicketSerializer,
-    CreateTicketSerializer,
+    AddMessageResponse,
     AddMessageSerializer,
+    CreateTicketResponse,
+    CreateTicketSerializer,
     SupportMessageSerializer,
     SupportTicketListResponse,
-    CreateTicketResponse,
-    AddMessageResponse,
+    SupportTicketSerializer,
 )
 
 
@@ -23,8 +24,8 @@ def create_attachments(message, images):
 
 
 class SupportTicketListView(APIView):
-    permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = (IsAuthenticated,)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     @extend_schema(
         summary="List my support tickets",
@@ -169,8 +170,8 @@ class SupportTicketListView(APIView):
 
 
 class SupportTicketDetailView(APIView):
-    permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = (IsAuthenticated,)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     @extend_schema(
         summary="Get support ticket detail",
