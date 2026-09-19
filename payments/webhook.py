@@ -531,45 +531,6 @@ class VTpassWebhookView(APIView):
                                     f"VTpass webhook notify failed {request_id}: {e}"
                                 )
 
-                    try:
-                        from channels.layers import get_channel_layer
-                        from asgiref.sync import async_to_sync
-
-                        channel_layer = get_channel_layer()
-                        if channel_layer is not None and user is not None:
-                            payload_ws = {
-                                "type": "payment_update",
-                                "reference_id": request_id,
-                                "status": vt_status,
-                                "payment_type": model_name,
-                                "vtpass_transaction_id": transaction_id,
-                                "amount": str(amount or _charge_for_bonus or ""),
-                            }
-                            try:
-                                async_to_sync(channel_layer.group_send)(
-                                    f"payments_user_{user.id}", payload_ws
-                                )
-                                async_to_sync(channel_layer.group_send)(
-                                    f"payment_{request_id}", payload_ws
-                                )
-                                if isinstance(locked_obj, GroupPayment):
-                                    for (
-                                        contrib
-                                    ) in locked_obj.contributions.select_related(
-                                        "member__user"
-                                    ).all():
-                                        try:
-                                            async_to_sync(channel_layer.group_send)(
-                                                f"payments_user_{contrib.member.user.id}",
-                                                payload_ws,
-                                            )
-                                        except Exception:
-                                            pass
-                            except Exception as e:
-                                logger.debug(f"WS push failed {request_id}: {e}")
-                    except Exception as e:
-                        logger.debug(f"WS channel layer error {request_id}: {e}")
-
                     log.is_processed = True
                     log.error = ""
                     log.save()

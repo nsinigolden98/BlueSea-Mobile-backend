@@ -285,57 +285,7 @@ PIN_LOCKOUT_MINUTES = int(os.environ.get("PIN_LOCKOUT_MINUTES", "15"))
 
 def _inject_websocket_docs(result, generator, request, public):
     # Hook-based WebSocket docs (no REST ws-info/ endpoint)
-    # Adds wss:// ws/payments/ paths to OpenAPI without documenting webhooks
     paths = result.setdefault("paths", {})
-    ws_desc = (
-        "Real-time WebSocket for VTpass payment status. "
-        "Connect with `?token=<JWT access token>` or `Authorization: Bearer <token>` header. "
-        "On `pending` creation via `POST /payments/*` you receive `reference_id`; subscribe to `ws/payments/{reference_id}/` (owner-checked) or `ws/payments/` (user-scoped). "
-        'Server pushes `{"type":"payment_update","reference_id":"BS-...","status":"delivered|failed|reversed|pending","payment_type":"AirtimeTopUp","vtpass_transaction_id":"...","amount":"100"}` '
-        "when `POST /payments/webhook/vtpass` or DVA `POST /transactions/webhook/paystack/` updates status. "
-        'Send `{"type":"ping"}` → `{"type":"pong"}`. Close `401` unauth / `403` not owner. '
-        "Also `wallet_user_{id}` group for DVA `wallet_update`. Fallback: `GET /payments/status/{reference_id}/`."
-    )
-    for ws_path in ["/ws/payments/", "/ws/payments/{reference_id}/"]:
-        if ws_path not in paths:
-            paths[ws_path] = {
-                "get": {
-                    "tags": ["Payments"],
-                    "summary": "Payments WebSocket (real-time status)",
-                    "description": ws_desc,
-                    "operationId": f"payments_ws_{'base' if ws_path == '/ws/payments/' else 'detail'}_retrieve",
-                    "parameters": [
-                        {
-                            "name": "token",
-                            "in": "query",
-                            "required": False,
-                            "description": "JWT access token (alternative to Authorization header)",
-                            "schema": {"type": "string"},
-                        }
-                    ]
-                    + (
-                        [
-                            {
-                                "name": "reference_id",
-                                "in": "path",
-                                "required": True,
-                                "description": "Reference ID (BS-...) owner-checked, e.g. BS-AIRT202509011200-XXXX",
-                                "schema": {"type": "string"},
-                            }
-                        ]
-                        if "{reference_id}" in ws_path
-                        else []
-                    ),
-                    "responses": {
-                        "101": {
-                            "description": "Switching Protocols - WebSocket established"
-                        },
-                        "401": {"description": "Missing/invalid JWT"},
-                        "403": {"description": "Not owner of reference_id"},
-                    },
-                    "x-websocket": True,
-                }
-            }
     wallet_desc = (
         "Real-time WebSocket for wallet balance. "
         "Connect with `?token=<JWT access token>` or `Authorization: Bearer <token>` header. "
@@ -366,6 +316,66 @@ def _inject_websocket_docs(result, generator, request, public):
                             "description": "Switching Protocols - WebSocket established"
                         },
                         "401": {"description": "Missing/invalid JWT"},
+                    },
+                    "x-websocket": True,
+                }
+            }
+    support_desc = (
+        "Real-time WebSocket for customer support chat (text + images). "
+        "Connect with `?token=<JWT access token>` or `Authorization: Bearer <token>` header. "
+        "History comes from REST (`GET /support/` and `GET /support/<ticket_id>/`); "
+        "WS carries live events only. Access: ticket owner or admin (`request.user.is_admin is True`), "
+        "else close `4401` unauth / `4403` not owner / `4404` unknown ticket. "
+        "Subscribe to `ws/support/<ticket_id>/` (ticket room) or `ws/support/` (user-scoped). "
+        'On connect you receive `{"type":"connected","user_id":7,"user_name":"...","is_admin":false,"ticket_id":1}`. '
+        'Send `{"type":"send_message","ticket_id":1,"message":"Hello","images":["data:image/png;base64,iVBOR..."]}` '
+        "(max 3 images, <=5MB each, png/jpg/webp/gif; `is_admin` is derived server-side and client value is ignored). "
+        'Server broadcasts `{"type":"new_message","ticket_id":1,"message":{"id":9,"sender_name":"...","message":"...","is_admin":false,"attachments":[{"id":1,"image":"/media/..."}],"created_at":"..."}}`. '
+        'Admins can send `{"type":"update_status","ticket_id":1,"status":"in_progress"}` and '
+        '`{"type":"update_priority","ticket_id":1,"priority":"urgent"}`; server broadcasts '
+        '`{"type":"status_update",...}` / `{"type":"priority_update",...}`. '
+        'Send `{"type":"ping"}` → `{"type":"pong"}`; errors arrive as `{"type":"error","detail":"..."}`. '
+        "Admin REST (`request.user.is_admin`): `GET /support/admin/tickets/?status=&priority=&search=`, "
+        "`GET/PATCH /support/admin/tickets/<id>/`, `POST /support/admin/tickets/<id>/reply/` (multipart `message` + `images`), "
+        "which also pushes `new_message` to the ticket room."
+    )
+    for ws_path in ["/ws/support/", "/ws/support/{ticket_id}/"]:
+        if ws_path not in paths:
+            paths[ws_path] = {
+                "get": {
+                    "tags": ["Support"],
+                    "summary": "Support Chat WebSocket (real-time)",
+                    "description": support_desc,
+                    "operationId": f"support_ws_{'base' if ws_path == '/ws/support/' else 'detail'}_retrieve",
+                    "parameters": [
+                        {
+                            "name": "token",
+                            "in": "query",
+                            "required": False,
+                            "description": "JWT access token (alternative to Authorization header)",
+                            "schema": {"type": "string"},
+                        }
+                    ]
+                    + (
+                        [
+                            {
+                                "name": "ticket_id",
+                                "in": "path",
+                                "required": True,
+                                "description": "Support ticket ID (owner or is_admin only)",
+                                "schema": {"type": "integer"},
+                            }
+                        ]
+                        if "{ticket_id}" in ws_path
+                        else []
+                    ),
+                    "responses": {
+                        "101": {
+                            "description": "Switching Protocols - WebSocket established"
+                        },
+                        "401": {"description": "Missing/invalid JWT"},
+                        "403": {"description": "Not owner and not admin"},
+                        "404": {"description": "Unknown ticket"},
                     },
                     "x-websocket": True,
                 }
