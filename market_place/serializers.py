@@ -235,11 +235,67 @@ class CreateEventSerializer(serializers.ModelSerializer):
         return data
 
 
+class EventUpdateSerializer(serializers.ModelSerializer):
+    """Vendor edit of event info: title, banner, ticket image, venue, link, time."""
+
+    class Meta:
+        model = EventInfo
+        fields = (
+            "event_title",
+            "event_banner",
+            "ticket_image",
+            "event_location",
+            "meeting_link",
+            "event_date",
+        )
+        extra_kwargs = {field: {"required": False} for field in fields}
+
+    def validate_event_date(self, value):
+        if value < timezone.now():
+            raise serializers.ValidationError("Event date must be in the future")
+        return value
+
+    def validate(self, data):
+        instance = getattr(self, "instance", None)
+        mode = instance.event_mode if instance else None
+        location = data.get(
+            "event_location", instance.event_location if instance else None
+        )
+        link = data.get("meeting_link", instance.meeting_link if instance else None)
+        if mode in ("offline", "hybrid") and not (location or "").strip():
+            raise serializers.ValidationError(
+                {"event_location": "event_location is required for this event mode"}
+            )
+        if mode in ("online", "hybrid") and not (link or "").strip():
+            raise serializers.ValidationError(
+                {"meeting_link": "meeting_link is required for this event mode"}
+            )
+        return data
+
+
 class AttendeeSerializer(serializers.Serializer):
     """Serializer for attendee information"""
 
     name = serializers.CharField(max_length=255)
     email = serializers.EmailField()
+
+
+class CancelEventRequestSerializer(serializers.Serializer):
+    """Docs schema for vendor whole-event cancellation (see VendorEventCancelView)."""
+
+    reason = serializers.CharField(
+        help_text="Why the event is being canceled. Sent to buyers in the mail.",
+    )
+    transaction_pin = serializers.CharField(
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        max_length=512,
+        help_text=(
+            "RSA-OAEP encrypted transaction PIN (base64), same format as purchase. "
+            "Required for vendors; skipped for admins."
+        ),
+    )
 
 
 class PurchaseTicketSerializer(serializers.Serializer):
