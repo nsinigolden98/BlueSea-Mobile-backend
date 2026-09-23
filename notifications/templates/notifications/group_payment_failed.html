@@ -24,7 +24,7 @@
           BlueSea
         </h1>
       </div>
-            <p>Hello {{ user.first_name }},</p>
+            <p>Hello {% if user.first_name %}{{ user.first_name }}{% else %}there{% endif %},</p>
             
             <p>Unfortunately, the group payment could not be completed.</p>
             
@@ -33,7 +33,7 @@
             </div>
             
             <p style="margin-top: 20px; padding: 15px; background-color: #d4edda; border-left: 4px solid #28a745;">
-                <strong>However</strong>, Your contribution of <span class="amount">₦{{ amount }}</span> has been 
+                <strong>However</strong>, your contribution of <span class="amount">₦{{ amount }}</span> has been 
                 refunded back to your wallet automatically.
             </p>
             
@@ -44,7 +44,30 @@
             <div style="margin: 10px 0;">
                 <strong>Payment Type:</strong> {{ payment_type|title }}
             </div>
+
+            <p style="margin-top: 20px; color: #333; font-size: 14px;">
+                Warm regards,<br>
+                <strong>The BlueSea Mobile Team</strong>
+            </p>
         </div>
+        <!-- Social Icons -->
+      <div class="socials" style="display: flex; justify-content: center; margin-top: 40px; gap: 15px;">
+        <a href="#" style="text-decoration: none;">
+          <img src="{% notification_static 'notification/images/tk.png'%}" width="24" alt="TikTok">
+        </a>
+        <a href="#" style="text-decoration: none;">
+          <img src="{% notification_static 'notification/images/inst.jpeg'%}" width="24" alt="Instagram">
+        </a>
+        <a href="#" style="text-decoration: none;">
+          <img src="{% notification_static 'notification/images/fb.jpeg'%}" width="24" alt="Facebook">
+        </a>
+        <a href="#" style="text-decoration: none;">
+          <img src="{% notification_static 'notification/images/x.png'%}" width="24" alt="Twitter">
+        </a>
+        <a href="#" style="text-decoration: none;">
+          <img src="{% notification_static 'notification/images/link.png'%}" width="24" alt="LinkedIn">
+        </a>
+      </div>
         <!-- Footer -->
       <div class="footer" style="margin-top: 40px; text-align: center; padding-top: 20px; border-top: 1px solid #e0e0e0;">
         <p style="font-size: 14px; color: #888; line-height: 20px; margin: 5px 0;">
@@ -55,7 +78,7 @@
         </p>
         <p style="font-size: 12px; color: #999; margin: 10px 0;">
           &copy; {{ current_year|default:"2025" }} BlueSea Technology. All rights reserved.
-           <p style="margin: 5px 0; color: #999;">This is an automated message, please do not reply.</p>
+           <p style="margin: 5px 0; color: #999;">This is an automated message — please do not reply to this email.</p>
            
         </p>
       </div>

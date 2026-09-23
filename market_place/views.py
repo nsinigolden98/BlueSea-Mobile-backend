@@ -11,7 +11,7 @@ from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import status
-from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
@@ -22,8 +22,10 @@ from wallet.models import Wallet
 
 from .models import EventInfo, EventScanner, IssuedTicket, TicketVendor
 from .serializers import (
+    CancelEventRequestSerializer,
     CreateEventSerializer,
     EventInfoSerializer,
+    EventUpdateSerializer,
     EventWithdrawalRequestSerializer,
     IssuedTicketSerializer,
     PurchaseTicketSerializer,
@@ -445,7 +447,7 @@ class EventListView(APIView):
     def get(self, request):
         # Base query: only approved events
         events = (
-            EventInfo.objects.filter(is_approved=True)
+            EventInfo.objects.filter(is_approved=True, is_canceled=False)
             .select_related("vendor")
             .prefetch_related("ticket_types")
             .annotate(
@@ -481,7 +483,7 @@ class EventDetailView(APIView):
         tags=["Events"],
     )
     def get(self, request, event_id):
-        event = get_object_or_404(EventInfo, id=event_id, is_approved=True)
+        event = get_object_or_404(EventInfo, id=event_id, is_approved=True, is_canceled=False)
         serializer = EventInfoSerializer(event)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -502,7 +504,7 @@ class EventPublicView(APIView):
     )
     def get(self, request, event_id):
         # Only return approved events
-        event = get_object_or_404(EventInfo, id=event_id, is_approved=True)
+        event = get_object_or_404(EventInfo, id=event_id, is_approved=True, is_canceled=False)
         serializer = EventInfoSerializer(event)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -547,6 +549,14 @@ class PurchaseTicketView(APIView):
         transaction_pin = serializer.validated_data.get("transaction_pin")
 
         # Check if event is approved
+        if event.is_canceled:
+            return Response(
+                {
+                    "error": "This event has been canceled by the vendor",
+                    "state": False,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if not event.is_approved:
             return Response(
                 {
@@ -637,6 +647,18 @@ class PurchaseTicketView(APIView):
                     logger.info(
                         f"User {request.user.email} registered {quantity} free ticket(s) for '{event.event_title}'"
                     )
+
+                    try:
+                        from notifications.utils import ticket_purchase_notification
+
+                        ticket_purchase_notification(
+                            request.user, event, issued_tickets, "0.00"
+                        )
+                    except Exception as mail_exc:
+                        logger.error(
+                            f"Free ticket purchase mail failed: {mail_exc}",
+                            exc_info=True,
+                        )
 
                     return Response(
                         {
@@ -815,6 +837,21 @@ class PurchaseTicketView(APIView):
                 #     f"Total: ₦{total_cost}, Bonus: {bonus_points} points"
                 # )
 
+                try:
+                    from notifications.utils import ticket_purchase_notification
+
+                    ticket_purchase_notification(
+                        request.user,
+                        event,
+                        issued_tickets,
+                        total_cost,
+                        reference=reference_id,
+                    )
+                except Exception as mail_exc:
+                    logger.error(
+                        f"Ticket purchase mail failed: {mail_exc}", exc_info=True
+                    )
+
                 return Response(
                     {
                         "success": True,
@@ -927,6 +964,17 @@ class ScanTicketView(APIView):
                     "error_code": "INVALID_EVENT",
                 },
                 status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if event.is_canceled:
+            return Response(
+                {
+                    "error": "This event has been canceled",
+                    "state": False,
+                    "error_code": "CANCELED",
+                    "scan_result": "rejected",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Check scanner authorization
@@ -1451,6 +1499,12 @@ class TransferTicketView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        if ticket.event.is_canceled:
+            return Response(
+                {"error": "This event has been canceled", "state": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         # Check if current user is the CURRENT OWNER (not original purchaser)
         if ticket.owner_email != request.user.email:
             return Response(
@@ -1509,7 +1563,7 @@ class TransferTicketView(APIView):
 
 
 class CancelTicketView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         summary="Cancel ticket and get refund",
@@ -1672,6 +1726,500 @@ class CancelTicketView(APIView):
                 {"error": f"Cancellation failed: {str(e)}", "state": False},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class VendorEventCancelView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(
+        summary="Cancel a whole event (vendor)",
+        description=(
+            "Cancel an entire event. Requires a cancellation reason and the vendor's "
+            "transaction PIN. The vendor wallet must cover the total of all paid "
+            "upcoming tickets; it is debited synchronously, then buyer refunds and "
+            "cancellation mails are processed asynchronously — a 202 means QUEUED, not "
+            "done: poll GET events/<event_id>/cancel-status/ until cancel_status is "
+            "'completed'. Free tickets are marked canceled with no refund. Admins may "
+            "cancel without PIN or balance check."
+        ),
+        request=CancelEventRequestSerializer,
+        responses={
+            202: OpenApiTypes.OBJECT,
+            200: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT,
+        },
+        examples=[
+            OpenApiExample(
+                "Cancel request",
+                summary="Vendor cancel with reason + PIN",
+                value={
+                    "reason": "Venue double-booked, no alternative date",
+                    "transaction_pin": "<RSA-encrypted PIN>",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Queued",
+                summary="202 — cancellation queued",
+                value={
+                    "success": True,
+                    "state": True,
+                    "message": "Event canceled. Refunds and mails are being processed.",
+                    "event_id": "1e838403-4a2d-424a-81ea-5d4e3a68594d",
+                    "tickets_queued": 42,
+                    "total_refund": "210000.00",
+                    "funded_by": "vendor",
+                },
+                response_only=True,
+                status_codes=["202"],
+            ),
+            OpenApiExample(
+                "Shortfall",
+                summary="400 — vendor balance too low",
+                value={
+                    "error": "Insufficient vendor balance to cover refunds. Required: ₦10,000.00, Available: ₦100.00",
+                    "state": False,
+                    "required": "10000.00",
+                    "available": "100.00",
+                },
+                response_only=True,
+                status_codes=["400"],
+            ),
+        ],
+        tags=["Events"],
+    )
+    def post(self, request, event_id):
+        from decimal import Decimal
+
+        from django.db.models import Sum
+
+        from .tasks import process_event_cancellation
+
+        reason = (request.data.get("reason") or "").strip()
+        if not reason:
+            return Response(
+                {"error": "Cancellation reason is required", "state": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            event = EventInfo.objects.select_related("vendor", "vendor__user").get(
+                id=event_id
+            )
+        except EventInfo.DoesNotExist:
+            return Response(
+                {"error": "Event not found", "state": False},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        vendor = event.vendor
+        is_admin = request.user.is_staff or bool(
+            getattr(request.user, "is_admin", False)
+        )
+        is_owner = vendor.user_id == request.user.id
+        if not (is_owner or is_admin):
+            return Response(
+                {
+                    "error": "Only the event vendor can cancel this event",
+                    "state": False,
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if is_owner and not vendor.is_verified:
+            return Response(
+                {
+                    "error": "Only verified vendors can cancel events",
+                    "state": False,
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if event.is_canceled:
+            if event.cancel_status == "completed" and (event.cancel_failed or 0) == 0:
+                return Response(
+                    {
+                        "success": True,
+                        "state": True,
+                        "message": "Event is already canceled",
+                        "event_id": str(event.id),
+                        "cancel_status": event.cancel_status,
+                        "refunded_count": event.cancel_refunded,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+            # Replay: vendor debit dedupes on reference, task skips non-upcoming
+            process_event_cancellation.delay(
+                str(event.id), event.cancellation_reason or reason
+            )
+            return Response(
+                {
+                    "success": True,
+                    "state": True,
+                    "message": "Cancellation replay queued",
+                    "event_id": str(event.id),
+                    "cancel_status": event.cancel_status,
+                },
+                status=status.HTTP_202_ACCEPTED,
+            )
+
+        if event.event_date < timezone.now():
+            return Response(
+                {"error": "This event has already passed", "state": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        funded_by = "platform"
+        if is_owner:
+            transaction_pin = request.data.get("transaction_pin")
+            if not transaction_pin:
+                return Response(
+                    {
+                        "error": "Transaction PIN is required to cancel an event",
+                        "state": False,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            pin_result = verify_pin_with_lockout(request.user, transaction_pin)
+            if pin_result.locked:
+                retry_min = int(pin_result.retry_after // 60) + 1
+                return Response(
+                    {"error": f"Too many attempts. Try again in {retry_min} minutes."},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            if not pin_result.ok:
+                return Response(
+                    {"error": "Invalid transaction PIN", "state": False},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            funded_by = "vendor"
+
+        try:
+            with transaction.atomic():
+                locked = EventInfo.objects.select_for_update().get(id=event.id)
+                if locked.is_canceled:
+                    process_event_cancellation.delay(
+                        str(locked.id), locked.cancellation_reason or reason
+                    )
+                    return Response(
+                        {
+                            "success": True,
+                            "state": True,
+                            "message": "Cancellation replay queued",
+                            "event_id": str(locked.id),
+                        },
+                        status=status.HTTP_202_ACCEPTED,
+                    )
+
+                now = timezone.now()
+                upcoming_ids = list(
+                    IssuedTicket.objects.filter(
+                        event=locked, status="upcoming"
+                    ).values_list("id", flat=True)
+                )
+                if locked.is_free:
+                    total = Decimal("0")
+                else:
+                    total = (
+                        IssuedTicket.objects.filter(
+                            event=locked,
+                            status="upcoming",
+                            ticket_type__isnull=False,
+                        ).aggregate(total=Sum("ticket_type__price"))["total"]
+                        or Decimal("0")
+                    )
+
+                if funded_by == "vendor" and total > 0:
+                    try:
+                        vendor_wallet = Wallet.objects.select_for_update().get(
+                            user=vendor.user
+                        )
+                    except Wallet.DoesNotExist:
+                        return Response(
+                            {
+                                "error": "Vendor wallet not found. Please contact support.",
+                                "state": False,
+                            },
+                            status=status.HTTP_404_NOT_FOUND,
+                        )
+                    if vendor_wallet.balance < total:
+                        return Response(
+                            {
+                                "error": (
+                                    "Insufficient vendor balance to cover refunds. "
+                                    f"Required: ₦{total:,.2f}, "
+                                    f"Available: ₦{vendor_wallet.balance:,.2f}"
+                                ),
+                                "state": False,
+                                "required": str(total),
+                                "available": str(vendor_wallet.balance),
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    vendor_wallet.debit(
+                        amount=total,
+                        description=f"Event cancellation payout: {locked.event_title}",
+                        reference=f"event-cancel-{locked.id}",
+                    )
+
+                locked.is_canceled = True
+                locked.canceled_at = now
+                locked.cancellation_reason = reason
+                locked.canceled_by = request.user
+                locked.cancel_status = "processing"
+                locked.cancel_total = len(upcoming_ids)
+                locked.cancel_processed = 0
+                locked.cancel_refunded = 0
+                locked.cancel_failed = 0
+                locked.save()
+
+            process_event_cancellation.delay(str(locked.id), reason)
+            logger.info(
+                f"Event {locked.id} canceled by {request.user.email}: "
+                f"{len(upcoming_ids)} tickets queued, ₦{total} funded by {funded_by}"
+            )
+            return Response(
+                {
+                    "success": True,
+                    "state": True,
+                    "message": "Event canceled. Refunds and mails are being processed.",
+                    "event_id": str(locked.id),
+                    "tickets_queued": len(upcoming_ids),
+                    "total_refund": str(total),
+                    "funded_by": funded_by,
+                },
+                status=status.HTTP_202_ACCEPTED,
+            )
+        except Exception as e:
+            logger.error(f"Event cancellation failed: {str(e)}", exc_info=True)
+            return Response(
+                {"error": f"Cancellation failed: {str(e)}", "state": False},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class EventCancelStatusView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(
+        summary="Get event cancellation status",
+        description="Poll the async cancellation progress for an event. Vendor owner or admin only.",
+        parameters=[
+            OpenApiParameter(
+                name="event_id", type=OpenApiTypes.UUID, location=OpenApiParameter.PATH
+            )
+        ],
+        responses={200: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                "Progress",
+                summary="Cancellation progress",
+                value={
+                    "event_id": "1e838403-4a2d-424a-81ea-5d4e3a68594d",
+                    "is_canceled": True,
+                    "cancel_status": "processing",
+                    "cancel_total": 42,
+                    "cancel_processed": 30,
+                    "cancel_refunded": 28,
+                    "cancel_failed": 0,
+                    "canceled_at": "2026-09-23T18:59:53Z",
+                    "cancellation_reason": "Venue double-booked…",
+                },
+                response_only=True,
+            ),
+        ],
+        tags=["Events"],
+    )
+    def get(self, request, event_id):
+        try:
+            event = EventInfo.objects.select_related("vendor").get(id=event_id)
+        except EventInfo.DoesNotExist:
+            return Response(
+                {"error": "Event not found", "state": False},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        is_admin = request.user.is_staff or bool(
+            getattr(request.user, "is_admin", False)
+        )
+        if not (is_admin or event.vendor.user_id == request.user.id):
+            return Response(
+                {"error": "You do not have permission to view this", "state": False},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return Response(
+            {
+                "event_id": str(event.id),
+                "is_canceled": event.is_canceled,
+                "cancel_status": event.cancel_status,
+                "cancel_total": event.cancel_total,
+                "cancel_processed": event.cancel_processed,
+                "cancel_refunded": event.cancel_refunded,
+                "cancel_failed": event.cancel_failed,
+                "canceled_at": event.canceled_at,
+                "cancellation_reason": event.cancellation_reason,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class EventUpdateView(APIView):
+    permission_classes = (IsAuthenticated,)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+
+    # Venue/link/time changes need re-approval + buyer mail; banner/title/image do not
+    MATERIAL_FIELDS = ("event_location", "meeting_link", "event_date")
+
+    @extend_schema(
+        summary="Edit event info (vendor)",
+        description=(
+            "Edit event title, banner, ticket image, venue, meeting link or date. "
+            "Only the owning verified vendor or admin. Canceled or past events cannot "
+            "be edited. Venue/link/date changes reset approval (pending re-review) and "
+            "notify upcoming ticket holders; banner/title/ticket-image changes do not."
+        ),
+        request=EventUpdateSerializer,
+        responses={
+            200: EventInfoSerializer,
+            400: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT,
+        },
+        examples=[
+            OpenApiExample(
+                "Material edit",
+                summary="Venue change (re-approval + buyer mail)",
+                value={"event_location": "Eko Convention Centre, Hall B"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Updated",
+                summary="200 — material edit response",
+                value={
+                    "success": True,
+                    "state": True,
+                    "message": "Event updated successfully and pending re-approval",
+                    "reapproval_required": True,
+                },
+                response_only=True,
+            ),
+        ],
+        tags=["Events"],
+    )
+    def patch(self, request, event_id):
+        from .tasks import send_event_update_notifications
+
+        try:
+            event = EventInfo.objects.select_related("vendor", "vendor__user").get(
+                id=event_id
+            )
+        except EventInfo.DoesNotExist:
+            return Response(
+                {"error": "Event not found", "state": False},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        vendor = event.vendor
+        is_admin = request.user.is_staff or bool(
+            getattr(request.user, "is_admin", False)
+        )
+        is_owner = vendor.user_id == request.user.id
+        if not (is_owner or is_admin):
+            return Response(
+                {
+                    "error": "Only the event vendor can edit this event",
+                    "state": False,
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if is_owner and not vendor.is_verified:
+            return Response(
+                {"error": "Only verified vendors can edit events", "state": False},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if event.is_canceled:
+            return Response(
+                {"error": "Canceled events cannot be edited", "state": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if event.event_date < timezone.now():
+            return Response(
+                {
+                    "error": "Events that have already started cannot be edited",
+                    "state": False,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = EventUpdateSerializer(
+            event, data=request.data, partial=True, context={"request": request}
+        )
+        if not serializer.is_valid():
+            return Response(
+                {"error": serializer.errors, "state": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not serializer.validated_data:
+            return Response(
+                {"error": "No editable fields provided", "state": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        def display(value):
+            if hasattr(value, "isoformat"):
+                return value.isoformat()
+            return str(value) if value is not None else ""
+
+        material_changes = {}
+        for field in self.MATERIAL_FIELDS:
+            if field in serializer.validated_data:
+                old, new = display(getattr(event, field)), display(
+                    serializer.validated_data[field]
+                )
+                if old != new:
+                    material_changes[field] = {"old": old, "new": new}
+
+        try:
+            with transaction.atomic():
+                locked = EventInfo.objects.select_for_update().get(id=event.id)
+                if locked.is_canceled:
+                    return Response(
+                        {"error": "Canceled events cannot be edited", "state": False},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                for field, value in serializer.validated_data.items():
+                    setattr(locked, field, value)
+                if material_changes:
+                    locked.is_approved = False
+                locked.save()
+        except Exception as e:
+            logger.error(f"Event update failed: {str(e)}", exc_info=True)
+            return Response(
+                {"error": f"Update failed: {str(e)}", "state": False},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        if material_changes:
+            send_event_update_notifications.delay(str(locked.id), material_changes)
+            logger.info(
+                f"Event {locked.id} edited by {request.user.email}: "
+                f"material changes {sorted(material_changes)}; approval reset, buyers notified"
+            )
+        return Response(
+            {
+                "success": True,
+                "state": True,
+                "message": "Event updated successfully"
+                + (
+                    " and pending re-approval"
+                    if material_changes
+                    else ""
+                ),
+                "reapproval_required": bool(material_changes),
+                "event": EventInfoSerializer(locked, context={"request": request}).data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class ScannerDashboardView(APIView):

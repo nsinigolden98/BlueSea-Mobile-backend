@@ -207,6 +207,27 @@ class EventInfo(models.Model):
     is_approved = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Vendor-initiated whole-event cancellation
+    is_canceled = models.BooleanField(default=False)
+    canceled_at = models.DateTimeField(null=True, blank=True)
+    cancellation_reason = models.TextField(null=True, blank=True)
+    canceled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="canceled_events",
+    )
+    cancel_status = models.CharField(
+        max_length=30,
+        default="pending",
+        help_text="pending, processing, completed, completed_with_failures",
+    )
+    cancel_total = models.IntegerField(default=0)
+    cancel_processed = models.IntegerField(default=0)
+    cancel_refunded = models.IntegerField(default=0)
+    cancel_failed = models.IntegerField(default=0)
+
     def __str__(self):
         return self.event_title
 

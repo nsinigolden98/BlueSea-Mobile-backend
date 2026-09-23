@@ -3082,7 +3082,7 @@ class WithdrawalView(APIView):
                         recipient_code=withdrawal.recipient_code,
                         amount=amount * Decimal("0.99"),
                         reference=reference_id,
-                        reason=f"Withdrawal to {account_name} ({account_number})",
+                        reason=f"Transfer to {account_name} ({account_number})",
                     )
                     if transfer_success:
                         withdrawal.transfer_code = transfer_result
@@ -3092,7 +3092,7 @@ class WithdrawalView(APIView):
 
                         user_wallet.debit(
                         amount=amount,
-                        description=f"Withdrawal to {account_name} ({account_number})",
+                        description=f"Transfer  to {account_name} ({account_number})",
                         reference=reference_id,
                     )
 
@@ -3100,13 +3100,13 @@ class WithdrawalView(APIView):
                         try:
                             send_notification(
                                 user=request.user,
-                                title="Withdrawal Request Received",
+                                title="Transfer Successful",
                                 message=(
-                                    f"₦{amount} withdrawal to {account_name} "
+                                    f"₦{amount} transfer to {account_name} "
                                     "received. It will be processed shortly."
                                 ),
                                 notification_type="payment",
-                                email_subject="BlueSea - Withdrawal Request Received",
+                                email_subject="BlueSea Mobile- Transfer Successful",
                             )
                         except Exception as e:
                             logger.error(f"Error sending withdrawal notification: {str(e)}")
@@ -3114,7 +3114,7 @@ class WithdrawalView(APIView):
                         response_serializer = WithdrawalResponseSerializer(
                             {
                                 "state": True,
-                                "message": "Withdrawal successful",
+                                "message": "Transfer successful",
                                 "withdrawal": withdrawal,
                             }
                         )
@@ -3130,7 +3130,7 @@ class WithdrawalView(APIView):
                         response_serializer = WithdrawalResponseSerializer(
                         {
                             "state": False,
-                            "message": "Network Error, Withdrawal Failed Try Again Later",
+                            "message": "Network Error, Transfer  Failed Try Again Later",
                             "withdrawal": withdrawal,
                         }
                     )
@@ -3152,7 +3152,7 @@ class WithdrawalView(APIView):
         except Exception as e:
             logger.error(f"Error processing withdrawal: {str(e)}")
             return Response(
-                {"success": False, "error": f"Withdrawal failed: {str(e)}"},
+                {"success": False, "error": f"Transfer failed: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 

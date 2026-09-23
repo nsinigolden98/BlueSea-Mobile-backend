@@ -157,7 +157,7 @@
                 <div class="icon group">👥</div>
             {% endif %}
             
-            <p class="greeting">Hello {% if user.first_name %}{{ user.first_name }}{% else %}Dearest User{% endif %},</p>
+            <p class="greeting">Hello {% if user.first_name %}{{ user.first_name }}{% else %}there{% endif %},</p>
             
             <div class="message-box {{ notification_type }}">
                 <p style="margin: 0;">{{ message }}</p>
@@ -165,7 +165,11 @@
             
             {% if context %}
                 <div class="details">
+                    {% if notification_type == 'payment' or notification_type == 'payment_success' or notification_type == 'payment_failed' or notification_type == 'wallet' %}
+                    <h3 style="color: #555; font-size: 16px; margin-bottom: 15px;">Transaction Details:</h3>
+                    {% else %}
                     <h3 style="color: #555; font-size: 16px; margin-bottom: 15px;">Details:</h3>
+                    {% endif %}
                     
                     {% if context.amount %}
                     <div class="detail-item">
@@ -254,7 +258,12 @@
             {% endif %}
             
             <p style="margin-top: 30px; color: #666; font-size: 14px;">
-                If you have any questions or concerns, please don't hesitate to contact our support team.
+                Need help? Our support team is available anytime through the app.
+            </p>
+
+            <p style="margin-top: 20px; color: #333; font-size: 14px;">
+                Warm regards,<br>
+                <strong>The BlueSea Mobile Team</strong>
             </p>
         </div>
 
@@ -287,7 +296,7 @@
         </p>
         <p style="font-size: 12px; color: #999; margin: 10px 0;">
           &copy; {{ current_year|default:"2025" }} BlueSea Technology. All rights reserved.
-           <p style="margin: 5px 0; color: #999;">This is an automated message, please do not reply.</p>
+           <p style="margin: 5px 0; color: #999;">This is an automated message — please do not reply to this email.</p>
            
         </p>
       </div>
