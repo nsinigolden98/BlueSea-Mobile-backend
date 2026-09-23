@@ -5,9 +5,11 @@ from .views import (
     CancelTicketView,
     CreateEventView,
     CreateTicketVendor,
+    EventCancelStatusView,
     EventDetailView,
     EventListView,
     EventPublicView,
+    EventUpdateView,
     EventWithdrawalView,
     ExportAttendeesView,
     MyScannerAssignmentsView,
@@ -19,6 +21,7 @@ from .views import (
     TicketDetailView,
     TicketListView,
     TransferTicketView,
+    VendorEventCancelView,
     VendorStatusView,
     VendorTicketsList,
     VerifyAccountNameView,
@@ -31,6 +34,21 @@ urlpatterns = [
     path("events/create/", CreateEventView.as_view(), name="create-event"),
     path("events/all/", EventListView.as_view(), name="event-list"),
     path("events/<uuid:event_id>/", EventDetailView.as_view(), name="event-detail"),
+    path(
+        "events/<uuid:event_id>/edit/",
+        EventUpdateView.as_view(),
+        name="event-edit",
+    ),
+    path(
+        "events/<uuid:event_id>/cancel/",
+        VendorEventCancelView.as_view(),
+        name="vendor-event-cancel",
+    ),
+    path(
+        "events/<uuid:event_id>/cancel-status/",
+        EventCancelStatusView.as_view(),
+        name="event-cancel-status",
+    ),
     path(
         "events/public/<uuid:event_id>/", EventPublicView.as_view(), name="event-public"
     ),

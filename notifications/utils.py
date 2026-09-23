@@ -122,3 +122,58 @@ def group_payment_failed(member, amount, group_name, payment_type, reason):
 
 def auto_topup_success():
     pass
+
+
+def ticket_purchase_notification(buyer, event, tickets, total_cost, reference=None):
+    title = 'Ticket Purchase Confirmed'
+    quantity = len(tickets)
+    if event.is_free:
+        message = (
+            f'You registered {quantity} free ticket(s) for '
+            f"'{event.event_title}'. Your tickets are ready under My Tickets."
+        )
+    else:
+        message = (
+            f'You purchased {quantity} ticket(s) for '
+            f"'{event.event_title}'. Total paid: ₦{total_cost}."
+        )
+
+    rows = []
+    for ticket in tickets:
+        try:
+            ticket_type_name = ticket.ticket_type.name
+            price = str(ticket.ticket_type.price)
+        except AttributeError:
+            ticket_type_name = 'Free Entry'
+            price = '0.00'
+        rows.append(
+            {
+                'owner_name': ticket.owner_name,
+                'ticket_type': ticket_type_name,
+                'price': price,
+            }
+        )
+
+    context = {
+        'event_title': event.event_title,
+        'event_date': event.event_date.strftime('%A, %B %d, %Y at %I:%M %p')
+        if event.event_date
+        else '',
+        'event_venue': event.event_location or '',
+        'meeting_link': event.meeting_link or '',
+        'hosted_by': event.hosted_by or '',
+        'tickets': rows,
+        'quantity': quantity,
+        'total_cost': str(total_cost),
+        'reference': reference or '',
+    }
+
+    return send_notification(
+        user=buyer,
+        title=title,
+        message=message,
+        notification_type='success',
+        email_subject=f'BlueSea Mobile - {title}',
+        email_template='notifications/ticket_purchase.html',
+        context=context
+    )
