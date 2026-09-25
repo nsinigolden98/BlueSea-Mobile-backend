@@ -297,8 +297,8 @@ class CheckUser(APIView):
 class GetUser(APIView):
     permission_classes =(IsAuthenticated,)
     @extend_schema(
-        summary="Check user verification status",
-        description="Check whether a user with the given email exists and is verified",
+        summary="Get a user full name from email",
+        description="Get a user full name from there if the email exists and is verified",
         parameters=[
             OpenApiParameter(
                 name="email",
