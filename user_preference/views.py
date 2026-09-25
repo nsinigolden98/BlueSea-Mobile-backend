@@ -239,7 +239,7 @@ class CurrentUserView(APIView):
         )
 
 
-class CheckUsers(APIView):
+class CheckUser(APIView):
     @extend_schema(
         summary="Check user verification status",
         description="Check whether a user with the given email exists and is verified",
@@ -259,7 +259,7 @@ class CheckUsers(APIView):
         examples=[
             OpenApiExample(
                 "Verified",
-                value={"state": True, "message": "User is verified"},
+                value={"state": True, "message": "User is verified", },
                 response_only=True,
             ),
             OpenApiExample(
@@ -274,8 +274,77 @@ class CheckUsers(APIView):
         check = Profile.objects.filter(email=email, email_verified=True).first()
         try:
             if check:
+                name = getattr(check, 'username', None)
+                surname = getattr(check, 'surname', None)
                 return Response(
-                    {"state": True, "message": "User is verified"},
+                    {"state": True, "message": "User is verified", "data":{
+                        "name": name,     
+                        "surname": surname   
+                    }},
+                    status=status.HTTP_200_OK,
+                )
+            else:
+                return Response(
+                    {"state": False, "message": "User is not verified"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+        except Exception as e:
+            return Response(
+                {"state": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+class GetUser(APIView):
+    permission_classes =(IsAuthenticated,)
+    @extend_schema(
+        summary="Check user verification status",
+        description="Check whether a user with the given email exists and is verified",
+        parameters=[
+            OpenApiParameter(
+                name="email",
+                location=OpenApiParameter.PATH,
+                required=True,
+                description="Email of the user to check",
+            ),
+        ],
+        responses={
+            200: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT,
+            400: OpenApiTypes.OBJECT,
+        },
+        examples=[
+            OpenApiExample(
+                "Verified",
+                value={
+                    "state": True,
+                    "message": "User is verified",
+                    "data":{
+                        "name": "John",
+                        "surname": "Doe"
+                    }
+                },
+                response_only=True,
+            ),
+            OpenApiExample(
+                "Not Verified",
+                value={"state": False, "message": "User is not verified"},
+                response_only=True,
+            ),
+        ],
+        tags=["User Profile"],
+    )
+    def get(self, request, email):
+        check = Profile.objects.filter(email=email, email_verified=True).first()
+        try:
+            if check:
+                name = getattr(check, "username", None)
+                surname = getattr(check, "surname", None)
+                return Response(
+                    {
+                        "state": True,
+                        "message": "User is verified",
+                        "data": {"name": name, "surname": surname},
+                    },
                     status=status.HTTP_200_OK,
                 )
             else:

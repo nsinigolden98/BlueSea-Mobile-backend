@@ -3080,7 +3080,7 @@ class WithdrawalView(APIView):
 
                     transfer_success, transfer_result = initiate_transfer(
                         recipient_code=withdrawal.recipient_code,
-                        amount=amount * Decimal("0.99"),
+                        amount=amount - Decimal("10.00"),
                         reference=reference_id,
                         reason=f"Transfer to {account_name} ({account_number})",
                     )
