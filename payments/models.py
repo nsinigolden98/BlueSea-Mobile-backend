@@ -786,11 +786,11 @@ class ElectricityPaymentCustomers(models.Model):
 
 
 class Withdrawal(models.Model):
-    STATUS_CHOICES = [
+    STATUS_CHOICES = (
         ("pending", "Pending"),
         ("failed", "Failed"),
         ("successful", "Successful"),
-    ]
+    )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="withdrawal"
     )
@@ -836,3 +836,33 @@ class VTpassWebhookLog(models.Model):
 
     def __str__(self):
         return f"{self.request_id} - {self.vt_status} - {self.code}"
+
+class InternalTransfer(models.Model):
+    TRANSFER_METHOD = (
+        ('email','Email'),
+        ('dva','DVA')
+    )
+    STATUS_CHOICES = (
+            ("pending", "Pending"),
+            ("failed", "Failed"),
+            ("successful", "Successful"),
+    )
+    reference_id = models.CharField(max_length=100, null=True, blank=True, unique=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="internal_transfer"
+    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    recepiant_dva_account_number = models.CharField(max_length=10, blank=True)
+    recepiant_email= models.CharField(max_length=100, blank=True)
+    recepiant_full_name= models.CharField(max_length=100, blank=True)
+    transfer_method = models.CharField( max_length=5, choices=TRANSFER_METHOD, default='email')
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+
+    def __str__(self):
+            return f"Tranfer of {self.amount} to {self.recepiant_full_name} - {self.status}"
+    
+    class Meta:
+            ordering = ("-created_at",)
+

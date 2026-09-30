@@ -1,25 +1,29 @@
-from rest_framework import serializers
 from decimal import Decimal
+
+from rest_framework import serializers
+
 from .models import (
-    AirtimeTopUp,
-    WAECRegitration,
-    WAECResultChecker,
-    JAMBRegistration,
-    ElectricityPayment,
-    DSTVPayment,
-    GOTVPayment,
-    StartimesPayment,
-    ShowMaxPayment,
     AirtelDataTopUp,
-    GloDataTopUp,
+    Airtime2Cash,
+    AirtimeTopUp,
+    DSTVPayment,
+    ElectricityPayment,
+    ElectricityPaymentCustomers,
     EtisalatDataTopUp,
-    MTNDataTopUp,
+    GloDataTopUp,
+    GOTVPayment,
     GroupPayment,
     GroupPaymentContribution,
-    Airtime2Cash,
-    ElectricityPaymentCustomers,
-    Withdrawal
+    InternalTransfer,
+    JAMBRegistration,
+    MTNDataTopUp,
+    ShowMaxPayment,
+    StartimesPayment,
+    WAECRegitration,
+    WAECResultChecker,
+    Withdrawal,
 )
+
 
 class AirtimeTopUpSerializer(serializers.ModelSerializer):
     class Meta:
@@ -137,7 +141,7 @@ class ElectricityPaymentCustomerSerializer(serializers.ModelSerializer):
 class WithdrawalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Withdrawal
-        fields = [
+        fields = (
             "id",
             "user",
             "account_name",
@@ -151,8 +155,8 @@ class WithdrawalSerializer(serializers.ModelSerializer):
             "transfer_code",
             "created_at",
             "completed_at",
-        ]
-        read_only_fields = [
+        )
+        read_only_fields = (
             "user",
             "status",
             "payment_reference",
@@ -160,7 +164,7 @@ class WithdrawalSerializer(serializers.ModelSerializer):
             "transfer_code",
             "created_at",
             "completed_at",
-        ]
+        )
 
 class WithdrawalRequestSerializer(serializers.Serializer):
     account_name = serializers.CharField(max_length=100)
@@ -177,3 +181,16 @@ class WithdrawalResponseSerializer(serializers.Serializer):
     state = serializers.BooleanField()
     message = serializers.CharField()
     withdrawal = WithdrawalSerializer()
+
+class InternalTransferSerializer(serializers.ModelSerializer):
+    class Meta:
+        model= InternalTransfer
+        fields = ("recepiant_dva_account_number","user","recepiant_email", "created_at", 'completed_at', "transfer_method", "amount", "reference_id", "status", "recepiant_full_name")
+        read_only_fields = (
+            "reference_id",
+            "completed_at",
+            "created_at",
+            "user",
+            "status",
+            "recepiant_full_name",
+        )
