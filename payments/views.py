@@ -1,6 +1,6 @@
 import logging
 import uuid
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 
+from accounts.models import PaystackDedicatedAccount
 from bluesea_mobile.utils import InsufficientFundsException
 from bonus.models import Referral
 from bonus.utils import (
@@ -34,7 +35,7 @@ from notifications.utils import (
     send_notification,
 )
 
-from .models import GroupPayment, GroupPaymentContribution, Withdrawal
+from .models import GroupPayment, GroupPaymentContribution, InternalTransfer, Withdrawal
 from .serializers import (
     AirtelDataTopUpSerializer,
     Airtime2CashSerializer,
@@ -2266,7 +2267,7 @@ class ElectricityPaymentViews(APIView):
                         user_wallet.debit(
                             amount=amount,
                             reference=request_id,
-                            description=f"Electricity - {serializer.data['biller_name'].capitalize()} {electricity_response.get('purchased_code')}",
+                            description=f"Electricity - {serializer.data['biller_name'].capitalize()} {electricity_response.get('purchased_code') if electricity_response.get('purchased_code') else " Debt Paid "}",
                         )
 
                         # Award bonus points
@@ -2301,7 +2302,7 @@ class ElectricityPaymentViews(APIView):
                                 title="Electricity Payment Successful",
                                 message=f"₦{amount} electricity units purchased for {serializer.data['billersCode']}",
                                 notification_type="payment_success",
-                                email_subject="BlueSea - Electricity Payment",
+                                email_subject="BlueSea Mobile - Electricity Payment",
                             )
                         except Exception as e:
                             logger.error(f"Error sending notification: {str(e)}")
@@ -2820,7 +2821,7 @@ class InternalTransferView(APIView):
     )
     def post(self, request):
         transaction_pin = request.data.get("transaction_pin")
-        recipient_email = request.data.get("email")
+        recipient_email = (request.data.get("email") or "").strip()
         amount = request.data.get("amount")
 
         if not transaction_pin:
@@ -2853,30 +2854,56 @@ class InternalTransferView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not amount or Decimal(str(amount)) <= 0:
+        if not amount:
             return Response(
                 {"error": "Valid amount is required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        amount = Decimal(str(amount))
+        try:
+            amount = Decimal(str(amount))
+        except (InvalidOperation, ValueError, TypeError, AttributeError):
+            return Response(
+                {"error": "Valid amount is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if amount <= 0:
+            return Response(
+                {"error": "Valid amount is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Get recipient user
         try:
-            recipient = User.objects.get(email=recipient_email)
+            recipient = User.objects.get(email__iexact=recipient_email)
         except User.DoesNotExist:
             return Response(
                 {"error": "Recipient not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        
-        if recipient == request.user:
+
+        if recipient.pk == request.user.pk:
             return Response(
                 {"error": "Cannot transfer to yourself"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        sender_wallet = request.user.wallet
+        try:
+            sender_wallet = request.user.wallet
+        except Exception:
+            return Response(
+                {"error": "Sender wallet not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            recipient_wallet = recipient.wallet
+        except Exception:
+            return Response(
+                {"error": "Recipient wallet not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if sender_wallet.balance < amount:
             return Response(
@@ -2888,6 +2915,21 @@ class InternalTransferView(APIView):
         recipient_reference = f"BS-INT-{generate_reference_id()}"
 
         try:
+            obj = InternalTransfer.objects.create(
+                reference_id=sender_reference,
+                user=request.user,
+                amount=amount,
+                recepiant_email=recipient_email,
+                recepiant_full_name=f"{recipient.surname} {recipient.other_names}".strip(),
+            )
+        except Exception as e:
+            logger.error(f"Error creating internal transfer record: {str(e)}")
+            return Response(
+                {"success": False, "error": f"Transfer failed: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        try:
             with transaction.atomic():
                 # Debit sender
                 sender_wallet.debit(
@@ -2897,12 +2939,14 @@ class InternalTransferView(APIView):
                 )
 
                 # Credit recipient
-                recipient_wallet = recipient.wallet
                 recipient_wallet.credit(
                     amount=amount,
                     description=f"Internal transfer from {request.user.email}",
                     reference=recipient_reference,
                 )
+                obj.status = "successful"
+                obj.completed_at = timezone.now()
+                obj.save(update_fields=["status", "completed_at"])
 
                 # Send notification to sender
                 try:
@@ -2920,7 +2964,7 @@ class InternalTransferView(APIView):
                 try:
                     send_notification(
                         user=recipient,
-                        title=" funds Received",
+                        title="Funds Received",
                         message=f"₦{amount} received from {request.user.email}",
                         notification_type="payment_success",
                         email_subject="BlueSea - Funds Received",
@@ -2935,11 +2979,35 @@ class InternalTransferView(APIView):
                     "reference": sender_reference,
                     "amount": str(amount),
                     "recipient": recipient.email,
+                    "recipient_name": obj.recepiant_full_name,
                 },
                 status=status.HTTP_200_OK,
             )
 
+        except ValueError as e:
+            try:
+                obj.status = "failed"
+                obj.completed_at = timezone.now()
+                obj.save(update_fields=["status", "completed_at"])
+            except Exception:
+                pass
+            message = str(e)
+            if "Insufficient funds" in message:
+                return Response(
+                    {"error": "Insufficient funds"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            return Response(
+                {"success": False, "error": f"Transfer failed: {message}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         except Exception as e:
+            try:
+                obj.status = "failed"
+                obj.completed_at = timezone.now()
+                obj.save(update_fields=["status", "completed_at"])
+            except Exception:
+                pass
             return Response(
                 {"success": False, "error": f"Transfer failed: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -2951,7 +3019,7 @@ class WithdrawalView(APIView):
 
     @extend_schema(
         summary="Withdrawal via Paystack",
-        description="Withdraw wallet funds to a bank account. Validates PIN, bank details, and minimum amount (N500). Creates withdrawal record with status pending and automatically initiates Paystack transfer. Status updates to successful/failed via webhook at POST /transactions/webhook/paystack/ handling transfer.success, transfer.failed, transfer.reversed.",
+        description="Withdraw wallet funds to a bank account. Validates PIN, bank details, and minimum amount (N500). If account_number matches an in-system PaystackDedicatedAccount.dva_account_number (active), it is routed as an internal transfer (InternalTransfer, transfer_method=dva, no Paystack fees, self-transfers rejected) instead of Paystack. Otherwise creates withdrawal record with status pending and automatically initiates Paystack transfer. Status updates to successful/failed via webhook at POST /transactions/webhook/paystack/ handling transfer.success, transfer.failed, transfer.reversed.",
         request=WithdrawalRequestSerializer,
         responses={
             201: WithdrawalResponseSerializer,
@@ -3027,6 +3095,136 @@ class WithdrawalView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # DVA routing: request account_number -> PaystackDedicatedAccount.dva_account_number.
+        # If it exists in our system, handle as internal transfer (no Paystack, no self-transfer).
+        dva_account_number = (account_number or "").strip()
+        dva_match = (
+            PaystackDedicatedAccount.objects.select_related("user")
+            .filter(dva_account_number=dva_account_number, active=True)
+            .first()
+        )
+        if dva_match is not None:
+            recipient = dva_match.user
+            if recipient.pk == request.user.pk:
+                return Response(
+                    {"error": "Cannot transfer to yourself", "success": False},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            try:
+                sender_wallet = request.user.wallet
+            except Exception:
+                return Response(
+                    {"error": "Sender wallet not found", "success": False},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            try:
+                recipient_wallet = recipient.wallet
+            except Exception:
+                return Response(
+                    {"error": "Recipient wallet not found", "success": False},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if sender_wallet.balance < amount:
+                return Response(
+                    {"error": "Insufficient funds", "success": False},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            sender_reference = f"BS-INT-{generate_reference_id()}"
+            recipient_reference = f"BS-INT-{generate_reference_id()}"
+            try:
+                transfer = InternalTransfer.objects.create(
+                    reference_id=sender_reference,
+                    user=request.user,
+                    amount=amount,
+                    recepiant_dva_account_number=dva_account_number,
+                    recepiant_email=recipient.email,
+                    recepiant_full_name=f"{recipient.surname} {recipient.other_names}".strip(),
+                    transfer_method="dva",
+                )
+            except Exception as e:
+                logger.error(f"Error creating DVA internal transfer record: {str(e)}")
+                return Response(
+                    {"success": False, "error": f"Transfer failed: {str(e)}"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            try:
+                with transaction.atomic():
+                    sender_wallet.debit(
+                        amount=amount,
+                        description=f"Internal transfer to {recipient.email} ({dva_account_number})",
+                        reference=sender_reference,
+                    )
+                    recipient_wallet.credit(
+                        amount=amount,
+                        description=f"Internal transfer from {request.user.email}",
+                        reference=recipient_reference,
+                    )
+                    transfer.status = "successful"
+                    transfer.completed_at = timezone.now()
+                    transfer.save(update_fields=["status", "completed_at"])
+                    try:
+                        send_notification(
+                            user=request.user,
+                            title="Transfer Successful",
+                            message=f"₦{amount} transferred to {recipient.email}",
+                            notification_type="payment_success",
+                            email_subject="BlueSea Mobile - Transfer Successful",
+                        )
+                    except Exception as e:
+                        logger.error(f"Error sending notification: {str(e)}")
+                    try:
+                        send_notification(
+                            user=recipient,
+                            title="Funds Received",
+                            message=f"₦{amount} received from {request.user.email}",
+                            notification_type="payment_success",
+                            email_subject="BlueSea Mobile - Funds Received",
+                        )
+                    except Exception as e:
+                        logger.error(f"Error sending notification: {str(e)}")
+                return Response(
+                    {
+                        "state": True,
+                        "message":"Internal tranfer successful",
+                        "withdrawal":{
+                        "routed_to_internal": True,
+                        "transfer_method": "dva",
+                        "message": "Transfer successful",
+                        "reference": sender_reference,
+                        "amount": str(amount),
+                        "recipient": recipient.email,
+                        "recipient_name": transfer.recepiant_full_name,}
+                    },
+                    status=status.HTTP_200_OK,
+                )
+            except ValueError as e:
+                try:
+                    transfer.status = "failed"
+                    transfer.completed_at = timezone.now()
+                    transfer.save(update_fields=["status", "completed_at"])
+                except Exception:
+                    pass
+                if "Insufficient funds" in str(e):
+                    return Response(
+                        {"error": "Insufficient funds", "success": False},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                return Response(
+                    {"success": False, "error": f"Transfer failed: {str(e)}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            except Exception as e:
+                try:
+                    transfer.status = "failed"
+                    transfer.completed_at = timezone.now()
+                    transfer.save(update_fields=["status", "completed_at"])
+                except Exception:
+                    pass
+                return Response(
+                    {"success": False, "error": f"Transfer failed: {str(e)}"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
         user_wallet = request.user.wallet
         if user_wallet.balance < amount:
             return Response(
@@ -3036,113 +3234,112 @@ class WithdrawalView(APIView):
 
         try:
             with transaction.atomic():
-                reference_id = f"BS-WIT-{generate_reference_id()}"
-                withdrawal = Withdrawal.objects.create(
-                    user=request.user,
-                    account_name=account_name,
-                    account_number=account_number,
-                    bank_code=bank_code,
-                    bank_name=bank_name,
-                    amount=amount,
-                    payment_reference=reference_id,
-                    status="pending",
-                )
-
                 
-                # Auto-initiate Paystack transfer
-                try:
-                    from transactions.paystack import (
-                        create_transfer_recipient,
-                        initiate_transfer,
-                    )
+                    reference_id = f"BS-WIT-{generate_reference_id()}"
+                    withdrawal = Withdrawal.objects.create(
+                                        user=request.user,
+                                        account_name=account_name,
+                                        account_number=account_number,
+                                        bank_code=bank_code,
+                                        bank_name=bank_name,
+                                        amount=amount,
+                                        payment_reference=reference_id,
+                                        status="pending",
+                                    )
 
-                    recipient_success, recipient_result = create_transfer_recipient(
-                        name=account_name,
-                        account_number=account_number,
-                        bank_code=bank_code,
-                        bank_name=bank_name,
-                    )
-                    if not recipient_success:
-                        withdrawal.status = "failed"
-                        withdrawal.completed_at = timezone.now()
-                        withdrawal.save(
-                            update_fields=["status","completed_at"]
+                    try:
+                        from transactions.paystack import (
+                            create_transfer_recipient,
+                            initiate_transfer,
                         )
-                        logger.error(
-                            f"Paystack recipient creation failed: {recipient_result}"
+
+                        recipient_success, recipient_result = create_transfer_recipient(
+                            name=account_name,
+                            account_number=account_number,
+                            bank_code=bank_code,
+                            bank_name=bank_name,
                         )
-                        raise Exception(
-                            f"Recipient creation failed: {recipient_result}"
-                        )             
-
-                    withdrawal.recipient_code = recipient_result
-                    withdrawal.save(update_fields=["recipient_code"])
-
-                    transfer_success, transfer_result = initiate_transfer(
-                        recipient_code=withdrawal.recipient_code,
-                        amount=amount - Decimal("10.00"),
-                        reference=reference_id,
-                        reason=f"Transfer to {account_name} ({account_number})",
-                    )
-                    if transfer_success:
-                        withdrawal.transfer_code = transfer_result
-                        withdrawal.status = "successful"
-                        withdrawal.completed_at= timezone.now()
-                        withdrawal.save(update_fields=["status","transfer_code", "completed_at"])
-
-                        user_wallet.debit(
-                        amount=amount,
-                        description=f"Transfer  to {account_name} ({account_number})",
-                        reference=reference_id,
-                    )
-
-                        # Notify the user that the request was received
-                        try:
-                            send_notification(
-                                user=request.user,
-                                title="Transfer Successful",
-                                message=(
-                                    f"₦{amount} transfer to {account_name} "
-                                    "received. It will be processed shortly."
-                                ),
-                                notification_type="payment",
-                                email_subject="BlueSea Mobile- Transfer Successful",
+                        if not recipient_success:
+                            withdrawal.status = "failed"
+                            withdrawal.completed_at = timezone.now()
+                            withdrawal.save(
+                                update_fields=["status","completed_at"]
                             )
-                        except Exception as e:
-                            logger.error(f"Error sending withdrawal notification: {str(e)}")
+                            logger.error(
+                                f"Paystack recipient creation failed: {recipient_result}"
+                            )
+                            raise Exception(
+                                f"Recipient creation failed: {recipient_result}"
+                            )             
 
-                        response_serializer = WithdrawalResponseSerializer(
+                        withdrawal.recipient_code = recipient_result
+                        withdrawal.save(update_fields=["recipient_code"])
+
+                        transfer_success, transfer_result = initiate_transfer(
+                            recipient_code=withdrawal.recipient_code,
+                            amount=amount - Decimal("10.00"),
+                            reference=reference_id,
+                            reason=f"Transfer to {account_name} ({account_number})",
+                        )
+                        if transfer_success:
+                            withdrawal.transfer_code = transfer_result
+                            withdrawal.status = "successful"
+                            withdrawal.completed_at= timezone.now()
+                            withdrawal.save(update_fields=["status","transfer_code", "completed_at"])
+
+                            user_wallet.debit(
+                            amount=amount,
+                            description=f"Transfer  to {account_name} ({account_number})",
+                            reference=reference_id,
+                        )
+
+                            # Notify the user that the request was received
+                            try:
+                                send_notification(
+                                    user=request.user,
+                                    title="Transfer Successful",
+                                    message=(
+                                        f"₦{amount} transfer to {account_name} "
+                                        "received. It will be processed shortly."
+                                    ),
+                                    notification_type="payment",
+                                    email_subject="BlueSea Mobile- Transfer Successful",
+                                )
+                            except Exception as e:
+                                logger.error(f"Error sending withdrawal notification: {str(e)}")
+
+                            response_serializer = WithdrawalResponseSerializer(
+                                {
+                                    "state": True,
+                                    "message": "Transfer successful",
+                                    "withdrawal": withdrawal,
+                                }
+                            )
+
+                        else:
+                            withdrawal.status = "failed"
+                            withdrawal.completed_at=timezone.now()
+                            withdrawal.save(update_fields=["status, completed_at"])
+                            
+                            logger.error(
+                                f"Paystack transfer initiation failed: {transfer_result}"
+                            )
+                            response_serializer = WithdrawalResponseSerializer(
                             {
-                                "state": True,
-                                "message": "Transfer successful",
+                                "state": False,
+                                "message": "Network Error, Transfer  Failed Try Again Later",
                                 "withdrawal": withdrawal,
                             }
                         )
 
-                    else:
-                        withdrawal.status = "failed"
-                        withdrawal.completed_at=timezone.now()
-                        withdrawal.save(update_fields=["status, completed_at"])
-                        
-                        logger.error(
-                            f"Paystack transfer initiation failed: {transfer_result}"
+                        return Response(
+                            response_serializer.data, status=status.HTTP_500_INTERNAL_SERVER_ERROR
                         )
-                        response_serializer = WithdrawalResponseSerializer(
-                        {
-                            "state": False,
-                            "message": "Network Error, Transfer  Failed Try Again Later",
-                            "withdrawal": withdrawal,
-                        }
-                    )
+                    except Exception as e:
+                        logger.error(f"Paystack auto-transfer error: {str(e)}")
 
+                
                     return Response(
-                        response_serializer.data, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                    )
-                except Exception as e:
-                    logger.error(f"Paystack auto-transfer error: {str(e)}")
-
-               
-                return Response(
                         {"state":False,
                          "message": "Invalid Request",
                          "withdrawal": withdrawal
@@ -3187,6 +3384,7 @@ class PaymentStatusView(APIView):
             GloDataTopUp,
             GOTVPayment,
             GroupPayment,
+            InternalTransfer,
             JAMBRegistration,
             MTNDataTopUp,
             ShowMaxPayment,
@@ -3247,6 +3445,22 @@ class PaymentStatusView(APIView):
                     "type": "GroupPayment",
                     "created_at": gp.created_at,
                     "updated_at": gp.updated_at,
+                },
+                status=status.HTTP_200_OK,
+            )
+        it = InternalTransfer.objects.filter(reference_id=reference_id).first()
+        if it:
+            if it.user_id != request.user.id:
+                return Response(
+                    {"error": "Not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+            return Response(
+                {
+                    "reference_id": it.reference_id,
+                    "status": it.status,
+                    "type": "InternalTransfer",
+                    "created_at": it.created_at,
+                    "updated_at": it.completed_at,
                 },
                 status=status.HTTP_200_OK,
             )

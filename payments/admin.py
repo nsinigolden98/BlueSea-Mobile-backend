@@ -16,6 +16,7 @@ from .models import (
     JAMBRegistration,
     Airtime2Cash,
     ElectricityPaymentCustomers,
+    InternalTransfer,
     Withdrawal,
     VTpassWebhookLog,
 )
@@ -369,3 +370,43 @@ class VTpassWebhookLogAdmin(admin.ModelAdmin):
     ]
     date_hierarchy = "created_at"
     list_per_page = 30
+
+
+@admin.register(InternalTransfer)
+class InternalTransferAdmin(admin.ModelAdmin):
+    list_display = [
+        "id",
+        "user",
+        "amount_display",
+        "status_display",
+        "recepiant_email",
+        "recepiant_full_name",
+        "transfer_method",
+        "reference_id",
+        "created_at",
+        "completed_at",
+    ]
+    list_filter = ["status", "transfer_method", "created_at"]
+    search_fields = [
+        "recepiant_email",
+        "recepiant_full_name",
+        "reference_id",
+        "user__email",
+    ]
+    readonly_fields = ["user", "reference_id", "created_at", "completed_at"]
+    date_hierarchy = "created_at"
+    list_per_page = 30
+    list_display_links = ["id"]
+
+    def amount_display(self, obj):
+        return format_html(
+            '<span style="font-weight:600;font-family:monospace;">&#x20A6;{}</span>',
+            _fmt(obj.amount),
+        )
+
+    amount_display.short_description = "Amount"
+
+    def status_display(self, obj):
+        return _status_badge(obj.status)
+
+    status_display.short_description = "Status"
