@@ -3,7 +3,7 @@ import logging
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -75,18 +75,88 @@ class NewMonthBroadcastView(APIView):
     @extend_schema(
         summary="Broadcast Happy New Month (superuser)",
         description=(
-            "GET without ?confirm=yes returns a preview (recipient count, defaults, already-sent flag). "
-            "GET with ?confirm=yes queues Happy New Month emails + in-app notifications to all active users via Celery. "
-            "Idempotent per calendar month unless ?force=yes. Superuser (is_superuser) only."
+            "Send the monthly greeting to every active user, or preview it first.\n\n"
+            "- Without `?confirm=yes`: dry-run preview. Returns the resolved title/message/subject, "
+            "the editable template (`broadcast/new_month.html`), the current `month_key` (YYYY-MM), "
+            "the active-user `recipient_count`, and whether this month was `already_sent`. Nothing is queued.\n"
+            "- With `?confirm=yes`: creates a `Broadcast(kind=new_month)` record and queues delivery via Celery — "
+            "one in-app Notification per user plus one email each rendered from the template. "
+            "Returns the record immediately with HTTP 202; actual delivery continues in the background.\n\n"
+            "Delivery tracking: `total` = recipients targeted, `sent_count` = emails confirmed delivered, "
+            "`failed_count` = emails failed after retries. Final `status` is `sent` (all delivered), "
+            "`partial` (some failed), or `failed` (none delivered); follow-up detail via `GET /broadcast/`.\n\n"
+            "Idempotency: one send per calendar month. Re-sending the same `month_key` returns 400 "
+            "unless `?force=yes`. Responses are `Cache-Control: no-store` (safe to re-click). "
+            "Requires superuser JWT (`is_superuser=True`); otherwise 403."
         ),
         parameters=[
-            OpenApiParameter("confirm", OpenApiTypes.STR, required=False, description="Set to 'yes' to send"),
-            OpenApiParameter("force", OpenApiTypes.STR, required=False, description="Set to 'yes' to resend same month"),
-            OpenApiParameter("title", OpenApiTypes.STR, required=False),
-            OpenApiParameter("message", OpenApiTypes.STR, required=False),
-            OpenApiParameter("email_subject", OpenApiTypes.STR, required=False),
+            OpenApiParameter("confirm", OpenApiTypes.STR, required=False, description="Set to 'yes' to queue the broadcast; omit for preview only"),
+            OpenApiParameter("force", OpenApiTypes.STR, required=False, description="Set to 'yes' to resend when this month was already sent"),
+            OpenApiParameter("title", OpenApiTypes.STR, required=False, description="Override the greeting title. Default: 'Happy New Month — <Month Year>!'"),
+            OpenApiParameter("message", OpenApiTypes.STR, required=False, description="Override the greeting body text"),
+            OpenApiParameter("email_subject", OpenApiTypes.STR, required=False, description="Override the email subject. Default: 'BlueSea Mobile — <title>'"),
         ],
-        responses={200: OpenApiTypes.OBJECT, 202: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        responses={
+            200: OpenApiTypes.OBJECT,
+            202: BroadcastSerializer,
+            400: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT,
+        },
+        examples=[
+            OpenApiExample(
+                "Preview",
+                summary="Dry-run preview (no confirm)",
+                value={
+                    "kind": "new_month",
+                    "month_key": "2026-10",
+                    "title": "Happy New Month — October 2026!",
+                    "message": "Happy New Month, and welcome to October 2026! Thank you for choosing BlueSea Mobile.",
+                    "email_subject": "BlueSea Mobile — Happy New Month — October 2026!",
+                    "template": "broadcast/new_month.html",
+                    "recipient_count": 1250,
+                    "already_sent": False,
+                    "hint": "Add ?confirm=yes to queue the broadcast",
+                },
+                response_only=True,
+                status_codes=["200"],
+            ),
+            OpenApiExample(
+                "Queued",
+                summary="Broadcast accepted for delivery",
+                value={
+                    "id": 3,
+                    "kind": "new_month",
+                    "title": "Happy New Month — October 2026!",
+                    "message": "Happy New Month, and welcome to October 2026! Thank you for choosing BlueSea Mobile.",
+                    "email_subject": "BlueSea Mobile — Happy New Month — October 2026!",
+                    "template": "broadcast/new_month.html",
+                    "month_key": "2026-10",
+                    "status": "pending",
+                    "total": 1250,
+                    "sent_count": 0,
+                    "failed_count": 0,
+                    "created_by": 1,
+                    "created_at": "2026-10-01T08:00:00Z",
+                    "completed_at": None,
+                },
+                response_only=True,
+                status_codes=["202"],
+            ),
+            OpenApiExample(
+                "Already sent",
+                summary="Duplicate for the same month",
+                value={"error": "New month broadcast for 2026-10 already sent. Use ?force=yes to resend."},
+                response_only=True,
+                status_codes=["400"],
+            ),
+            OpenApiExample(
+                "Forbidden",
+                summary="Non-superuser",
+                value={"detail": "You do not have permission to perform this action."},
+                response_only=True,
+                status_codes=["403"],
+            ),
+        ],
         tags=["Broadcast"],
     )
     def get(self, request):
@@ -143,18 +213,89 @@ class ImportantBroadcastView(APIView):
     @extend_schema(
         summary="Broadcast important notice (superuser)",
         description=(
-            "GET without ?confirm=yes returns a preview. GET with ?confirm=yes queues the domain-change notice "
-            "(blueseamobile.com.ng to blueseamobile.com) to all active users via Celery. "
-            "Blocked if already sent unless ?force=yes. Superuser (is_superuser) only."
+            "Send the one-shot domain-change notice to every active user, or preview it first.\n\n"
+            "- Without `?confirm=yes`: dry-run preview. Returns the resolved title/message/subject, "
+            "the editable template (`broadcast/important.html`), the active-user `recipient_count`, "
+            "and whether the notice was `already_sent`. Nothing is queued.\n"
+            "- With `?confirm=yes`: creates a `Broadcast(kind=important)` record and queues delivery via Celery — "
+            "one in-app Notification per user plus one email each rendered from the template. "
+            "Default copy informs users the platform moved from `blueseamobile.com.ng` to `blueseamobile.com` "
+            "(accounts, wallet balances, and PINs unchanged). Returns the record immediately with HTTP 202; "
+            "actual delivery continues in the background.\n\n"
+            "Delivery tracking: `total` = recipients targeted, `sent_count` = emails confirmed delivered, "
+            "`failed_count` = emails failed after retries. Final `status` is `sent` (all delivered), "
+            "`partial` (some failed), or `failed` (none delivered); follow-up detail via `GET /broadcast/`.\n\n"
+            "Idempotency: the notice sends once. Re-sending returns 400 unless `?force=yes`. "
+            "Responses are `Cache-Control: no-store` (safe to re-click). "
+            "Requires superuser JWT (`is_superuser=True`); otherwise 403."
         ),
         parameters=[
-            OpenApiParameter("confirm", OpenApiTypes.STR, required=False, description="Set to 'yes' to send"),
-            OpenApiParameter("force", OpenApiTypes.STR, required=False, description="Set to 'yes' to resend"),
-            OpenApiParameter("title", OpenApiTypes.STR, required=False),
-            OpenApiParameter("message", OpenApiTypes.STR, required=False),
-            OpenApiParameter("email_subject", OpenApiTypes.STR, required=False),
+            OpenApiParameter("confirm", OpenApiTypes.STR, required=False, description="Set to 'yes' to queue the broadcast; omit for preview only"),
+            OpenApiParameter("force", OpenApiTypes.STR, required=False, description="Set to 'yes' to resend when already sent"),
+            OpenApiParameter("title", OpenApiTypes.STR, required=False, description="Override the notice title. Default: 'Important: We have moved to blueseamobile.com'"),
+            OpenApiParameter("message", OpenApiTypes.STR, required=False, description="Override the notice body text"),
+            OpenApiParameter("email_subject", OpenApiTypes.STR, required=False, description="Override the email subject. Default: 'BlueSea Mobile — Important domain change'"),
         ],
-        responses={200: OpenApiTypes.OBJECT, 202: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
+        responses={
+            200: OpenApiTypes.OBJECT,
+            202: BroadcastSerializer,
+            400: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT,
+        },
+        examples=[
+            OpenApiExample(
+                "Preview",
+                summary="Dry-run preview (no confirm)",
+                value={
+                    "kind": "important",
+                    "title": "Important: We have moved to blueseamobile.com",
+                    "message": "Hello from BlueSea Mobile! Please note our platform has moved from blueseamobile.com.ng to blueseamobile.com.",
+                    "email_subject": "BlueSea Mobile — Important domain change",
+                    "template": "broadcast/important.html",
+                    "recipient_count": 1250,
+                    "already_sent": False,
+                    "hint": "Add ?confirm=yes to queue the broadcast",
+                },
+                response_only=True,
+                status_codes=["200"],
+            ),
+            OpenApiExample(
+                "Queued",
+                summary="Broadcast accepted for delivery",
+                value={
+                    "id": 4,
+                    "kind": "important",
+                    "title": "Important: We have moved to blueseamobile.com",
+                    "message": "Hello from BlueSea Mobile! Please note our platform has moved from blueseamobile.com.ng to blueseamobile.com.",
+                    "email_subject": "BlueSea Mobile — Important domain change",
+                    "template": "broadcast/important.html",
+                    "month_key": None,
+                    "status": "pending",
+                    "total": 1250,
+                    "sent_count": 0,
+                    "failed_count": 0,
+                    "created_by": 1,
+                    "created_at": "2026-10-01T08:05:00Z",
+                    "completed_at": None,
+                },
+                response_only=True,
+                status_codes=["202"],
+            ),
+            OpenApiExample(
+                "Already sent",
+                summary="Duplicate notice",
+                value={"error": "Important broadcast already sent. Use ?force=yes to resend."},
+                response_only=True,
+                status_codes=["400"],
+            ),
+            OpenApiExample(
+                "Forbidden",
+                summary="Non-superuser",
+                value={"detail": "You do not have permission to perform this action."},
+                response_only=True,
+                status_codes=["403"],
+            ),
+        ],
         tags=["Broadcast"],
     )
     def get(self, request):
@@ -207,7 +348,45 @@ class BroadcastHistoryView(APIView):
 
     @extend_schema(
         summary="List broadcasts (superuser)",
-        responses={200: BroadcastSerializer(many=True)},
+        description=(
+            "Newest-first history of queued broadcasts (latest 50). Each entry carries the delivery counters "
+            "(`total`, `sent_count`, `failed_count`) and final `status` (`pending`, `sending`, `sent`, "
+            "`partial`, `failed`) with `completed_at` set once `sent_count + failed_count` reaches `total`. "
+            "Requires superuser JWT (`is_superuser=True`); otherwise 403."
+        ),
+        responses={200: BroadcastSerializer(many=True), 403: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                "History",
+                summary="Latest broadcasts with delivery status",
+                value=[
+                    {
+                        "id": 4,
+                        "kind": "important",
+                        "title": "Important: We have moved to blueseamobile.com",
+                        "status": "sent",
+                        "total": 1250,
+                        "sent_count": 1250,
+                        "failed_count": 0,
+                        "created_at": "2026-10-01T08:05:00Z",
+                        "completed_at": "2026-10-01T08:12:00Z",
+                    },
+                    {
+                        "id": 3,
+                        "kind": "new_month",
+                        "title": "Happy New Month — October 2026!",
+                        "status": "partial",
+                        "total": 1250,
+                        "sent_count": 1248,
+                        "failed_count": 2,
+                        "created_at": "2026-10-01T08:00:00Z",
+                        "completed_at": "2026-10-01T08:09:00Z",
+                    },
+                ],
+                response_only=True,
+                status_codes=["200"],
+            ),
+        ],
         tags=["Broadcast"],
     )
     def get(self, request):
