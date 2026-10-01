@@ -30,6 +30,7 @@ urlpatterns = [
     path("autotopup/", include("autotopup.urls")),
     path("support/", include("support.urls")),
     path("affiliate/", include("affiliate.urls")),
+    path("broadcast/", include("broadcast.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if DEBUG:

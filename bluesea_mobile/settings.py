@@ -245,6 +245,7 @@ INSTALLED_APPS = [
     "loyalty_market",
     "support",
     "affiliate",
+    "broadcast",
 ]
 
 MIDDLEWARE = [
