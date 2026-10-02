@@ -514,7 +514,7 @@ class PurchaseTicketView(APIView):
 
     @extend_schema(
         summary="Purchase event tickets",
-        description="Purchase tickets for an event. Provide ticket type name (e.g., 'Regular', 'VIP'). Leave empty for free events.",
+        description="Purchase tickets for an event. Provide ticket type name (e.g., 'Regular', 'VIP'). Leave empty for free events. Ticket sales close 4hrs after the event start.",
         parameters=[
             OpenApiParameter(
                 name="event_id",
@@ -566,10 +566,10 @@ class PurchaseTicketView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Check if event date has passed
-        if event.event_date < timezone.now():
+        # Check if ticket sales have closed (4hrs after event start)
+        if not event.sales_open:
             return Response(
-                {"error": "This event has already passed", "state": False},
+                {"error": "Ticket sales have closed for this event", "state": False},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
