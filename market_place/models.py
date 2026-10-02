@@ -1,4 +1,5 @@
 import uuid
+from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -7,6 +8,9 @@ from django.db import models
 from django.utils import timezone
 
 User = get_user_model()
+
+# Grace period after event start during which tickets can still be purchased.
+TICKET_SALES_GRACE_PERIOD = timedelta(hours=4)
 
 
 class TicketVendor(models.Model):
@@ -230,6 +234,15 @@ class EventInfo(models.Model):
 
     def __str__(self):
         return self.event_title
+
+    @property
+    def sales_cutoff(self):
+        """Ticket sales close 4hrs after the event start."""
+        return self.event_date + TICKET_SALES_GRACE_PERIOD
+
+    @property
+    def sales_open(self):
+        return timezone.now() <= self.sales_cutoff
 
     class Meta:
         ordering = ("-event_date",)

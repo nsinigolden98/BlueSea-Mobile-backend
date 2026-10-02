@@ -1,7 +1,7 @@
 from datetime import timedelta
 from celery import shared_task
 from django.utils import timezone
-from .models import IssuedTicket
+from .models import IssuedTicket, TICKET_SALES_GRACE_PERIOD
 import logging
 
 logger = logging.getLogger(__name__)
@@ -10,11 +10,12 @@ logger = logging.getLogger(__name__)
 @shared_task
 def expire_past_event_tickets():
     now = timezone.now()
-    
-    # Find all upcoming tickets for events that have passed
+
+    # Tickets expire once sales close (4hrs after event start),
+    # keeping late purchases within the grace window scannable.
     tickets_to_expire = IssuedTicket.objects.filter(
         status='upcoming',
-        event__event_date__lt=now
+        event__event_date__lt=now - TICKET_SALES_GRACE_PERIOD
     ).select_related('event')
     
     count = tickets_to_expire.count()
