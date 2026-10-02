@@ -378,7 +378,11 @@ class GroupPaymentViews(APIView):
         members = GroupMember.objects.filter(group=group).select_related(
             "user", "user__wallet"
         )
-
+        if group.status == 'completed':
+            return Response(
+                {"error": "Cannot initiate payment for a completed group"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if members.count() == 0:
             return Response(
                 {"error": "No active members in group"},
@@ -453,7 +457,8 @@ class GroupPaymentViews(APIView):
                         "requestId", vtu_response.get("reference")
                     )
                     group_payment.save()
-
+                    group.status = "completed"
+                    group.save(update_fields=["status"])
                     # Update all contributions to completed
                     for member in members:
                         GroupPaymentContribution.objects.filter(
@@ -493,6 +498,8 @@ class GroupPaymentViews(APIView):
                     # VTU API failed
                     group_payment.status = "failed"
                     group_payment.save()
+                    group.status = "failed"
+                    group.save(update_fields=["status"])
 
                     # Reverse all debits by crediting back
                     with transaction.atomic():
