@@ -6,6 +6,7 @@ class Broadcast(models.Model):
     KIND_CHOICES = (
         ("new_month", "New Month"),
         ("important", "Important"),
+        ("announcement", "Announcement"),
     )
     STATUS_CHOICES = (
         ("pending", "Pending"),

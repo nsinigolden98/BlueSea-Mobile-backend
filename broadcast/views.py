@@ -18,6 +18,7 @@ User = get_user_model()
 
 NEW_MONTH_TEMPLATE = "broadcast/new_month.html"
 IMPORTANT_TEMPLATE = "broadcast/important.html"
+ANNOUNCEMENT_TEMPLATE = "broadcast/announcement.html"
 
 
 class IsSuperUser(IsAuthenticated):
@@ -62,6 +63,18 @@ def _important_defaults(request):
         "Your account, wallet balance, and PIN remain unchanged."
     )
     email_subject = request.query_params.get("email_subject") or "BlueSea Mobile — Important domain change"
+    return title, message, email_subject
+
+
+def _announcement_defaults(request):
+    title = request.query_params.get("title") or "You're Invited: BlueSea Mobile Event Today!"
+    message = request.query_params.get("message") or (
+        "Hello from BlueSea Mobile! Join us today, Saturday, October 3, 2026 — "
+        "red carpet at 2:30pm, main event at 3:00pm, at Assemblies of God, "
+        "Testimony Chapel, Oyigbo, Rivers State. Entry is free — grab your free "
+        "ticket now from the BlueTicket section on the platform. We can't wait to see you there!"
+    )
+    email_subject = request.query_params.get("email_subject") or "BlueSea Mobile — You're Invited Today!"
     return title, message, email_subject
 
 
@@ -338,6 +351,142 @@ class ImportantBroadcastView(APIView):
 
         send_broadcast.delay(broadcast.id)
         logger.info(f"Superuser {request.user.email} queued important broadcast {broadcast.id}")
+        return _no_store(Response(
+            BroadcastSerializer(broadcast).data, status=status.HTTP_202_ACCEPTED
+        ))
+
+
+class AnnouncementBroadcastView(APIView):
+    permission_classes = [IsSuperUser]
+
+    @extend_schema(
+        summary="Broadcast general announcement (superuser)",
+        description=(
+            "Send a reusable general announcement to every active user, or preview it first.\n\n"
+            "- Without `?confirm=yes`: dry-run preview. Returns the resolved title/message/subject, "
+            "the editable template (`broadcast/announcement.html`), the active-user `recipient_count`, "
+            "and whether an announcement was `already_sent`. Nothing is queued. "
+            "Both copy and template are meant to change per announcement — override via query params "
+            "or edit the template file.\n"
+            "- With `?confirm=yes`: creates a `Broadcast(kind=announcement)` record and queues delivery via Celery — "
+            "one in-app Notification per user plus one email each rendered from the template. "
+            "Returns the record immediately with HTTP 202; actual delivery continues in the background.\n\n"
+            "Delivery tracking: `total` = recipients targeted, `sent_count` = emails confirmed delivered, "
+            "`failed_count` = emails failed after retries. Final `status` is `sent` (all delivered), "
+            "`partial` (some failed), or `failed` (none delivered); follow-up detail via `GET /broadcast/`.\n\n"
+            "Idempotency: one-shot. Re-sending returns 400 unless `?force=yes` (use force for the next "
+            "announcement). Responses are `Cache-Control: no-store` (safe to re-click). "
+            "Requires superuser JWT (`is_superuser=True`); otherwise 403."
+        ),
+        parameters=[
+            OpenApiParameter("confirm", OpenApiTypes.STR, required=False, description="Set to 'yes' to queue the broadcast; omit for preview only"),
+            OpenApiParameter("force", OpenApiTypes.STR, required=False, description="Set to 'yes' to send a new announcement when one was already sent"),
+            OpenApiParameter("title", OpenApiTypes.STR, required=False, description="Override the announcement title"),
+            OpenApiParameter("message", OpenApiTypes.STR, required=False, description="Override the announcement body text"),
+            OpenApiParameter("email_subject", OpenApiTypes.STR, required=False, description="Override the email subject"),
+        ],
+        responses={
+            200: OpenApiTypes.OBJECT,
+            202: BroadcastSerializer,
+            400: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT,
+        },
+        examples=[
+            OpenApiExample(
+                "Preview",
+                summary="Dry-run preview (no confirm)",
+                value={
+                    "kind": "announcement",
+                    "title": "You're Invited: BlueSea Mobile Event Today!",
+                    "message": "Hello from BlueSea Mobile! Join us today, Saturday, October 3, 2026 — red carpet at 2:30pm, main event at 3:00pm, at Assemblies of God, Testimony Chapel, Oyigbo, Rivers State. Entry is free — grab your free ticket now from the BlueTicket section on the platform.",
+                    "email_subject": "BlueSea Mobile — You're Invited Today!",
+                    "template": "broadcast/announcement.html",
+                    "recipient_count": 1250,
+                    "already_sent": False,
+                    "hint": "Add ?confirm=yes to queue the broadcast",
+                },
+                response_only=True,
+                status_codes=["200"],
+            ),
+            OpenApiExample(
+                "Queued",
+                summary="Broadcast accepted for delivery",
+                value={
+                    "id": 5,
+                    "kind": "announcement",
+                    "title": "You're Invited: BlueSea Mobile Event Today!",
+                    "message": "Hello from BlueSea Mobile! Join us today, Saturday, October 3, 2026.",
+                    "email_subject": "BlueSea Mobile — You're Invited Today!",
+                    "template": "broadcast/announcement.html",
+                    "month_key": None,
+                    "status": "pending",
+                    "total": 1250,
+                    "sent_count": 0,
+                    "failed_count": 0,
+                    "created_by": 1,
+                    "created_at": "2026-10-03T08:00:00Z",
+                    "completed_at": None,
+                },
+                response_only=True,
+                status_codes=["202"],
+            ),
+            OpenApiExample(
+                "Already sent",
+                summary="Duplicate announcement",
+                value={"error": "Announcement already sent. Use ?force=yes to send a new one."},
+                response_only=True,
+                status_codes=["400"],
+            ),
+            OpenApiExample(
+                "Forbidden",
+                summary="Non-superuser",
+                value={"detail": "You do not have permission to perform this action."},
+                response_only=True,
+                status_codes=["403"],
+            ),
+        ],
+        tags=["Broadcast"],
+    )
+    def get(self, request):
+        title, message, email_subject = _announcement_defaults(request)
+        already_sent = Broadcast.objects.filter(
+            kind="announcement", status__in=["sending", "sent", "partial"]
+        ).exists()
+
+        confirm = (request.query_params.get("confirm") or "").lower() == "yes"
+        if not confirm:
+            return _no_store(Response({
+                "kind": "announcement",
+                "title": title,
+                "message": message,
+                "email_subject": email_subject,
+                "template": ANNOUNCEMENT_TEMPLATE,
+                "recipient_count": _recipient_count(),
+                "already_sent": already_sent,
+                "hint": "Add ?confirm=yes to queue the broadcast",
+            }))
+
+        force = (request.query_params.get("force") or "").lower() == "yes"
+        if already_sent and not force:
+            return _no_store(Response(
+                {"error": "Announcement already sent. Use ?force=yes to send a new one."},
+                status=status.HTTP_400_BAD_REQUEST,
+            ))
+
+        broadcast = Broadcast.objects.create(
+            kind="announcement",
+            title=title,
+            message=message,
+            email_subject=email_subject,
+            template=ANNOUNCEMENT_TEMPLATE,
+            status="pending",
+            total=_recipient_count(),
+            created_by=request.user,
+        )
+        from .tasks import send_broadcast
+
+        send_broadcast.delay(broadcast.id)
+        logger.info(f"Superuser {request.user.email} queued announcement broadcast {broadcast.id}")
         return _no_store(Response(
             BroadcastSerializer(broadcast).data, status=status.HTTP_202_ACCEPTED
         ))
