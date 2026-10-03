@@ -55,6 +55,7 @@ from .serializers import (
     WAECResultCheckerSerializer,
     WithdrawalRequestSerializer,
     WithdrawalResponseSerializer,
+    WithdrawalSerializer,
 )
 from .vtpass import (
     airtel_dict,
@@ -3326,7 +3327,7 @@ class WithdrawalView(APIView):
                         else:
                             withdrawal.status = "failed"
                             withdrawal.completed_at=timezone.now()
-                            withdrawal.save(update_fields=["status, completed_at"])
+                            withdrawal.save(update_fields=["status", "completed_at"])
                             
                             logger.error(
                                 f"Paystack transfer initiation failed: {transfer_result}"
@@ -3349,7 +3350,7 @@ class WithdrawalView(APIView):
                     return Response(
                         {"state":False,
                          "message": "Invalid Request",
-                         "withdrawal": withdrawal
+                         "withdrawal": WithdrawalSerializer(withdrawal).data
                         }
                         , status=status.HTTP_400_BAD_REQUEST
                 )
