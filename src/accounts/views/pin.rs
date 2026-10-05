@@ -12,7 +12,7 @@ use crate::accounts::pin_security::verify_pin_with_lockout;
 use crate::accounts::serializers::{
     ChangePinBody, NewPinBody, OtpOnlyBody, SetPinBody, VerifyPinBody,
 };
-use crate::accounts::utils::{pin_store, send_email_verification};
+use crate::accounts::utils::{pin_reset_email, pin_store, send_rendered_email};
 use crate::auth::extractor::auth_user;
 use crate::auth::password as auth_password;
 use crate::error::AppError;
@@ -153,12 +153,8 @@ pub async fn pin_reset_request(
             .otps
             .insert(user.email.clone(), (otp.clone(), Utc::now().timestamp() + 600));
     }
-    send_email_verification(
-        &user.email,
-        "Transaction Pin Reset Verification Code",
-        &otp,
-        s.config.debug,
-    );
+    let rendered = pin_reset_email(&s.config.site_url, &user.email, &otp);
+    send_rendered_email(&rendered, s.config.debug);
     Ok(Json(
         json!({"message": "Transaction Pin reset OTP sent to your email", "state": true}),
     ))

@@ -1,0 +1,80 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verify Email Address</title>
+  <link href="https://fonts.googleapis.com/css2?family=Exo:wght@400&family=Ubuntu:wght@500&display=swap" rel="stylesheet">
+</head>
+
+<body style="background-color: rgb(240, 244, 255); font-family: 'Exo', sans-serif; margin: 0; padding: 0;">
+
+  <!-- Preheader Text (Inbox preview) -->
+  <span style="display: none; visibility: hidden; opacity: 0; color: transparent; height: 0; width: 0; overflow: hidden;">
+    Welcome to BlueSea VTU! Use this OTP to verify your BlueSea account — valid for 15 minutes only.
+  </span>
+
+  <section class="content">
+    <div class="container" style="max-width: 960px; margin: 0 auto; padding: 20px;">
+
+      <!-- Logo and Branding -->
+      <div style="display: flex; justify-content: center; align-items: center;">
+        <img src="{{ static_base }}/accounts/images/logo.jpeg" width="50" alt="BlueSea Logo" style="margin-right: 10px;">
+        <h1 class="logo-word" style="font-weight: 700; color: #190C01; font-size: 35.36px; text-align: center; margin: 20px 0;">
+          BlueSea
+        </h1>
+      </div>
+
+      <!-- Main Content -->
+      <div class="row content-row" style="background: #fff; margin: 20px 0; padding: 20px;">
+        <div>
+          <h2 class="small-heading" style="color: #190C01; font-weight: 600; font-size: 24px;">
+            Verify Email Address
+          </h2>
+
+          <p style="font-size: 16px; line-height: 24px; color: #190C01;">
+            Please use the OTP below to verify your email address and complete your account registration.
+            This OTP is valid only for 15 minutes from the time you received it.
+          </p>
+
+          <div class="otp-bg" style="background: #FFF6EE; padding: 10px; text-align: center; font-weight: 700; font-size: 25px; margin: 20px 0;">
+            <span class="otp" style="color: #190C01;">{{ verification_code }}</span>
+          </div>
+
+          <p style="font-size: 16px; line-height: 24px; color: #190C01;">
+            If you didn’t request this email, you can safely ignore it.
+          </p>
+
+          <p style="font-size: 16px; line-height: 24px; color: #190C01;">
+            Need help? <a href="mailto:support@bluesea.com" style="text-decoration: none; color: #267bfb;">Contact our support team</a>
+          </p>
+        </div>
+      </div>
+
+      <!-- Social Icons -->
+      <div class="socials" style="display: flex; justify-content: center; margin-top: 40px;">
+        <div class="flex" style="text-align: center;">
+          <img src="{{ static_base }}/accounts/images/tk.png" width="24" alt="TikTok">
+          <img src="{{ static_base }}/accounts/images/inst.jpeg" width="24" alt="Instagram">
+          <img src="{{ static_base }}/accounts/images/fb.jpeg" width="24" alt="Facebook">
+          <img src="{{ static_base }}/accounts/images/x.png" width="24" alt="Twitter">
+          <img src="{{ static_base }}/accounts/images/link.png" width="24" alt="LinkedIn">
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer" style="margin-top: 70px; text-align: center;">
+        <p style="font-size: 14px; color: #888;">
+          &copy; BlueSea Technology. Uyo, Akwa Ibom State, Nigeria.<br>
+          All rights reserved.
+        </p>
+      </div>
+
+    </div>
+  </section>
+</body>
+
+</html>
+

@@ -11,7 +11,8 @@ use crate::accounts::serializers::{
     SignUpBody,
 };
 use crate::accounts::utils::{
-    now_naive, referral_code, reset_token, send_email_verification, six_digit_otp,
+    now_naive, password_reset_email, password_reset_success_email, referral_code,
+    reset_token, send_rendered_email, signup_verification_email, six_digit_otp,
 };
 use crate::auth::extractor::get_profile;
 use crate::auth::{jwt as auth_jwt, password as auth_password};
@@ -66,7 +67,8 @@ pub async fn sign_up(
         .bind(&now).bind(&now).bind(user_id).execute(&s.db).await?;
 
     let otp = six_digit_otp();
-    send_email_verification(&b.email, "Verify Email Address", &otp, s.config.debug);
+    let rendered = signup_verification_email(&s.config.site_url, &b.email, &otp);
+    send_rendered_email(&rendered, s.config.debug);
     sqlx::query("INSERT INTO accounts_emailverification (email, otp, timestamp) VALUES (?, ?, ?) ON CONFLICT(email) DO UPDATE SET otp=excluded.otp, timestamp=excluded.timestamp")
         .bind(&b.email).bind(otp.parse::<i64>().unwrap_or(0)).bind(&now).execute(&s.db).await?;
 
@@ -145,7 +147,8 @@ pub async fn resend_otp(
         .await?;
     let otp = six_digit_otp();
     let now = now_naive().to_string();
-    send_email_verification(&b.email, "Verify Email Address", &otp, s.config.debug);
+    let rendered = signup_verification_email(&s.config.site_url, &b.email, &otp);
+    send_rendered_email(&rendered, s.config.debug);
     sqlx::query("INSERT INTO accounts_emailverification (email, otp, timestamp) VALUES (?, ?, ?) ON CONFLICT(email) DO UPDATE SET otp=excluded.otp, timestamp=excluded.timestamp")
         .bind(&b.email).bind(otp.parse::<i64>().unwrap_or(0)).bind(&now).execute(&s.db).await?;
     Ok((
@@ -236,12 +239,8 @@ pub async fn password_reset_request(
         sqlx::query("INSERT INTO accounts_resetpassword (otp, timestamp, profile_id) VALUES (?, ?, ?)")
             .bind(otp.parse::<i64>().unwrap_or(0)).bind(&now).bind(user.id).execute(&s.db).await?;
     }
-    send_email_verification(
-        &user.email,
-        "Password Reset Verification Code",
-        &otp,
-        s.config.debug,
-    );
+    let rendered = password_reset_email(&s.config.site_url, &user.email, &otp);
+    send_rendered_email(&rendered, s.config.debug);
     Ok(Json(
         json!({"message": "Password reset OTP sent to your email", "state": true}),
     ))
@@ -341,5 +340,9 @@ pub async fn password_reset_confirm(
         .execute(&s.db)
         .await?;
     let _ = get_profile(&s.db, user.id).await?;
+    send_rendered_email(
+        &password_reset_success_email(&s.config.site_url, &user.email),
+        s.config.debug,
+    );
     Ok(Json(json!({"message": "Password reset successfully", "state": true})))
 }
