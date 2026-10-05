@@ -67,14 +67,15 @@ def _important_defaults(request):
 
 
 def _announcement_defaults(request):
-    title = request.query_params.get("title") or "You're Invited: BlueSea Mobile Event Today!"
+    title = request.query_params.get("title") or "Thank You for Celebrating with Us!"
     message = request.query_params.get("message") or (
-        "Hello from BlueSea Mobile! Join us today, Saturday, October 3, 2026 — "
-        "red carpet at 2:30pm, main event at 3:00pm, at Assemblies of God, "
-        "Testimony Chapel, Oyigbo, Rivers State. Entry is free — grab your free "
-        "ticket now from the BlueTicket section on the platform. We can't wait to see you there!"
+        "Thank you for coming out on Saturday, October 3rd! Your presence at the "
+        "BlueSea Mobile event — red carpet at 2:30pm, main event at 3:00pm, at "
+        "Assemblies of God, Testimony Chapel, Oyigbo, Rivers State — meant the "
+        "world to us. We're grateful for this community and have so much more in "
+        "store. Stay tuned!"
     )
-    email_subject = request.query_params.get("email_subject") or "BlueSea Mobile — You're Invited Today!"
+    email_subject = request.query_params.get("email_subject") or "BlueSea Mobile — Thank You!"
     return title, message, email_subject
 
 
@@ -397,9 +398,9 @@ class AnnouncementBroadcastView(APIView):
                 summary="Dry-run preview (no confirm)",
                 value={
                     "kind": "announcement",
-                    "title": "You're Invited: BlueSea Mobile Event Today!",
-                    "message": "Hello from BlueSea Mobile! Join us today, Saturday, October 3, 2026 — red carpet at 2:30pm, main event at 3:00pm, at Assemblies of God, Testimony Chapel, Oyigbo, Rivers State. Entry is free — grab your free ticket now from the BlueTicket section on the platform.",
-                    "email_subject": "BlueSea Mobile — You're Invited Today!",
+                    "title": "Thank You for Celebrating with Us!",
+                    "message": "Thank you for coming out on Saturday, October 3rd! Your presence at the BlueSea Mobile event meant the world to us.",
+                    "email_subject": "BlueSea Mobile — Thank You!",
                     "template": "broadcast/announcement.html",
                     "recipient_count": 1250,
                     "already_sent": False,
@@ -414,9 +415,9 @@ class AnnouncementBroadcastView(APIView):
                 value={
                     "id": 5,
                     "kind": "announcement",
-                    "title": "You're Invited: BlueSea Mobile Event Today!",
-                    "message": "Hello from BlueSea Mobile! Join us today, Saturday, October 3, 2026.",
-                    "email_subject": "BlueSea Mobile — You're Invited Today!",
+                    "title": "Thank You for Celebrating with Us!",
+                    "message": "Thank you for coming out on Saturday, October 3rd! Your presence at the BlueSea Mobile event meant the world to us.",
+                    "email_subject": "BlueSea Mobile — Thank You!",
                     "template": "broadcast/announcement.html",
                     "month_key": None,
                     "status": "pending",
