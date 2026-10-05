@@ -1,5 +1,6 @@
 mod accounts;
 mod auth;
+mod docs;
 mod email;
 mod error;
 mod settings;

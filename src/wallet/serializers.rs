@@ -2,10 +2,11 @@
 //! Mirrors `wallet/serializers.py::WalletSerializer`.
 
 use serde::Serialize;
+use utoipa::ToSchema;
 
 use super::models::Wallet;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct WalletPublic {
     pub id: i64,
     pub user: i64,

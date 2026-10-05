@@ -10,6 +10,18 @@ use crate::state::AppState;
 
 use super::models::{format_naira, get_by_user, parse_cents};
 
+#[utoipa::path(
+    get,
+    path = "/wallet/balance/",
+    tag = "Wallet",
+    summary = "Get wallet balance",
+    description = "Return the user's wallet balance, locked balance and available balance as formatted naira strings",
+    responses(
+        (status = 200, description = "Balance returned"),
+        (status = 404, description = "Wallet not found"),
+    ),
+    security(("bearer" = [])),
+)]
 pub async fn balance(
     State(s): State<AppState>,
     headers: HeaderMap,

@@ -13,6 +13,20 @@ use crate::auth::extractor::auth_user;
 use crate::error::AppError;
 use crate::state::AppState;
 
+#[utoipa::path(
+    post,
+    path = "/accounts/user/lookup/",
+    tag = "Authentication",
+    summary = "Lookup user by email",
+    description = "Look up a user's public profile details by email",
+    request_body = LookupBody,
+    responses(
+        (status = 200, description = "User found"),
+        (status = 400, description = "Email parameter required"),
+        (status = 404, description = "User not found"),
+    ),
+    security(("bearer" = [])),
+)]
 pub async fn user_lookup(
     State(s): State<AppState>,
     headers: HeaderMap,
@@ -40,6 +54,20 @@ pub async fn user_lookup(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/accounts/dva/assign/",
+    tag = "Authentication",
+    summary = "Assign Wema dedicated virtual account",
+    description = "Create single-step Paystack DVA for Wema Bank. Idempotent when one already exists.",
+    request_body = DvaAssignBody,
+    responses(
+        (status = 200, description = "DVA already exists"),
+        (status = 201, description = "Dedicated account assigned"),
+        (status = 400, description = "Validation or Paystack failure"),
+    ),
+    security(("bearer" = [])),
+)]
 pub async fn dva_assign(
     State(s): State<AppState>,
     headers: HeaderMap,

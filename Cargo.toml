@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = { version = "0.7", features = ["macros", "ws"] }
+axum = { version = "0.8", features = ["macros", "ws"] }
 tokio = { version = "1", features = ["full"] }
 tower = "0.4"
 tower-http = { version = "0.5", features = ["cors", "trace"] }
@@ -29,7 +29,9 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 dotenvy = "0.15"
 validator = { version = "0.18", features = ["derive"] }
 subtle = "2"
+utoipa = { version = "6.0.0", features = ["chrono"] }
+utoipa-swagger-ui = { version = "10.0.1", features = ["axum"] }
+utoipa-redoc = { version = "7.0.0", features = ["axum"] }
 
 [dev-dependencies]
-axum-test = "15"
 tokio = { version = "1", features = ["full"] }

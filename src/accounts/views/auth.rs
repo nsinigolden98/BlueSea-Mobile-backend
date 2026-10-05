@@ -19,6 +19,19 @@ use crate::auth::{jwt as auth_jwt, password as auth_password};
 use crate::error::AppError;
 use crate::state::AppState;
 
+#[utoipa::path(
+    post,
+    path = "/accounts/sign-up/",
+    tag = "Authentication",
+    summary = "Register a new user",
+    description = "Create a new user account and send email verification",
+    request_body = SignUpBody,
+    responses(
+        (status = 201, description = "Account created, verification email sent"),
+        (status = 400, description = "Registration failed"),
+        (status = 500, description = "Verification email failed"),
+    ),
+)]
 pub async fn sign_up(
     State(s): State<AppState>,
     Json(b): Json<SignUpBody>,
@@ -78,6 +91,18 @@ pub async fn sign_up(
     ))
 }
 
+#[utoipa::path(
+    post,
+    path = "/accounts/verify-email/",
+    tag = "Authentication",
+    summary = "Verify email address",
+    description = "Verify user's email using the OTP sent to their email (10 minute window)",
+    request_body = OtpBody,
+    responses(
+        (status = 200, description = "Email verified, JWT pair returned"),
+        (status = 400, description = "Invalid or expired OTP"),
+    ),
+)]
 pub async fn verify_email(
     State(s): State<AppState>,
     Json(b): Json<OtpBody>,
@@ -126,6 +151,19 @@ pub async fn verify_email(
     ))
 }
 
+#[utoipa::path(
+    post,
+    path = "/accounts/resend-otp/",
+    tag = "Authentication",
+    summary = "Resend OTP",
+    description = "Resend verification OTP to user's email",
+    request_body = EmailOnlyBody,
+    responses(
+        (status = 201, description = "OTP sent"),
+        (status = 400, description = "Email does not exist"),
+        (status = 500, description = "Email send failed"),
+    ),
+)]
 pub async fn resend_otp(
     State(s): State<AppState>,
     Json(b): Json<EmailOnlyBody>,
@@ -157,6 +195,18 @@ pub async fn resend_otp(
     ))
 }
 
+#[utoipa::path(
+    post,
+    path = "/accounts/login/",
+    tag = "Authentication",
+    summary = "User login",
+    description = "Authenticate user and return JWT tokens",
+    request_body = LoginBody,
+    responses(
+        (status = 200, description = "Login successful"),
+        (status = 401, description = "Invalid credentials"),
+    ),
+)]
 pub async fn login(
     State(s): State<AppState>,
     Json(b): Json<LoginBody>,
@@ -190,6 +240,19 @@ pub async fn login(
     ))
 }
 
+#[utoipa::path(
+    post,
+    path = "/accounts/logout/",
+    tag = "Authentication",
+    summary = "User logout",
+    description = "Logout user by blacklisting their refresh token",
+    request_body = LogoutBody,
+    responses(
+        (status = 200, description = "Logout successful"),
+        (status = 400, description = "Invalid token"),
+    ),
+    security(("bearer" = [])),
+)]
 pub async fn logout(
     State(s): State<AppState>,
     Json(b): Json<LogoutBody>,
@@ -211,6 +274,18 @@ pub async fn logout(
     Ok(Json(json!({"message": "Logout successful", "state": true})))
 }
 
+#[utoipa::path(
+    post,
+    path = "/accounts/password/reset/request/",
+    tag = "Authentication",
+    summary = "Request password reset",
+    description = "Send OTP to user's email for password reset",
+    request_body = EmailOnlyBody,
+    responses(
+        (status = 200, description = "Reset OTP sent (or generic success)"),
+        (status = 500, description = "Email send failed"),
+    ),
+)]
 pub async fn password_reset_request(
     State(s): State<AppState>,
     Json(b): Json<EmailOnlyBody>,
@@ -246,6 +321,18 @@ pub async fn password_reset_request(
     ))
 }
 
+#[utoipa::path(
+    post,
+    path = "/accounts/password/reset/verify-otp/",
+    tag = "Authentication",
+    summary = "Verify password reset OTP",
+    description = "Verify the OTP and return a single-use token for password reset",
+    request_body = OtpBody,
+    responses(
+        (status = 200, description = "OTP verified, reset token returned"),
+        (status = 400, description = "Invalid or expired OTP"),
+    ),
+)]
 pub async fn password_reset_verify_otp(
     State(s): State<AppState>,
     Json(b): Json<OtpBody>,
@@ -290,6 +377,18 @@ pub async fn password_reset_verify_otp(
     ))
 }
 
+#[utoipa::path(
+    post,
+    path = "/accounts/password/reset/confirm/",
+    tag = "Authentication",
+    summary = "Reset password",
+    description = "Reset user password using the verified token (single use, 15 minute window)",
+    request_body = ResetConfirmBody,
+    responses(
+        (status = 200, description = "Password reset successfully"),
+        (status = 400, description = "Invalid token or weak password"),
+    ),
+)]
 pub async fn password_reset_confirm(
     State(s): State<AppState>,
     Json(b): Json<ResetConfirmBody>,

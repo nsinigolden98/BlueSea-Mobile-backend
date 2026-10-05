@@ -105,7 +105,7 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user_id: Option<i
         "available_balance_formatted": balances.available_balance_formatted,
     });
     if socket
-        .send(Message::Text(hello.to_string()))
+        .send(Message::Text(hello.to_string().into()))
         .await
         .is_err()
     {
@@ -117,13 +117,13 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user_id: Option<i
             msg = socket.recv() => {
                 let Some(Ok(msg)) = msg else { break };
                 let Message::Text(text) = msg else { continue };
-                let value: serde_json::Value = match serde_json::from_str(&text) {
+                let value: serde_json::Value = match serde_json::from_str(text.as_str()) {
                     Ok(v) => v,
                     Err(_) => continue,
                 };
                 match value.get("type").and_then(|t| t.as_str()) {
                     Some("ping") => {
-                        if socket.send(Message::Text(json!({"type": "pong"}).to_string())).await.is_err() {
+                        if socket.send(Message::Text(json!({"type": "pong"}).to_string().into())).await.is_err() {
                             break;
                         }
                     }
@@ -138,7 +138,7 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user_id: Option<i
                             "available_balance": b.available_balance,
                             "available_balance_formatted": b.available_balance_formatted,
                         });
-                        if socket.send(Message::Text(out.to_string())).await.is_err() {
+                        if socket.send(Message::Text(out.to_string().into())).await.is_err() {
                             break;
                         }
                     }
@@ -148,7 +148,7 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user_id: Option<i
             update = rx.recv() => {
                 match update {
                     Ok(text) => {
-                        if socket.send(Message::Text(text)).await.is_err() {
+                        if socket.send(Message::Text(text.into())).await.is_err() {
                             break;
                         }
                     }

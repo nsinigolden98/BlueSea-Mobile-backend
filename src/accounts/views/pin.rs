@@ -35,6 +35,19 @@ fn limits(s: &AppState) -> (i64, i64) {
     )
 }
 
+#[utoipa::path(
+    post,
+    path = "/accounts/pin/set/",
+    tag = "Authentication",
+    summary = "Set transaction PIN",
+    description = "Set a 4-digit RSA-encrypted transaction PIN for wallet operations",
+    request_body = SetPinBody,
+    responses(
+        (status = 200, description = "PIN set successfully"),
+        (status = 400, description = "Invalid PIN or already set"),
+    ),
+    security(("bearer" = [])),
+)]
 pub async fn pin_set(
     State(s): State<AppState>,
     headers: HeaderMap,
@@ -62,6 +75,20 @@ pub async fn pin_set(
     Ok(Json(json!({"message": "Transaction pin set successfully", "state": true})))
 }
 
+#[utoipa::path(
+    post,
+    path = "/accounts/pin/verify/",
+    tag = "Authentication",
+    summary = "Verify transaction PIN",
+    description = "Verify the user's transaction PIN (lockout after repeated failures)",
+    request_body = VerifyPinBody,
+    responses(
+        (status = 200, description = "PIN verified"),
+        (status = 400, description = "Invalid PIN"),
+        (status = 429, description = "Too many attempts, locked"),
+    ),
+    security(("bearer" = [])),
+)]
 pub async fn pin_verify(
     State(s): State<AppState>,
     headers: HeaderMap,
@@ -92,6 +119,20 @@ pub async fn pin_verify(
     Err(AppError::bad_request("Invalid transaction pin"))
 }
 
+#[utoipa::path(
+    post,
+    path = "/accounts/pin/reset/",
+    tag = "Authentication",
+    summary = "Change transaction PIN",
+    description = "Change the existing transaction PIN",
+    request_body = ChangePinBody,
+    responses(
+        (status = 200, description = "PIN changed successfully"),
+        (status = 400, description = "Old PIN incorrect or invalid new PIN"),
+        (status = 429, description = "Too many attempts, locked"),
+    ),
+    security(("bearer" = [])),
+)]
 pub async fn pin_change(
     State(s): State<AppState>,
     headers: HeaderMap,
@@ -138,6 +179,19 @@ pub async fn pin_change(
     ))
 }
 
+#[utoipa::path(
+    post,
+    path = "/accounts/transaction/pin/request/",
+    tag = "Authentication",
+    summary = "Request transaction PIN reset",
+    description = "Request OTP to reset a forgotten transaction PIN",
+    responses(
+        (status = 200, description = "Reset OTP sent"),
+        (status = 400, description = "PIN is not set"),
+        (status = 500, description = "Email send failed"),
+    ),
+    security(("bearer" = [])),
+)]
 pub async fn pin_reset_request(
     State(s): State<AppState>,
     headers: HeaderMap,
@@ -160,6 +214,19 @@ pub async fn pin_reset_request(
     ))
 }
 
+#[utoipa::path(
+    post,
+    path = "/accounts/transaction/pin/verify-otp/",
+    tag = "Authentication",
+    summary = "Verify PIN reset OTP",
+    description = "Verify OTP sent for transaction PIN reset, returns a verification token",
+    request_body = OtpOnlyBody,
+    responses(
+        (status = 200, description = "OTP verified"),
+        (status = 400, description = "Invalid or expired OTP"),
+    ),
+    security(("bearer" = [])),
+)]
 pub async fn pin_reset_verify_otp(
     State(s): State<AppState>,
     headers: HeaderMap,
@@ -192,6 +259,19 @@ pub async fn pin_reset_verify_otp(
     Ok(Json(json!({"message": "OTP verified successfully", "state": true, "verification_token": token})))
 }
 
+#[utoipa::path(
+    post,
+    path = "/accounts/transaction/pin/new/",
+    tag = "Authentication",
+    summary = "Reset transaction PIN",
+    description = "Reset transaction PIN with a verified token",
+    request_body = NewPinBody,
+    responses(
+        (status = 200, description = "PIN reset successfully"),
+        (status = 400, description = "Invalid token or PIN"),
+    ),
+    security(("bearer" = [])),
+)]
 pub async fn pin_reset_new(
     State(s): State<AppState>,
     headers: HeaderMap,

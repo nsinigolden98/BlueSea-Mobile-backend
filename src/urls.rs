@@ -1,8 +1,12 @@
 //! Top-level route table.
 //! Mirrors `bluesea_mobile/urls.py` — mounts each app's `urls.rs`
-//! (plus websocket `routing.rs` tables).
+//! (plus websocket `routing.rs` tables) and the API docs
+//! (`/schema/`, `/docs/`, `/redoc/`, like drf-spectacular).
 
-use axum::Router;
+use axum::{Json, Router, routing::get};
+use utoipa::OpenApi;
+use utoipa_redoc::{Redoc, Servable as _};
+use utoipa_swagger_ui::SwaggerUi;
 
 use crate::state::AppState;
 
@@ -11,5 +15,14 @@ pub fn router(state: AppState) -> Router {
         .merge(crate::accounts::urls::router(state.clone()))
         .merge(crate::wallet::urls::router(state.clone()))
         .merge(crate::wallet::routing::router(state))
-        .route("/health", axum::routing::get(|| async { "ok" }))
+        .route("/health", get(|| async { "ok" }))
+        .route(
+            "/schema/",
+            get(|| async { Json(crate::docs::ApiDoc::openapi()) }),
+        )
+        .merge(
+            SwaggerUi::new("/docs")
+                .url("/schema/openapi.json", crate::docs::ApiDoc::openapi()),
+        )
+        .merge(Redoc::with_url("/redoc", crate::docs::ApiDoc::openapi()))
 }
