@@ -4,7 +4,9 @@ mod email;
 mod error;
 mod settings;
 mod state;
+mod transactions;
 mod urls;
+mod wallet;
 
 use state::AppState;
 
@@ -17,7 +19,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let http = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(15))
         .build()?;
-    let state = AppState { db, config, http };
+    let state = AppState {
+        db,
+        config,
+        http,
+        wallet_hub: wallet::hub::WalletHub::default(),
+    };
     let app = urls::router(state);
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await?;
     tracing::info!("listening on {}", listener.local_addr()?);
