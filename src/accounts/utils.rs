@@ -84,10 +84,10 @@ pub fn signup_verification_email(site_url: &str, to_email: &str, otp: &str) -> R
     .render()
     .expect("signup template renders");
     let text = format!(
-        "BlueSea VTU - Verify Your Email Address\n\nPlease use the OTP below to verify your email address \
+        "BlueSea Mobile - Verify Your Email Address\n\nPlease use the OTP below to verify your email address \
          and complete your account registration.\n\nOTP: {otp}\n\nNote: This OTP is valid for only 15 minutes \
          from when you received it.\n\nIf you didn't request this email, you can safely ignore it.\n\n\
-         Need help? Contact our support at support@bluesea.com"
+         Need help? Contact our support at support@blueseamobile.com"
     );
     RenderedEmail {
         to: to_email.to_string(),
@@ -107,7 +107,7 @@ pub fn password_reset_email(site_url: &str, to_email: &str, otp: &str) -> Render
     .render()
     .expect("password reset template renders");
     let text = format!(
-        "BlueSea VTU - Password Reset\n\nWe received a request to reset the password for {to_email}.\n\n\
+        "BlueSea Mobile - Password Reset\n\nWe received a request to reset the password for {to_email}.\n\n\
          OTP: {otp}\n\nThis OTP is valid for 10 minutes. If you didn't request this, please ignore this email."
     );
     RenderedEmail {
@@ -143,7 +143,7 @@ pub fn pin_reset_email(site_url: &str, to_email: &str, otp: &str) -> RenderedEma
     .render()
     .expect("pin reset template renders");
     let text = format!(
-        "BlueSea VTU - Transaction PIN Reset\n\nUse the OTP below to reset your transaction PIN for {to_email}.\n\n\
+        "BlueSea Mobile - Transaction PIN Reset\n\nUse the OTP below to reset your transaction PIN for {to_email}.\n\n\
          OTP: {otp}\n\nThis OTP is valid for 10 minutes. If you didn't request this, please ignore this email."
     );
     RenderedEmail {
@@ -155,9 +155,20 @@ pub fn pin_reset_email(site_url: &str, to_email: &str, otp: &str) -> RenderedEma
 }
 
 /// Rendered-email sender (mirrors `send_email_verification`).
-/// DEBUG logs the email; production transport lands in `crate::email`.
-pub fn send_rendered_email(email: &RenderedEmail, debug: bool) -> bool {
-    crate::email::send_email(&email.to, email.subject, &email.text, &email.html, debug)
+/// Dispatches to the configured backend (`console` in DEBUG, `brevo` in prod).
+pub async fn send_rendered_email(
+    state: &crate::state::AppState,
+    email: &RenderedEmail,
+) -> bool {
+    crate::email::send_email(
+        &state.http,
+        &state.config,
+        &email.to,
+        email.subject,
+        &email.text,
+        &email.html,
+    )
+    .await
 }
 
 /// Own signed-token format for the password-reset flow

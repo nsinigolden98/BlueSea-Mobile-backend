@@ -68,7 +68,7 @@ pub async fn sign_up(
 
     let otp = six_digit_otp();
     let rendered = signup_verification_email(&s.config.site_url, &b.email, &otp);
-    send_rendered_email(&rendered, s.config.debug);
+    send_rendered_email(&s, &rendered).await;
     sqlx::query("INSERT INTO accounts_emailverification (email, otp, timestamp) VALUES (?, ?, ?) ON CONFLICT(email) DO UPDATE SET otp=excluded.otp, timestamp=excluded.timestamp")
         .bind(&b.email).bind(otp.parse::<i64>().unwrap_or(0)).bind(&now).execute(&s.db).await?;
 
@@ -148,7 +148,7 @@ pub async fn resend_otp(
     let otp = six_digit_otp();
     let now = now_naive().to_string();
     let rendered = signup_verification_email(&s.config.site_url, &b.email, &otp);
-    send_rendered_email(&rendered, s.config.debug);
+    send_rendered_email(&s, &rendered).await;
     sqlx::query("INSERT INTO accounts_emailverification (email, otp, timestamp) VALUES (?, ?, ?) ON CONFLICT(email) DO UPDATE SET otp=excluded.otp, timestamp=excluded.timestamp")
         .bind(&b.email).bind(otp.parse::<i64>().unwrap_or(0)).bind(&now).execute(&s.db).await?;
     Ok((
@@ -240,7 +240,7 @@ pub async fn password_reset_request(
             .bind(otp.parse::<i64>().unwrap_or(0)).bind(&now).bind(user.id).execute(&s.db).await?;
     }
     let rendered = password_reset_email(&s.config.site_url, &user.email, &otp);
-    send_rendered_email(&rendered, s.config.debug);
+    send_rendered_email(&s, &rendered).await;
     Ok(Json(
         json!({"message": "Password reset OTP sent to your email", "state": true}),
     ))
@@ -341,8 +341,9 @@ pub async fn password_reset_confirm(
         .await?;
     let _ = get_profile(&s.db, user.id).await?;
     send_rendered_email(
+        &s,
         &password_reset_success_email(&s.config.site_url, &user.email),
-        s.config.debug,
-    );
+    )
+    .await;
     Ok(Json(json!({"message": "Password reset successfully", "state": true})))
 }

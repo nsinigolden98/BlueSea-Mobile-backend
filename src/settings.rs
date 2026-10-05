@@ -13,6 +13,9 @@ pub struct Config {
     pub apple_client_id: String,
     pub paystack_secret_key: String,
     pub site_url: String,
+    pub email_backend: String,
+    pub brevo_api_key: String,
+    pub from_email: String,
 }
 
 impl Config {
@@ -38,6 +41,23 @@ impl Config {
                 .or_else(|_| env::var("PAYSTACK_SECRET"))
                 .unwrap_or_default(),
             site_url: env::var("SITE_URL").unwrap_or_else(|_| "http://localhost:8000".to_string()),
+            email_backend: env::var("EMAIL_BACKEND").unwrap_or_else(|_| {
+                if debug {
+                    "console".to_string()
+                } else {
+                    "brevo".to_string()
+                }
+            }),
+            brevo_api_key: env::var("BREVO_API_KEY").unwrap_or_default(),
+            from_email: {
+                let user = env::var("EMAIL_HOST_USER").unwrap_or_default();
+                if !user.trim().is_empty() {
+                    user
+                } else {
+                    env::var("DEFAULT_FROM_EMAIL")
+                        .unwrap_or_else(|_| "noreply@bluesea.com".to_string())
+                }
+            },
         }
     }
 }

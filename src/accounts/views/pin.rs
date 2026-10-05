@@ -154,7 +154,7 @@ pub async fn pin_reset_request(
             .insert(user.email.clone(), (otp.clone(), Utc::now().timestamp() + 600));
     }
     let rendered = pin_reset_email(&s.config.site_url, &user.email, &otp);
-    send_rendered_email(&rendered, s.config.debug);
+    send_rendered_email(&s, &rendered).await;
     Ok(Json(
         json!({"message": "Transaction Pin reset OTP sent to your email", "state": true}),
     ))
