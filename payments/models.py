@@ -455,6 +455,7 @@ class AirtimeTopUp(models.Model):
         max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
     )
     vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    vtpass_response = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -474,6 +475,7 @@ class MTNDataTopUp(models.Model):
         max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
     )
     vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    vtpass_response = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -493,6 +495,7 @@ class AirtelDataTopUp(models.Model):
         max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
     )
     vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    vtpass_response = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -512,6 +515,7 @@ class GloDataTopUp(models.Model):
         max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
     )
     vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    vtpass_response = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -531,6 +535,7 @@ class EtisalatDataTopUp(models.Model):
         max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
     )
     vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    vtpass_response = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -551,6 +556,7 @@ class DSTVPayment(models.Model):
         max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
     )
     vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    vtpass_response = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -571,6 +577,7 @@ class GOTVPayment(models.Model):
         max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
     )
     vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    vtpass_response = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -590,6 +597,7 @@ class StartimesPayment(models.Model):
         max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
     )
     vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    vtpass_response = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -608,6 +616,7 @@ class ShowMaxPayment(models.Model):
         max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
     )
     vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    vtpass_response = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -628,6 +637,7 @@ class ElectricityPayment(models.Model):
         max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
     )
     vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    vtpass_response = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -645,6 +655,7 @@ class WAECRegitration(models.Model):
         max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
     )
     vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    vtpass_response = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -662,6 +673,7 @@ class WAECResultChecker(models.Model):
         max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
     )
     vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    vtpass_response = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -681,6 +693,7 @@ class JAMBRegistration(models.Model):
         max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
     )
     vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    vtpass_response = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -717,6 +730,7 @@ class GroupPayment(models.Model):
     vtu_reference = models.CharField(
         max_length=100, blank=True, null=True, db_index=True
     )
+    vtpass_response = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -769,6 +783,7 @@ class Airtime2Cash(models.Model):
         max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
     )
     vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    vtpass_response = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

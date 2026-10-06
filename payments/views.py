@@ -457,6 +457,8 @@ class GroupPaymentViews(APIView):
                     group_payment.vtu_reference = vtu_response.get(
                         "requestId", vtu_response.get("reference")
                     )
+                    if isinstance(vtu_response, dict):
+                        group_payment.vtpass_response = vtu_response
                     group_payment.save()
                     group.status = "completed"
                     group.save(update_fields=["status"])
@@ -498,6 +500,8 @@ class GroupPaymentViews(APIView):
                 else:
                     # VTU API failed
                     group_payment.status = "failed"
+                    if isinstance(vtu_response, dict):
+                        group_payment.vtpass_response = vtu_response
                     group_payment.save()
                     group.status = "failed"
                     group.save(update_fields=["status"])
