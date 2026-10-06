@@ -20,7 +20,7 @@ pub fn brevo_payload(
     html_body: &str,
 ) -> serde_json::Value {
     serde_json::json!({
-        "sender": {"name": "BlueSea", "email": from_email},
+        "sender": {"name": "BlueSea Mobile", "email": from_email},
         "to": [{"email": to_email}],
         "subject": subject,
         "htmlContent": html_body,
@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn payload_shape_matches_brevo_api() {
         let p = brevo_payload("noreply@bluesea.com", "a@b.com", "Sub", "plain", "<b>html</b>");
-        assert_eq!(p["sender"]["name"], "BlueSea");
+        assert_eq!(p["sender"]["name"], "BlueSea Mobile");
         assert_eq!(p["sender"]["email"], "noreply@bluesea.com");
         assert_eq!(p["to"][0]["email"], "a@b.com");
         assert_eq!(p["subject"], "Sub");

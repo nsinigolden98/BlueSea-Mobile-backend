@@ -38,7 +38,7 @@ const DSTV: CableKind = CableKind {
     table: "payments_dstvpayment", plan_col: "dstv_plan", plan_field: "dstv_plan",
     plans: plans::DSTV_PLANS, service_id: "dstv", desc_kind: "showmax",
     ref_prefix: "BS-TV-DS", needs_subscription_type: true,
-    title: "DSTV Subscription Successful", subject: "BlueSea - DSTV Subscription",
+    title: "DSTV Subscription Successful", subject: "BlueSea Mobile - DSTV Subscription",
     notify_label: "DSTV",
     notify_smartcard: true,
 };
@@ -46,7 +46,7 @@ const GOTV: CableKind = CableKind {
     table: "payments_gotvpayment", plan_col: "gotv_plan", plan_field: "gotv_plan",
     plans: plans::GOTV_PLANS, service_id: "gotv", desc_kind: "gotv",
     ref_prefix: "BS-TV-GO", needs_subscription_type: true,
-    title: "GOTV Subscription Successful", subject: "BlueSea - GOTV Subscription",
+    title: "GOTV Subscription Successful", subject: "BlueSea Mobile - GOTV Subscription",
     notify_label: "GOTV",
     notify_smartcard: true,
 };
@@ -54,7 +54,7 @@ const STARTIMES: CableKind = CableKind {
     table: "payments_startimespayment", plan_col: "startimes_plan", plan_field: "startimes_plan",
     plans: plans::STARTIMES_PLANS, service_id: "startimes", desc_kind: "startimes",
     ref_prefix: "BS-TV-STA", needs_subscription_type: false,
-    title: "Startimes Subscription Successful", subject: "BlueSea - Startimes Subscription",
+    title: "Startimes Subscription Successful", subject: "BlueSea Mobile - Startimes Subscription",
     notify_label: "Startimes",
     notify_smartcard: true,
 };
@@ -62,7 +62,7 @@ const SHOWMAX: CableKind = CableKind {
     table: "payments_showmaxpayment", plan_col: "showmax_plan", plan_field: "showmax_plan",
     plans: plans::SHOWMAX_PLANS, service_id: "showmax", desc_kind: "showmax",
     ref_prefix: "BS-TV-SM", needs_subscription_type: false,
-    title: "ShowMax Subscription Successful", subject: "BlueSea - ShowMAx Subscription",
+    title: "ShowMax Subscription Successful", subject: "BlueSea Mobile - ShowMAx Subscription",
     notify_label: "ShowMax",
     notify_smartcard: false,
 };
@@ -156,10 +156,10 @@ async fn buy_cable(
             .await;
         } else {
             // Still run bonus hooks (outside the notify block in Django).
-            crate::bonus::utils::award_vtu_purchase_points(user.id, amount_cents, &request_id);
+            crate::bonus::utils::award_vtu_purchase_points(s, user.id, amount_cents, &request_id).await;
             match crate::bonus::utils::mark_first_transaction_completed(&s.db, user.id).await {
                 Ok(Some(referrer)) => {
-                    crate::bonus::utils::award_referral_bonus(referrer, user.id)
+                    crate::bonus::utils::award_referral_bonus(s, referrer, user.id, &user.email).await
                 }
                 Ok(None) => {}
                 Err(e) => tracing::error!("referral flag error: {e}"),

@@ -144,10 +144,10 @@ pub async fn settle_success(
     message: &str,
     email_subject: &str,
 ) {
-    crate::bonus::utils::award_vtu_purchase_points(user.id, amount_cents, reference);
+    crate::bonus::utils::award_vtu_purchase_points(s, user.id, amount_cents, reference).await;
     match crate::bonus::utils::mark_first_transaction_completed(&s.db, user.id).await {
         Ok(Some(referrer)) => {
-            crate::bonus::utils::award_referral_bonus(referrer, user.id)
+            crate::bonus::utils::award_referral_bonus(s, referrer, user.id, &user.email).await
         }
         Ok(None) => {}
         Err(e) => tracing::error!("referral flag error: {e}"),

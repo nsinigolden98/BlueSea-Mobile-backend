@@ -600,9 +600,15 @@ async fn deliver_bonus(
     let Some(cents) = bonus_cents.filter(|c| *c > 0) else {
         return;
     };
-    crate::bonus::utils::award_vtu_purchase_points(user_id, cents, request_id);
+    crate::bonus::utils::award_vtu_purchase_points(s, user_id, cents, request_id).await;
     match crate::bonus::utils::mark_first_transaction_completed(&s.db, user_id).await {
-        Ok(Some(referrer)) => crate::bonus::utils::award_referral_bonus(referrer, user_id),
+        Ok(Some(referrer)) => {
+            let email = get_profile(&s.db, user_id)
+                .await
+                .map(|u| u.email)
+                .unwrap_or_default();
+            crate::bonus::utils::award_referral_bonus(s, referrer, user_id, &email).await
+        }
         Ok(None) => {}
         Err(e) => tracing::warn!("VTpass webhook bonus failed {request_id}: {e}"),
     }
@@ -611,7 +617,7 @@ async fn deliver_bonus(
             s, user.id, &user.email, &user.other_names,
             "Transaction Successful",
             &format!("Your transaction {request_id} is {vt_status}. Reference: {request_id}"),
-            "payment_success", Some("BlueSea - Transaction Update"),
+            "payment_success", Some("BlueSea Mobile - Transaction Update"),
             NotifyContext::default(),
         )
         .await

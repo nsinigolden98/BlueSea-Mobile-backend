@@ -127,7 +127,7 @@ pub fn password_reset_success_email(site_url: &str, to_email: &str) -> RenderedE
     RenderedEmail {
         to: to_email.to_string(),
         subject: "Password Reset Successful",
-        text: "Your BlueSea account password has been successfully reset. You can now log in with your new password."
+        text: "Your BlueSea Mobile account password has been successfully reset. You can now log in with your new password."
             .to_string(),
         html,
     }

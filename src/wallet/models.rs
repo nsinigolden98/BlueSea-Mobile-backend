@@ -119,6 +119,21 @@ pub fn cents_to_decimal(cents: i64) -> String {
     format!("{sign}{}.{:02}", abs / 100, abs % 100)
 }
 
+/// DRF `DecimalField(max_digits=12, decimal_places=2)` output shape:
+/// half-even to 2dp, always shown (e.g. "0" -> "0.00").
+pub fn dec2(raw: &str) -> String {
+    use rust_decimal::RoundingStrategy;
+    raw.trim()
+        .parse::<rust_decimal::Decimal>()
+        .map(|d| {
+            let mut q =
+                d.round_dp_with_strategy(2, RoundingStrategy::MidpointNearestEven);
+            q.rescale(2);
+            q.to_string()
+        })
+        .unwrap_or_else(|_| raw.to_string())
+}
+
 /// Naira display string, e.g. 5960000 -> "₦59,600.00".
 pub fn format_naira(cents: i64) -> String {
     let (sign, abs) = if cents < 0 { ("-", cents.unsigned_abs()) } else { ("", cents as u64) };
@@ -561,5 +576,17 @@ mod tests {
             credit(&db, &hub, 1, 1, "-5", "Neg", None).await,
             Err(WalletError::InvalidAmount)
         ));
+    }
+}
+
+#[cfg(test)]
+mod dec2_tests {
+    use super::dec2;
+    #[test]
+    fn dec2_shapes() {
+        assert_eq!(dec2("0"), "0.00");
+        assert_eq!(dec2("35"), "35.00");
+        assert_eq!(dec2("333.333333"), "333.33");
+        assert_eq!(dec2("10.005"), "10.00");
     }
 }

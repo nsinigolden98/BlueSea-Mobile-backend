@@ -37,7 +37,7 @@ const WAEC_REG: ExamKind = ExamKind {
     jamb_amounts: false,
     title: "WAEC Registration Successful",
     message_kind: "WAEC registration completed for",
-    subject: "BlueSea - WAEC Registration",
+    subject: "BlueSea Mobile - WAEC Registration",
 };
 const WAEC_RESULT: ExamKind = ExamKind {
     table: "payments_waecresultchecker",
@@ -48,7 +48,7 @@ const WAEC_RESULT: ExamKind = ExamKind {
     jamb_amounts: false,
     title: "WAEC Result Purchase Successful",
     message_kind: "WAEC result checker PIN purchased for",
-    subject: "BlueSea - WAEC Result",
+    subject: "BlueSea Mobile - WAEC Result",
 };
 const JAMB: ExamKind = ExamKind {
     table: "payments_jambregistration",
@@ -59,7 +59,7 @@ const JAMB: ExamKind = ExamKind {
     jamb_amounts: true,
     title: "JAMB Registration Successful",
     message_kind: "JAMB registration completed for",
-    subject: "BlueSea - JAMB Registration",
+    subject: "BlueSea Mobile - JAMB Registration",
 };
 
 async fn buy_exam(

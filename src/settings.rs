@@ -20,6 +20,7 @@ pub struct Config {
     pub vtpass_api_key: String,
     pub vtpass_secret_key: String,
     pub vtpass_public_key: String,
+    pub media_root: String,
 }
 
 impl Config {
@@ -67,6 +68,7 @@ impl Config {
             vtpass_api_key: env::var("VTPASS_API_KEY").unwrap_or_default(),
             vtpass_secret_key: env::var("VTPASS_SECRET_KEY").unwrap_or_default(),
             vtpass_public_key: env::var("VTPASS_PUBLIC_KEY").unwrap_or_default(),
+            media_root: env::var("MEDIA_ROOT").unwrap_or_else(|_| "./media".to_string()),
         }
     }
 }

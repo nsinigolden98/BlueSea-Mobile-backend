@@ -129,7 +129,7 @@ async fn buy_data(
             s, &user, amount_cents, &request_id,
             kind.title,
             &format!("₦{} {} data purchased for {}", plan.price_naira, kind.message_network, params.phone),
-            "BlueSea - Data Purchase",
+            "BlueSea Mobile - Data Purchase",
         )
         .await;
     }

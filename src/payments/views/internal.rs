@@ -19,7 +19,7 @@ type Resp = (StatusCode, Json<Value>);
     path = "/payments/internal-transfer/",
     tag = "Payments",
     summary = "Transfer funds internally",
-    description = "Transfer wallet funds to another BlueSea user by email.",
+    description = "Transfer wallet funds to another BlueSea Mobile user by email.",
     request_body = crate::payments::serializers::InternalTransferBody,
     responses(
         (status = 200, description = "Transfer successful"),
@@ -185,7 +185,7 @@ pub async fn internal_transfer(
                 &s, user.id, &user.email, &user.other_names,
                 "Transfer Successful",
                 &format!("₦{amount} transferred to {recipient_email}"),
-                "payment_success", Some("BlueSea - Transfer Successful"),
+                "payment_success", Some("BlueSea Mobile - Transfer Successful"),
                 NotifyContext::default(),
             )
             .await
@@ -196,7 +196,7 @@ pub async fn internal_transfer(
                 &s, recipient_id, &recipient_email_owned, "",
                 "Funds Received",
                 &format!("₦{amount} received from {request_email}"),
-                "payment_success", Some("BlueSea - Funds Received"),
+                "payment_success", Some("BlueSea Mobile - Funds Received"),
                 NotifyContext::default(),
             )
             .await

@@ -598,19 +598,15 @@ async fn group_public(
     let contribs = pay_models::contributions_with_users(&s.db, r.id).await?;
     let mut items = Vec::new();
     for (c, _uid, name, email) in contribs {
-        let cents = crate::wallet::models::parse_cents(&c.amount).ok();
         items.push(ContributionPublic {
             id: c.id,
             member_name: name,
             member_email: email,
-            amount: cents
-                .map(crate::wallet::models::cents_to_decimal)
-                .unwrap_or_else(|| c.amount.clone()),
+            amount: crate::wallet::models::dec2(&c.amount),
             status: c.status,
             created_at: format_naive_lagos(&c.created_at),
         });
     }
-    let total_cents = crate::wallet::models::parse_cents(&r.total_raw).ok();
     let public = GroupPaymentPublic {
         id: r.id,
         group: r.group_id.clone(),
@@ -618,9 +614,7 @@ async fn group_public(
         initiated_by: init_id,
         initiated_by_name: init_name,
         payment_type: r.payment_type.clone(),
-        total_amount: total_cents
-            .map(crate::wallet::models::cents_to_decimal)
-            .unwrap_or_else(|| r.total_raw.clone()),
+        total_amount: crate::wallet::models::dec2(&r.total_raw),
         service_details: serde_json::from_str(&r.details_json).unwrap_or(Value::Null),
         status: r.status.clone(),
         vtu_reference: r.vtu_reference.clone(),

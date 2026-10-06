@@ -85,7 +85,7 @@ pub async fn airtime(
             &s, &user, amount_cents, &request_id,
             "Airtime Purchase Successful",
             &format!("₦{} airtime purchased for {}", params.amount_naira, params.phone),
-            "BlueSea - Airtime Purchase",
+            "BlueSea Mobile - Airtime Purchase",
         )
         .await;
     }

@@ -292,7 +292,7 @@ async fn handle_dva_assign_events(
                 "Dedicated Account Active",
                 &format!("Your Wema DVA {number} is now active and ready to receive funds."),
                 "dva_assigned",
-                Some("BlueSea - DVA Active"),
+                Some("BlueSea Mobile - DVA Active"),
                 NotifyContext::default(),
             )
             .await;
@@ -493,7 +493,7 @@ async fn handle_dva_charge(
                     &user.other_names,
                     "Dedicated Virtual Account Deposit Received",
                     &format!(
-                        "{amount_disp} received via Wema DVA {acct} from {sender_bank} in {sender_name} (ref {reference}) — your BlueSea wallet has been credited."
+                        "{amount_disp} received via Wema DVA {acct} from {sender_bank} in {sender_name} (ref {reference}) — your BlueSea Mobile wallet has been credited."
                     ),
                     "payment_success",
                     Some("BlueSea Mobile- Dedicated Virtual Account Deposit Received"),
@@ -635,7 +635,7 @@ async fn handle_checkout_charge(
             user.id,
             &user.email,
             &user.other_names,
-            "Deposite To Bluesea Account",
+            "Deposite To BlueSea Mobile Account",
             &format!("Successful Deposite of {amount_disp}"),
             "payment_success",
             Some("BlueSea Mobile - Checkout Deposite"),

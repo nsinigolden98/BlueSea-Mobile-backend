@@ -78,6 +78,8 @@ pub async fn sign_up(
     let user_id = res.last_insert_rowid();
     sqlx::query("INSERT INTO wallet_wallet (balance, locked_balance, created_at, updated_at, is_active, user_id) VALUES ('0.00', '0.00', ?, ?, 1, ?)")
         .bind(&now).bind(&now).bind(user_id).execute(&s.db).await?;
+    // Mirrors the post_save signal: every user gets a bonus account.
+    let _ = crate::bonus::models::ensure_point(&s.db, user_id, &now).await;
 
     let otp = six_digit_otp();
     let rendered = signup_verification_email(&s.config.site_url, &b.email, &otp);

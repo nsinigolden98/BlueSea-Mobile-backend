@@ -7,6 +7,7 @@ mod error;
 mod notifications;
 mod payments;
 mod settings;
+mod user_preference;
 mod state;
 mod time;
 mod transactions;

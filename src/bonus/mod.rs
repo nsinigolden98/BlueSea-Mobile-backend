@@ -1,8 +1,16 @@
-//! Loyalty hooks (minimal stub).
-//! Mirrors the call sites in `payments/views.py` + `payments/webhook.py`
-//! (`bonus.utils.award_vtu_purchase_points`, `award_referral_bonus`, and the
-//! `Referral.first_transaction_completed` flag write). Point awards land with
-//! the full bonus app port; the referral flag side-effect is preserved now
-//! because later bonus logic depends on it.
+//! Loyalty app — points, campaigns, referrals.
+//! Django file layout mirrored:
+//!   models.rs      <-> models.py (points, history, campaigns, referrals)
+//!   serializers.rs <-> serializers.py
+//!   utils.rs       <-> utils.py (awards, redemption, summary)
+//!   views.rs       <-> views.py (summary, history, daily-login, campaigns,
+//!                    referral)
+//!   urls.rs        <-> urls.py
+//! (Django signals live as explicit calls: bonus accounts are created at
+//! signup, VTU awards fire from the purchase paths.)
 
+pub mod models;
+pub mod serializers;
+pub mod urls;
 pub mod utils;
+pub mod views;

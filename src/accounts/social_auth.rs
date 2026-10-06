@@ -298,5 +298,7 @@ pub async fn get_or_create_social_user(
     let uid = res.last_insert_rowid();
     sqlx::query("INSERT INTO wallet_wallet (balance, locked_balance, created_at, updated_at, is_active, user_id) VALUES ('0.00', '0.00', ?, ?, 1, ?)")
         .bind(&now).bind(&now).bind(uid).execute(db).await.ok();
+    // Mirrors the post_save signal: every user gets a bonus account.
+    let _ = crate::bonus::models::ensure_point(db, uid, &now).await;
     Ok((get_profile(db, uid).await?, true))
 }
