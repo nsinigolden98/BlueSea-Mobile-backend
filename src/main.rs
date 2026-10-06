@@ -1,5 +1,6 @@
 mod accounts;
 mod auth;
+mod autotopup;
 mod bonus;
 mod docs;
 mod email;
@@ -31,6 +32,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         http,
         wallet_hub: wallet::hub::WalletHub::default(),
     };
+    // Auto top-up beat (mirrors celery beat's 60s `process_auto_topups`).
+    // Skipped when the AUTOTOPUP_SCHEDULER env var is "0" (e.g. extra replicas).
+    if std::env::var("AUTOTOPUP_SCHEDULER").as_deref() != Ok("0") {
+        let beat = state.clone();
+        tokio::spawn(async move {
+            let mut tick =
+                tokio::time::interval(std::time::Duration::from_secs(60));
+            loop {
+                tick.tick().await;
+                autotopup::tasks::sweep_once(&beat).await;
+            }
+        });
+    }
     let app = urls::router(state);
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await?;
     tracing::info!("listening on {}", listener.local_addr()?);

@@ -21,7 +21,8 @@ pub fn router(state: AppState) -> Router {
         .merge(crate::payments::urls::router(state.clone()))// payments
         .merge(crate::user_preference::urls::router(state.clone()))// user-preference
         .merge(crate::notifications::urls::router(state.clone()))// notifications
-        .merge(crate::bonus::urls::router(state)) //bonus
+        .merge(crate::bonus::urls::router(state.clone()))
+        .merge(crate::autotopup::urls::router(state)) //bonus
         .nest_service("/media/", ServeDir::new(media_root))// media files
         .route("/health", get(|| async { "ok" }))// health check
         .route(
