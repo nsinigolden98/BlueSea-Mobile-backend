@@ -192,7 +192,7 @@ pub async fn credit(
     };
     let new_balance = parse_cents(&balance_raw)? + amount_cents;
     let locked_cents = parse_cents(&locked_raw)?;
-    let now = chrono::Utc::now().naive_utc().to_string();
+    let now = crate::time::now_str();
     sqlx::query("UPDATE wallet_wallet SET balance = ?, updated_at = ? WHERE id = ?")
         .bind(cents_to_decimal(new_balance))
         .bind(&now)
@@ -262,7 +262,7 @@ pub async fn debit(
     }
     let new_balance = balance_cents - amount_cents;
     let locked_cents = parse_cents(&locked_raw)?;
-    let now = chrono::Utc::now().naive_utc().to_string();
+    let now = crate::time::now_str();
     sqlx::query("UPDATE wallet_wallet SET balance = ?, updated_at = ? WHERE id = ?")
         .bind(cents_to_decimal(new_balance))
         .bind(&now)

@@ -21,14 +21,19 @@ src/
   docs.rs            drf-spectacular config      (/schema/ /docs/ /redoc/)
   state.rs           shared AppState (db, config, http, wallet_hub)
   error.rs           {"message", "state": false} error envelope
+  time.rs            microsecond-truncated timestamps (Django storage format)
   email.rs           mail transport (console in DEBUG, Brevo in prod)
   auth/              jwt.rs, password.rs (PBKDF2), extractor.rs (auth_user)
   accounts/          models, serializers, views/{auth,social,pin,lookup},
                      urls, crypto, pin_security, social_auth, utils
   wallet/            models (credit/debit), serializers, views, consumers,
                      urls, routing, hub (balance pushes)
-  transactions/      models (WalletTransaction ledger; more with that app)
+  transactions/      models (WalletTransaction, FundWallet), serializers,
+                     pagination, paystack, views/{history,funding,webhook,
+                     dva_refresh,account_name}, urls
+  notifications/     models, utils (in-app row + email; endpoints later)
 templates/accounts/  Askama ports of accounts/templates/accounts/*.html
+templates/notifications/  Askama port of default_notification.html
 ```
 
 Each app keeps Django's file names (`models`/`serializers`/`views`/`urls`/…),

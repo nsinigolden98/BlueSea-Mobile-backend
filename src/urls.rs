@@ -14,7 +14,8 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .merge(crate::accounts::urls::router(state.clone()))
         .merge(crate::wallet::urls::router(state.clone()))
-        .merge(crate::wallet::routing::router(state))
+        .merge(crate::wallet::routing::router(state.clone()))
+        .merge(crate::transactions::urls::router(state))
         .route("/health", get(|| async { "ok" }))
         .route(
             "/schema/",

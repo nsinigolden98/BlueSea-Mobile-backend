@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 
 pub fn now_naive() -> NaiveDateTime {
-    Utc::now().naive_utc()
+    crate::time::now_naive()
 }
 
 pub fn six_digit_otp() -> String {

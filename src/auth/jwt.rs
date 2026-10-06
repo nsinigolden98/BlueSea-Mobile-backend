@@ -53,7 +53,7 @@ pub async fn record_outstanding(
     token: &str,
     exp: i64,
 ) -> Result<(), sqlx::Error> {
-    let now = chrono::Utc::now().naive_utc().to_string();
+    let now = crate::time::now_str();
     let exp_str = chrono::DateTime::from_timestamp(exp, 0)
         .map(|d| d.naive_utc().to_string())
         .unwrap_or_else(|| now.clone());
@@ -67,7 +67,7 @@ pub async fn blacklist_jti(db: &sqlx::SqlitePool, jti: &str) -> Result<bool, sql
     let row: Option<(i64,)> = sqlx::query_as("SELECT id FROM token_blacklist_outstandingtoken WHERE jti = ?")
         .bind(jti).fetch_optional(db).await?;
     if let Some((id,)) = row {
-        let now = chrono::Utc::now().naive_utc().to_string();
+        let now = crate::time::now_str();
         sqlx::query("INSERT INTO token_blacklist_blacklistedtoken (token_id, blacklisted_at) VALUES (?, ?)")
             .bind(id).bind(&now).execute(db).await?;
         return Ok(true);

@@ -16,6 +16,18 @@ pub struct WalletTransaction {
     pub created_at: chrono::NaiveDateTime,
 }
 
+#[derive(Debug, Clone, FromRow)]
+pub struct FundWallet {
+    pub id: i64,
+    pub amount: String,
+    pub payment_reference: String,
+    pub gateway_reference: Option<String>,
+    pub status: String,
+    pub created_at: chrono::NaiveDateTime,
+    pub completed_at: Option<chrono::NaiveDateTime>,
+    pub user_id: i64,
+}
+
 pub async fn reference_exists(
     db: &sqlx::SqlitePool,
     reference: &str,
@@ -26,6 +38,39 @@ pub async fn reference_exists(
             .fetch_optional(db)
             .await?;
     Ok(row.is_some())
+}
+
+pub async fn find_pending_funding(
+    db: &sqlx::SqlitePool,
+    payment_reference: &str,
+) -> Result<Option<FundWallet>, sqlx::Error> {
+    sqlx::query_as::<_, FundWallet>(
+        "SELECT id, CAST(amount AS TEXT) AS amount, payment_reference, gateway_reference, status, created_at, completed_at, user_id
+         FROM transactions_fundwallet WHERE payment_reference = ? AND status = 'PENDING'",
+    )
+    .bind(payment_reference)
+    .fetch_optional(db)
+    .await
+}
+
+pub async fn create_pending_funding(
+    db: &sqlx::SqlitePool,
+    user_id: i64,
+    amount_cents: i64,
+    payment_reference: &str,
+    now: &str,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "INSERT INTO transactions_fundwallet (amount, payment_reference, gateway_reference, status, created_at, completed_at, user_id)
+         VALUES (?, ?, NULL, 'PENDING', ?, NULL, ?)",
+    )
+    .bind(crate::wallet::models::cents_to_decimal(amount_cents))
+    .bind(payment_reference)
+    .bind(now)
+    .bind(user_id)
+    .execute(db)
+    .await?;
+    Ok(())
 }
 
 pub async fn reference_exists_tx(

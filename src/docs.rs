@@ -32,6 +32,7 @@ impl Modify for SecurityAddon {
     tags(
         (name = "Authentication", description = "Signup, login, verification, password reset, PIN and DVA"),
         (name = "Wallet", description = "Balance and real-time updates"),
+        (name = "Wallet & Transactions", description = "History, Paystack funding and DVA requery"),
     ),
     paths(
         crate::accounts::views::auth::sign_up,
@@ -53,6 +54,10 @@ impl Modify for SecurityAddon {
         crate::accounts::views::lookup::user_lookup,
         crate::accounts::views::lookup::dva_assign,
         crate::wallet::views::balance,
+        crate::transactions::views::history::history,
+        crate::transactions::views::funding::initialize_funding,
+        crate::transactions::views::account_name::account_name,
+        crate::transactions::views::dva_refresh::dva_refresh,
     ),
     components(schemas(
         crate::accounts::serializers::ProfilePublic,
@@ -72,6 +77,10 @@ impl Modify for SecurityAddon {
         crate::accounts::serializers::AppleLoginBody,
         crate::accounts::serializers::DvaAssignBody,
         crate::wallet::serializers::WalletPublic,
+        crate::transactions::serializers::WalletTransactionPublic,
+        crate::transactions::serializers::InitializeFundingBody,
+        crate::transactions::serializers::DvaRefreshBody,
+        crate::transactions::serializers::AccountNameBody,
     )),
 )]
 pub struct ApiDoc;

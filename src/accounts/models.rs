@@ -72,3 +72,88 @@ pub struct DvaAccount {
     pub dva_account_name: Option<String>,
     pub dva_account_number: Option<String>,
 }
+
+const DVA_COLUMNS: &str = "id, dedicated_account_id, account_number, account_name, bank_name, bank_slug, bank_id, customer_code, customer_id, phone, bvn_encrypted, active, paystack_response, created_at, updated_at, user_id, dva_account_name, dva_account_number";
+
+pub async fn find_dva_by_user(
+    db: &sqlx::SqlitePool,
+    user_id: i64,
+) -> Result<Option<DvaAccount>, sqlx::Error> {
+    sqlx::query_as::<_, DvaAccount>(&format!(
+        "SELECT {DVA_COLUMNS} FROM accounts_paystackdedicatedaccount WHERE user_id = ?"
+    ))
+    .bind(user_id)
+    .fetch_optional(db)
+    .await
+}
+
+pub async fn find_dva_by_user_email(
+    db: &sqlx::SqlitePool,
+    email: &str,
+) -> Result<Option<DvaAccount>, sqlx::Error> {
+    let cols = DVA_COLUMNS
+        .split(", ")
+        .map(|c| format!("d.{c}"))
+        .collect::<Vec<_>>()
+        .join(", ");
+    sqlx::query_as::<_, DvaAccount>(&format!(
+        "SELECT {cols} FROM accounts_paystackdedicatedaccount d
+         JOIN accounts_profile p ON p.id = d.user_id WHERE p.email = ?",
+    ))
+    .bind(email)
+    .fetch_optional(db)
+    .await
+}
+
+pub async fn find_dva_by_customer_code(
+    db: &sqlx::SqlitePool,
+    customer_code: &str,
+) -> Result<Option<DvaAccount>, sqlx::Error> {
+    sqlx::query_as::<_, DvaAccount>(&format!(
+        "SELECT {DVA_COLUMNS} FROM accounts_paystackdedicatedaccount WHERE customer_code = ?"
+    ))
+    .bind(customer_code)
+    .fetch_optional(db)
+    .await
+}
+
+pub async fn mark_dva_assigned(
+    db: &sqlx::SqlitePool,
+    id: i64,
+    active: bool,
+    payload_json: &str,
+    dva_account_number: Option<&str>,
+    dva_account_name: Option<&str>,
+    customer_code: &str,
+    dedicated_account_id: Option<i64>,
+    customer_id: Option<i64>,
+    now: &str,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "UPDATE accounts_paystackdedicatedaccount SET active = ?, paystack_response = ?, dva_account_number = ?,
+         dva_account_name = ?, customer_code = ?, dedicated_account_id = ?, customer_id = ?, updated_at = ? WHERE id = ?",
+    )
+    .bind(active)
+    .bind(payload_json)
+    .bind(dva_account_number)
+    .bind(dva_account_name)
+    .bind(customer_code)
+    .bind(dedicated_account_id)
+    .bind(customer_id)
+    .bind(now)
+    .bind(id)
+    .execute(db)
+    .await?;
+    Ok(())
+}
+
+pub async fn set_has_dva(
+    db: &sqlx::SqlitePool,
+    user_id: i64,
+) -> Result<(), sqlx::Error> {
+    sqlx::query("UPDATE accounts_profile SET has_DVA = 1 WHERE id = ? AND has_DVA = 0")
+        .bind(user_id)
+        .execute(db)
+        .await?;
+    Ok(())
+}
