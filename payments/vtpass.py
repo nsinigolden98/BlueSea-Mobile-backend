@@ -1,7 +1,11 @@
+import logging
 import uuid
 from datetime import datetime
+
 import requests
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 BASE_URL = settings.VTPASS_BASE_URL
 
@@ -484,12 +488,28 @@ def _get_session():
 
 
 def top_up(user_data):
-    # session = _get_seession()
-    response = requests.post(
-        f"{BASE_URL}/pay", headers=headers, json=user_data, timeout=(3, 30)
-    )
-    # response.raise_for_status()
-    return response.json()
+    request_id = (user_data or {}).get("request_id")
+    try:
+        # session = _get_seession()
+        response = requests.post(
+            f"{BASE_URL}/pay", headers=headers, json=user_data, timeout=(3, 30)
+        )
+        # response.raise_for_status()
+        data = response.json()
+    except Exception as e:
+        logger.error(f"VTpass top_up network error for {request_id}: {e}")
+        data = {
+            "response_description": "TRANSACTION FAILED",
+            "error": str(e),
+            "requestId": request_id,
+        }
+    try:
+        from .utils import save_vtpass_response
+
+        save_vtpass_response(request_id, data)
+    except Exception as e:
+        logger.warning(f"VTpass top_up save failed for {request_id}: {e}")
+    return data
 
 
 def get_variations():
