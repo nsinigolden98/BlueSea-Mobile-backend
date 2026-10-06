@@ -29,11 +29,12 @@ impl WalletHub {
 
     /// Emit the `balance_update` event with the same keys Django's
     /// `wallet_update` handler forwards to the socket.
+    /// `amount_display` is the decimal amount string (full precision).
     pub fn publish_update(
         &self,
         user_id: i64,
         balances: &WalletBalances,
-        amount_cents: i64,
+        amount_display: &str,
         reference: &str,
         description: &str,
         transaction_type: &str,
@@ -46,7 +47,7 @@ impl WalletHub {
             "locked_balance_formatted": balances.locked_balance_formatted,
             "available_balance": balances.available_balance,
             "available_balance_formatted": balances.available_balance_formatted,
-            "amount": super::models::cents_to_decimal(amount_cents),
+            "amount": amount_display,
             "reference": reference,
             "description": description,
             "transaction_type": transaction_type,

@@ -40,6 +40,17 @@ pub async fn reference_exists(
     Ok(row.is_some())
 }
 
+/// A DEBIT ledger row exists for `reference` (drives webhook idempotency).
+pub async fn debit_exists(db: &sqlx::SqlitePool, reference: &str) -> Result<bool, sqlx::Error> {
+    let row: Option<(i64,)> = sqlx::query_as(
+        "SELECT id FROM transactions_wallettransaction WHERE reference = ? AND transaction_type = 'DEBIT'",
+    )
+    .bind(reference)
+    .fetch_optional(db)
+    .await?;
+    Ok(row.is_some())
+}
+
 pub async fn find_pending_funding(
     db: &sqlx::SqlitePool,
     payment_reference: &str,
@@ -94,12 +105,33 @@ pub async fn record_tx(
     reference: &str,
     now: &str,
 ) -> Result<(), sqlx::Error> {
+    record_tx_str(
+        tx,
+        wallet_id,
+        &crate::wallet::models::cents_to_decimal(amount_cents),
+        transaction_type,
+        description,
+        reference,
+        now,
+    )
+    .await
+}
+
+pub async fn record_tx_str(
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    wallet_id: i64,
+    amount_display: &str,
+    transaction_type: &str,
+    description: &str,
+    reference: &str,
+    now: &str,
+) -> Result<(), sqlx::Error> {
     sqlx::query(
         "INSERT INTO transactions_wallettransaction (wallet_id, amount, transaction_type, status, description, reference, created_at)
          VALUES (?, ?, ?, 'COMPLETED', ?, ?, ?)",
     )
     .bind(wallet_id)
-    .bind(crate::wallet::models::cents_to_decimal(amount_cents))
+    .bind(amount_display)
     .bind(transaction_type)
     .bind(description)
     .bind(reference)

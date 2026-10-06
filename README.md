@@ -32,6 +32,14 @@ src/
                      pagination, paystack, views/{history,funding,webhook,
                      dva_refresh,account_name}, urls
   notifications/     models, utils (in-app row + email; endpoints later)
+  payments/          models (14 VTU tables, group, withdrawal, transfer,
+                     webhook log), plans (GENERATED catalog), serializers
+                     (DRF-shaped validation), vtpass client,
+                     views/{airtime,data,cable,electricity,exam,customer,
+                     group,internal,withdrawal,status,common},
+                     webhook (VTpass transaction-update), urls
+  bonus/             utils (referral-flag side effect + award stubs;
+                     full app later)
 templates/accounts/  Askama ports of accounts/templates/accounts/*.html
 templates/notifications/  Askama port of default_notification.html
 ```
@@ -98,3 +106,11 @@ fails sends so handlers return 500, exactly like Django's send failure.
   add `FOR UPDATE` when the prod pool moves to Postgres.
 - `pin_reset_success.html` exists in Django but is unreferenced; copied
   over unused for completeness.
+- Payments mirrors Django's quirks exactly: DSTV debits with a `showmax`
+  description, ShowMax never sends its notification (Django `KeyError`),
+  group splits use full decimal precision (Django `₦1000/3`), duplicate
+  checkout webhooks 404, and `updated_at` echoes `completed_at` on the
+  internal-transfer status view.
+- Django's payments celery tasks (`call_vtpass_task`,
+  `call_group_vtpass_task`) and `process_payment` are never called — the
+  views hit VTpass synchronously, so no worker is ported.

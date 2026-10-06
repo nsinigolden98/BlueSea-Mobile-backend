@@ -16,6 +16,10 @@ pub struct Config {
     pub email_backend: String,
     pub brevo_api_key: String,
     pub from_email: String,
+    pub vtpass_base_url: String,
+    pub vtpass_api_key: String,
+    pub vtpass_secret_key: String,
+    pub vtpass_public_key: String,
 }
 
 impl Config {
@@ -58,6 +62,11 @@ impl Config {
                         .unwrap_or_else(|_| "noreply@bluesea.com".to_string())
                 }
             },
+            vtpass_base_url: env::var("VTPASS_BASE_URL")
+                .unwrap_or_else(|_| "https://sandbox.vtpass.com/api".to_string()),
+            vtpass_api_key: env::var("VTPASS_API_KEY").unwrap_or_default(),
+            vtpass_secret_key: env::var("VTPASS_SECRET_KEY").unwrap_or_default(),
+            vtpass_public_key: env::var("VTPASS_PUBLIC_KEY").unwrap_or_default(),
         }
     }
 }

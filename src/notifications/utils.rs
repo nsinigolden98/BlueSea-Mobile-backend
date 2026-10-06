@@ -108,6 +108,42 @@ struct TemplateContext {
 }
 
 #[derive(Template)]
+#[template(path = "notifications/group_payment_contribution.html")]
+struct GroupContributionTemplate {
+    amount: String,
+    group_name: String,
+    payment_type_title: String,
+    user: TemplateUser,
+    static_base: String,
+    current_year: String,
+}
+
+#[derive(Template)]
+#[template(path = "notifications/group_payment_success.html")]
+struct GroupSuccessTemplate {
+    amount: String,
+    group_name: String,
+    payment_type: String,
+    payment_type_title: String,
+    vtu_reference: String,
+    user: TemplateUser,
+    static_base: String,
+    current_year: String,
+}
+
+#[derive(Template)]
+#[template(path = "notifications/group_payment_failed.html")]
+struct GroupFailedTemplate {
+    amount: String,
+    group_name: String,
+    payment_type_title: String,
+    reason: String,
+    user: TemplateUser,
+    static_base: String,
+    current_year: String,
+}
+
+#[derive(Template)]
 #[template(path = "notifications/default_notification.html")]
 struct DefaultNotificationTemplate {
     title: String,
@@ -190,16 +226,149 @@ pub async fn send_notification(
     .render()
     .unwrap_or_else(|_| message.to_string());
     let subject = email_subject.unwrap_or(title);
+    deliver(state, user_email, subject, message, &html).await;
+
+    Ok(id)
+}
+
+async fn deliver(state: &AppState, user_email: &str, subject: &str, message: &str, html: &str) {
     crate::email::send_email(
         &state.http,
         &state.config,
         user_email,
         subject,
         message,
-        &html,
+        html,
     )
     .await;
+}
 
+fn base_ctx(state: &AppState) -> (String, String) {
+    (
+        static_base(&state.config.site_url),
+        current_year(),
+    )
+}
+
+/// Mirrors `contribution_notification`: debited member notice.
+pub async fn contribution_notification(
+    state: &AppState,
+    user_id: i64,
+    user_email: &str,
+    first_name: &str,
+    amount_display: &str,
+    group_name: &str,
+    payment_type: &str,
+) -> Result<i64, sqlx::Error> {
+    let title = "Payment Contribution";
+    let message = format!("₦{amount_display} debited for {group_name} group payment");
+    let now = crate::time::now_str();
+    let res = sqlx::query(
+        "INSERT INTO notifications_notification (title, message, notification_type, is_read, created_at, read_at, user_id, broadcast_id)
+         VALUES (?, ?, 'payment', 0, ?, NULL, ?, NULL)",
+    )
+    .bind(title)
+    .bind(&message)
+    .bind(&now)
+    .bind(user_id)
+    .execute(&state.db)
+    .await?;
+    let id = res.last_insert_rowid();
+    let (static_base, current_year) = base_ctx(state);
+    let html = GroupContributionTemplate {
+        amount: amount_display.to_string(),
+        group_name: group_name.to_string(),
+        payment_type_title: py_title(payment_type),
+        user: TemplateUser { first_name: first_name.to_string() },
+        static_base,
+        current_year,
+    }
+    .render()
+    .unwrap_or_else(|_| message.clone());
+    deliver(state, user_email, "BlueSea Mobile - Payment Contribution", &message, &html).await;
+    Ok(id)
+}
+
+/// Mirrors `group_payment_success`.
+pub async fn group_payment_success(
+    state: &AppState,
+    user_id: i64,
+    user_email: &str,
+    first_name: &str,
+    amount_display: &str,
+    group_name: &str,
+    payment_type: &str,
+    vtu_reference: &str,
+) -> Result<i64, sqlx::Error> {
+    let title = "Group Purchase Successful";
+    let message = format!("{group_name}: {payment_type} purchase of ₦{amount_display} completed");
+    let now = crate::time::now_str();
+    let res = sqlx::query(
+        "INSERT INTO notifications_notification (title, message, notification_type, is_read, created_at, read_at, user_id, broadcast_id)
+         VALUES (?, ?, 'payment_success', 0, ?, NULL, ?, NULL)",
+    )
+    .bind(title)
+    .bind(&message)
+    .bind(&now)
+    .bind(user_id)
+    .execute(&state.db)
+    .await?;
+    let id = res.last_insert_rowid();
+    let (static_base, current_year) = base_ctx(state);
+    let html = GroupSuccessTemplate {
+        amount: amount_display.to_string(),
+        group_name: group_name.to_string(),
+        payment_type: payment_type.to_string(),
+        payment_type_title: py_title(payment_type),
+        vtu_reference: vtu_reference.to_string(),
+        user: TemplateUser { first_name: first_name.to_string() },
+        static_base,
+        current_year,
+    }
+    .render()
+    .unwrap_or_else(|_| message.clone());
+    deliver(state, user_email, "BlueSea Mobile - Group Purchase Successful", &message, &html).await;
+    Ok(id)
+}
+
+/// Mirrors `group_payment_failed`.
+pub async fn group_payment_failed(
+    state: &AppState,
+    user_id: i64,
+    user_email: &str,
+    first_name: &str,
+    amount_display: &str,
+    group_name: &str,
+    payment_type: &str,
+    reason: &str,
+) -> Result<i64, sqlx::Error> {
+    let title = "Group Payment Failed";
+    let message = format!("{group_name}: {payment_type} payment failed. ₦{amount_display} has been refunded to your wallet");
+    let now = crate::time::now_str();
+    let res = sqlx::query(
+        "INSERT INTO notifications_notification (title, message, notification_type, is_read, created_at, read_at, user_id, broadcast_id)
+         VALUES (?, ?, 'payment_failed', 0, ?, NULL, ?, NULL)",
+    )
+    .bind(title)
+    .bind(&message)
+    .bind(&now)
+    .bind(user_id)
+    .execute(&state.db)
+    .await?;
+    let id = res.last_insert_rowid();
+    let (static_base, current_year) = base_ctx(state);
+    let html = GroupFailedTemplate {
+        amount: amount_display.to_string(),
+        group_name: group_name.to_string(),
+        payment_type_title: py_title(payment_type),
+        reason: reason.to_string(),
+        user: TemplateUser { first_name: first_name.to_string() },
+        static_base,
+        current_year,
+    }
+    .render()
+    .unwrap_or_else(|_| message.clone());
+    deliver(state, user_email, "BlueSea Mobile - Group Payment Failed", &message, &html).await;
     Ok(id)
 }
 

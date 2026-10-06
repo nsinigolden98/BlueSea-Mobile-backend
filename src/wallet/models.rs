@@ -6,6 +6,9 @@
 use sqlx::FromRow;
 use uuid::Uuid;
 
+use rust_decimal::Decimal;
+use rust_decimal::RoundingStrategy;
+
 use crate::transactions::models as ledger;
 
 #[derive(Debug, Clone, FromRow)]
@@ -215,7 +218,7 @@ pub async fn credit(
     hub.publish_update(
         user_id,
         &balances,
-        amount_cents,
+        &cents_to_decimal(amount_cents),
         &reference,
         description,
         "CREDIT",
@@ -285,8 +288,159 @@ pub async fn debit(
     hub.publish_update(
         user_id,
         &balances,
-        amount_cents,
+        &cents_to_decimal(amount_cents),
         &reference,
+        description,
+        "DEBIT",
+    );
+    Ok(balances)
+}
+
+/// Full-precision decimal balance snapshot (group-payment path).
+fn balances_from_decimal(balance: Decimal, locked: Decimal) -> WalletBalances {
+    WalletBalances {
+        balance: balance.to_string(),
+        balance_formatted: format_naira(decimal_cents(&balance)),
+        locked_balance: locked.to_string(),
+        locked_balance_formatted: format_naira(decimal_cents(&locked)),
+        available_balance: balance.to_string(),
+        available_balance_formatted: format_naira(decimal_cents(&balance)),
+    }
+}
+
+/// Display cents for a Decimal (quantized half-even to 2dp, like Django's
+/// `:,.2f` formatting of stored balances).
+fn decimal_cents(d: &Decimal) -> i64 {
+    let q = d.round_dp_with_strategy(2, RoundingStrategy::MidpointNearestEven);
+    let scaled = (q * Decimal::new(100, 0)).round();
+    scaled.to_string().parse::<i64>().unwrap_or(0)
+}
+
+fn parse_decimal(raw: &str) -> Result<Decimal, WalletError> {
+    raw.trim()
+        .parse::<Decimal>()
+        .map_err(|_| WalletError::InvalidAmount)
+}
+
+/// Exact-decimal credit for group-payment shares (Django divides totals at
+/// full decimal precision). Idempotent on `reference`, emits balance pushes.
+pub async fn credit_decimal(
+    db: &sqlx::SqlitePool,
+    hub: &super::hub::WalletHub,
+    wallet_id: i64,
+    user_id: i64,
+    amount: Decimal,
+    description: &str,
+    reference: &str,
+) -> Result<WalletBalances, WalletError> {
+    if amount <= Decimal::ZERO {
+        return Err(WalletError::InvalidAmount);
+    }
+    let mut tx = db.begin().await?;
+    if ledger::reference_exists_tx(&mut tx, reference).await? {
+        tx.commit().await?;
+        return current_balances(db, wallet_id).await;
+    }
+    let row: Option<(String, String)> = sqlx::query_as(
+        "SELECT CAST(balance AS TEXT), CAST(locked_balance AS TEXT) FROM wallet_wallet WHERE id = ?",
+    )
+    .bind(wallet_id)
+    .fetch_optional(&mut *tx)
+    .await?;
+    let Some((balance_raw, locked_raw)) = row else {
+        return Err(WalletError::WalletNotFound);
+    };
+    let new_balance = parse_decimal(&balance_raw)? + amount;
+    let locked = parse_decimal(&locked_raw)?;
+    let now = crate::time::now_str();
+    sqlx::query("UPDATE wallet_wallet SET balance = ?, updated_at = ? WHERE id = ?")
+        .bind(new_balance.to_string())
+        .bind(&now)
+        .bind(wallet_id)
+        .execute(&mut *tx)
+        .await?;
+    ledger::record_tx_str(
+        &mut tx,
+        wallet_id,
+        &amount.to_string(),
+        "CREDIT",
+        description,
+        reference,
+        &now,
+    )
+    .await?;
+    tx.commit().await?;
+
+    let balances = balances_from_decimal(new_balance, locked);
+    hub.publish_update(
+        user_id,
+        &balances,
+        &amount.to_string(),
+        reference,
+        description,
+        "CREDIT",
+    );
+    Ok(balances)
+}
+
+/// Exact-decimal debit for group-payment shares. Mirrors `Wallet.debit()`.
+pub async fn debit_decimal(
+    db: &sqlx::SqlitePool,
+    hub: &super::hub::WalletHub,
+    wallet_id: i64,
+    user_id: i64,
+    amount: Decimal,
+    description: &str,
+    reference: &str,
+) -> Result<WalletBalances, WalletError> {
+    if amount <= Decimal::ZERO {
+        return Err(WalletError::InvalidAmount);
+    }
+    let mut tx = db.begin().await?;
+    if ledger::reference_exists_tx(&mut tx, reference).await? {
+        tx.commit().await?;
+        return current_balances(db, wallet_id).await;
+    }
+    let row: Option<(String, String)> = sqlx::query_as(
+        "SELECT CAST(balance AS TEXT), CAST(locked_balance AS TEXT) FROM wallet_wallet WHERE id = ?",
+    )
+    .bind(wallet_id)
+    .fetch_optional(&mut *tx)
+    .await?;
+    let Some((balance_raw, locked_raw)) = row else {
+        return Err(WalletError::WalletNotFound);
+    };
+    let balance = parse_decimal(&balance_raw)?;
+    if balance < amount {
+        return Err(WalletError::InsufficientFunds);
+    }
+    let new_balance = balance - amount;
+    let locked = parse_decimal(&locked_raw)?;
+    let now = crate::time::now_str();
+    sqlx::query("UPDATE wallet_wallet SET balance = ?, updated_at = ? WHERE id = ?")
+        .bind(new_balance.to_string())
+        .bind(&now)
+        .bind(wallet_id)
+        .execute(&mut *tx)
+        .await?;
+    ledger::record_tx_str(
+        &mut tx,
+        wallet_id,
+        &amount.to_string(),
+        "DEBIT",
+        description,
+        reference,
+        &now,
+    )
+    .await?;
+    tx.commit().await?;
+
+    let balances = balances_from_decimal(new_balance, locked);
+    hub.publish_update(
+        user_id,
+        &balances,
+        &amount.to_string(),
+        reference,
         description,
         "DEBIT",
     );
@@ -296,8 +450,7 @@ pub async fn debit(
 async fn current_balances(
     db: &sqlx::SqlitePool,
     wallet_id: i64,
-) -> Result<WalletBalances, WalletError> {
-    let row: Option<(String, String)> = sqlx::query_as(
+) -> Result<WalletBalances, WalletError> {    let row: Option<(String, String)> = sqlx::query_as(
         "SELECT CAST(balance AS TEXT), CAST(locked_balance AS TEXT) FROM wallet_wallet WHERE id = ?",
     )
     .bind(wallet_id)

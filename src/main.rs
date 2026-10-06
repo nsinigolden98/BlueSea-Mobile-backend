@@ -1,9 +1,11 @@
 mod accounts;
 mod auth;
+mod bonus;
 mod docs;
 mod email;
 mod error;
 mod notifications;
+mod payments;
 mod settings;
 mod state;
 mod time;

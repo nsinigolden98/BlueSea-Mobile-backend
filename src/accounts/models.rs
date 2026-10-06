@@ -117,6 +117,18 @@ pub async fn find_dva_by_customer_code(
     .await
 }
 
+pub async fn find_dva_by_account_number(
+    db: &sqlx::SqlitePool,
+    account_number: &str,
+) -> Result<Option<DvaAccount>, sqlx::Error> {
+    sqlx::query_as::<_, DvaAccount>(&format!(
+        "SELECT {DVA_COLUMNS} FROM accounts_paystackdedicatedaccount WHERE dva_account_number = ?"
+    ))
+    .bind(account_number)
+    .fetch_optional(db)
+    .await
+}
+
 pub async fn mark_dva_assigned(
     db: &sqlx::SqlitePool,
     id: i64,
