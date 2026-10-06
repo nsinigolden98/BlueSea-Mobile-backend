@@ -82,3 +82,4 @@ pub async fn is_blacklisted(db: &sqlx::SqlitePool, jti: &str) -> Result<bool, sq
         .bind(jti).fetch_optional(db).await?;
     Ok(row.is_some())
 }
+

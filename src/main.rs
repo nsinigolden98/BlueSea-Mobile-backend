@@ -2,6 +2,7 @@ mod accounts;
 mod auth;
 mod autotopup;
 mod bonus;
+mod group_payment;
 mod loyalty_market;
 mod docs;
 mod email;
@@ -47,7 +48,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     }
     let app = urls::router(state);
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await?;
+    let port: u16 = std::env::var("PORT")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(8000);
+    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{port}")).await?;
     tracing::info!("listening on {}", listener.local_addr()?);
     axum::serve(listener, app).await?;
     Ok(())

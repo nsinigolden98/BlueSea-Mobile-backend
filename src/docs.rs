@@ -40,6 +40,7 @@ impl Modify for SecurityAddon {
         (name = "Bonus & Rewards", description = "Points, campaigns and referrals"),
         (name = "Auto Top-Up", description = "Scheduled airtime/data purchases"),
         (name = "Loyalty Market", description = "Points redemption shop"),
+        (name = "Group Payments", description = "Payment groups and membership"),
     ),
     paths(
         crate::accounts::views::auth::sign_up,
@@ -110,6 +111,14 @@ impl Modify for SecurityAddon {
         crate::loyalty_market::views::reward_detail,
         crate::loyalty_market::views::redeem,
         crate::loyalty_market::views::redemptions,
+        crate::group_payment::views::create,
+        crate::group_payment::views::add_member,
+        crate::group_payment::views::my_groups,
+        crate::group_payment::views::details,
+        crate::group_payment::views::update,
+        crate::group_payment::views::join,
+        crate::group_payment::views::leave,
+        crate::group_payment::views::cancel,
     ),
     components(schemas(
         crate::accounts::serializers::ProfilePublic,
@@ -158,6 +167,13 @@ impl Modify for SecurityAddon {
         crate::autotopup::serializers::AutoTopUpCreateBody,
         crate::loyalty_market::serializers::RewardPublic,
         crate::loyalty_market::serializers::RedemptionPublic,
+        crate::group_payment::serializers::GroupListEntry,
+        crate::group_payment::serializers::GroupMemberPublic,
+        crate::group_payment::serializers::CreateGroupBody,
+        crate::group_payment::serializers::AddMemberBody,
+        crate::group_payment::serializers::JoinGroupBody,
+        crate::group_payment::serializers::GroupIdBody,
+        crate::group_payment::serializers::UpdateGroupBody,
     )),
 )]
 pub struct ApiDoc;
