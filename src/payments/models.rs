@@ -350,20 +350,6 @@ pub async fn insert_customer_lookup(
 // ---------- group payments (group_payment app tables are read directly) ----------
 
 #[derive(Debug, Clone, FromRow)]
-pub struct GroupPaymentRow {
-    pub id: i64,
-    pub payment_type: String,
-    pub total_amount: String,
-    pub service_details: String,
-    pub status: String,
-    pub created_at: chrono::NaiveDateTime,
-    pub updated_at: chrono::NaiveDateTime,
-    pub group_id: String,
-    pub initiated_by_id: Option<i64>,
-    pub vtu_reference: Option<String>,
-}
-
-#[derive(Debug, Clone, FromRow)]
 pub struct GroupMemberRow {
     pub id: i64,
     pub role: String,
