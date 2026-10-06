@@ -2,6 +2,7 @@ mod accounts;
 mod auth;
 mod autotopup;
 mod bonus;
+mod loyalty_market;
 mod docs;
 mod email;
 mod error;

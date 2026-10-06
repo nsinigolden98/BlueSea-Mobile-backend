@@ -39,6 +39,7 @@ impl Modify for SecurityAddon {
         (name = "Notifications", description = "In-app notifications"),
         (name = "Bonus & Rewards", description = "Points, campaigns and referrals"),
         (name = "Auto Top-Up", description = "Scheduled airtime/data purchases"),
+        (name = "Loyalty Market", description = "Points redemption shop"),
     ),
     paths(
         crate::accounts::views::auth::sign_up,
@@ -105,6 +106,10 @@ impl Modify for SecurityAddon {
         crate::autotopup::views::cancel,
         crate::autotopup::views::reactivate,
         crate::autotopup::views::history,
+        crate::loyalty_market::views::reward_list,
+        crate::loyalty_market::views::reward_detail,
+        crate::loyalty_market::views::redeem,
+        crate::loyalty_market::views::redemptions,
     ),
     components(schemas(
         crate::accounts::serializers::ProfilePublic,
@@ -151,6 +156,8 @@ impl Modify for SecurityAddon {
         crate::autotopup::serializers::AutoTopUpPublic,
         crate::autotopup::serializers::AutoTopUpHistoryPublic,
         crate::autotopup::serializers::AutoTopUpCreateBody,
+        crate::loyalty_market::serializers::RewardPublic,
+        crate::loyalty_market::serializers::RedemptionPublic,
     )),
 )]
 pub struct ApiDoc;
