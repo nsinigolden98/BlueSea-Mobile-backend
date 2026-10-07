@@ -1,5 +1,7 @@
 mod accounts;
+mod affiliate;
 mod auth;
+
 mod autotopup;
 mod bonus;
 mod group_payment;

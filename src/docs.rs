@@ -41,6 +41,7 @@ impl Modify for SecurityAddon {
         (name = "Auto Top-Up", description = "Scheduled airtime/data purchases"),
         (name = "Loyalty Market", description = "Points redemption shop"),
         (name = "Group Payments", description = "Payment groups and membership"),
+        (name = "Affiliate", description = "Event ticket referrals"),
     ),
     paths(
         crate::accounts::views::auth::sign_up,
@@ -119,6 +120,14 @@ impl Modify for SecurityAddon {
         crate::group_payment::views::join,
         crate::group_payment::views::leave,
         crate::group_payment::views::cancel,
+        crate::affiliate::views::apply,
+        crate::affiliate::views::status,
+        crate::affiliate::views::links_list,
+        crate::affiliate::views::links_create,
+        crate::affiliate::views::attribution,
+        crate::affiliate::views::dashboard,
+        crate::affiliate::views::sales,
+        crate::affiliate::views::payout,
     ),
     components(schemas(
         crate::accounts::serializers::ProfilePublic,
@@ -174,6 +183,12 @@ impl Modify for SecurityAddon {
         crate::group_payment::serializers::JoinGroupBody,
         crate::group_payment::serializers::GroupIdBody,
         crate::group_payment::serializers::UpdateGroupBody,
+        crate::affiliate::serializers::AffiliateApplyBody,
+        crate::affiliate::serializers::AffiliateLinkCreateBody,
+        crate::affiliate::serializers::AffiliateAttributionBody,
+        crate::affiliate::serializers::AffiliateStatusPublic,
+        crate::affiliate::serializers::AffiliateLinkPublic,
+        crate::affiliate::serializers::AffiliateSalePublic,
     )),
 )]
 pub struct ApiDoc;
