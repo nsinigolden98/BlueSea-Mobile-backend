@@ -29,17 +29,34 @@ src/
   wallet/            models (credit/debit), serializers, views, consumers,
                      urls, routing, hub (balance pushes)
   transactions/      models (WalletTransaction, FundWallet), serializers,
-                     pagination, paystack, views/{history,funding,webhook,
-                     dva_refresh,account_name}, urls
+                     pagination, nomba_gateway (nomba-rs async),
+                     views/{history}, nomba_views (funding, DVA, webhook), urls
   notifications/     models, utils (in-app row + email; endpoints later)
-  payments/          models (14 VTU tables, group, withdrawal, transfer,
-                     webhook log), plans (GENERATED catalog), serializers
-                     (DRF-shaped validation), vtpass client,
-                     views/{airtime,data,cable,electricity,exam,customer,
-                     group,internal,withdrawal,status,common},
-                     webhook (VTpass transaction-update), urls
+  payments/          models (purchase tables, betting, group, withdrawal,
+                     transfer, webhook log), serializers (DRF-shaped validation),
+                     vtpass client (exams only — WAEC/JAMB stay on VTpass),
+                     views/{airtime,data,cable,electricity (Nomba),
+                     exam (VTpass), customer (Nomba lookups), betting
+                     (fund-only via Nomba), group (Nomba; exams on VTpass),
+                     internal,withdrawal (Nomba),status,common},
+                     webhook (VTpass transaction-update, exams), urls
+  accounts/          + kyc.rs (tier evidence: NIN/BVN RSA-encrypted at rest,
+                     address, utility-bill image under MEDIA_ROOT/kyc/),
+                     tier.rs (T0 no-phone · T1 phone · T2 +NIN · T3 +BVN ·
+                     T4 +address+bill; cumulative in/out caps T0/T1 ₦100k,
+                     T2 ₦1M, T3 ₦5M, T4 unlimited; over-cap external inflow
+                     freezes the account, admin-only unfreeze at
+                     /admin/api/accounts.Profile/{id}/unfreeze/)
+  plans_cache/       startup Nomba plans cache (data x4 + cable x4) +
+                     `/ws/plans/` websocket (keys: mtn, airtel, glo, 9mobile,
+                     dstv, gotv, showmax, startimes; JWT like wallet socket)
   bonus/             utils (referral-flag side effect + award stubs;
                      full app later)
+   support/           tickets, messages, attachments, admin views, live chat
+   broadcast/         superuser mass mail + in-app fan-out (Tokio task
+                      replaces Celery)
+   market_place/      vendors/events/tickets/scanning/withdrawals
+                      (Tokio tasks replace Celery; `qrcode` renders QR PNGs)
 templates/accounts/  Askama ports of accounts/templates/accounts/*.html
 templates/notifications/  Askama port of default_notification.html
 ```
@@ -48,19 +65,31 @@ Each app keeps Django's file names (`models`/`serializers`/`views`/`urls`/…),
 same table/column names (existing DB works untouched), and same
 request/response shapes (existing frontend works untouched).
 
-## Setup
+## Setup (Postgres only)
 
 ```bash
-# 1. Debug database: copy once from the Django backend
-cp ../BlueSea-Mobile-backend/db.sqlite3 ./debug.sqlite3
+# 1. Database: a Postgres. The app runs sqlx migrations on boot
+#    (./migrations — baseline dump of the Django-migrated schema plus
+#    incremental files), so a fresh database needs no manual step:
+#    point DATABASE_URL at it and start the app.
+#    Local scratch DB:
+#    createdb -h localhost -U postgres bluesea
+#    (then `cargo run` migrates it automatically)
+#
+#    New schema change workflow:
+#      sqlx migrate add <name>   # writes migrations/<timestamp>_<name>.sql
+#      # ... write the up-migration SQL, update the FromRow struct(s),
+#      # ... and the fixture DDL in src/db.rs test_support ...
+#      sqlx migrate run          # apply locally (or just `cargo run`)
+#    Tests carry their own DDL (isolated scratch DBs per test), so the
+#    fixture DDL in src/db.rs must move together with every migration.
 
-# 2. Environment: copy ../BlueSea-Mobile-backend/.env to ./.env, then ensure:
+# 2. Environment: create ./.env (dev) with:
 #    DEBUG=True
-#    SQLITE_URL=sqlite://debug.sqlite3?mode=rwc
-#    SECRET_KEY=<same as Django, so tokens cross-verify>
-#    PIN_RSA_PRIVATE_KEY=<same base64 PEM as Django>
-#    EMAIL_BACKEND=console            # DEBUG default (log-only)
-#    # prod: EMAIL_BACKEND=brevo + BREVO_API_KEY + EMAIL_HOST_USER sender
+#    DATABASE_URL=postgres://postgres:postgres@localhost:5432/bluesea
+#    (plus SECRET_KEY, PIN_RSA_PRIVATE_KEY, EMAIL_BACKEND=console — see
+#    the full variable list under "Deploy" below)
+# NOTE: .env is parsed literally (no $VAR expansion), like Django.
 
 cargo run            # serves on :8000
 ```
@@ -75,11 +104,65 @@ cargo run            # serves on :8000
 | `GET /redoc/` | Redoc |
 | `WS /ws/wallet/`, `/ws/wallet/balance/` | live balance (`?token=<JWT>`, close `4401` unauthenticated) |
 
+## Admin panel
+
+Staff-only React + TypeScript panel (Vite) served by the backend at
+`/admin`, API under `/admin/api/*` (full model CRUD driven by a
+`GET /admin/api/models/` registry, plus vendor approve/reject).
+
+```bash
+cd admin-panel && npm install && npm run build   # outputs admin-panel/dist/
+```
+
+Backend: `src/admin/` mirrors the app layout — `mod.rs` holds the staff
+gate, generic CRUD executor, registry/dashboard, and the `/admin` SPA
+serving; each `admin/<app>.rs` registers that app's models (column types
+generated from the live Postgres schema). The Docker image builds the
+panel (`node` stage) and serves it; local dev uses the Vite proxy
+(`npm run dev`, `/admin/api` → `:8000`).
+
+## Nomba
+
+Wallet funding, dedicated virtual accounts, and bank withdrawals over the
+Nomba rail, via the async `nomba-rs` SDK (same crate family as this
+project). Mirrors `transactions/nomba_views.py`,
+`transactions/nomba_gateway.py`, and `payments/nomba_views.py`.
+
+| Route | Purpose |
+|---|---|
+| `POST /transactions/nomba/fund-wallet/` | hosted-checkout funding (min ₦100, DRF validation shapes) |
+| `POST /transactions/nomba/account-name/` | bank account lookup |
+| `POST /transactions/nomba/dva/assign/` | dedicated virtual account (idempotent) |
+| `POST /transactions/nomba/dva/confirm/` | reconfirm by `sessionId` |
+| `POST /transactions/nomba/webhook/` | public; `payment_success/failed`, `payout_success/refund` |
+| `POST /payments/withdrawal/nomba/` | bank withdrawal (min ₦500, PIN, DVA routing) |
+
+Setup:
+
+```bash
+# .env
+NOMBA_CLIENT_ID=...
+NOMBA_ACCOUNT_ID=...
+NOMBA_SECRET_KEY=...
+NOMBA_SIGNATURE_KEY=...   # webhook HMAC key (nomba-signature/nomba-timestamp)
+# NOMBA_SANDBOX=1         # defaults to DEBUG, like Django's sandbox=NOMBA_DEBUG
+
+# Database table (sqlx-owned schema, auto-migrated on boot):
+# `accounts_nombadedicatedaccount` ships in the baseline migration.
+```
+
+Register `https://<SITE_URL>/transactions/nomba/webhook/` as the Nomba
+webhook URL. Checkout funding credits on `payment_success` (idempotent on
+the order reference); DVA inflows credit by destination account number;
+payout refunds re-credit via `REV-<reference>` (idempotent); withdrawal
+rows carry `provider="nomba"` so Paystack records are never touched.
+
 ## Tests
 
 ```bash
-cargo test wallet utils email   # fast: ledger, templates, Brevo payload
-cargo test                      # full (PBKDF2 cases take ~1 min)
+# One variable for everything (default: the local test database).
+# Each test gets an isolated scratch database; real tables are never touched.
+cargo test
 ```
 
 Live flows (signup → verify → login → PIN → reset → logout, wallet
@@ -97,12 +180,17 @@ fails sends so handlers return 500, exactly like Django's send failure.
 
 ## Notes / deliberate divergences
 
+- Nomba runs on the async `nomba-rs` SDK: `create_order` takes a
+  `redirectUrl` the Django call omits, so `SITE_URL` is sent (the customer
+  email is passed as both email and name, per Nomba's checkout docs). The
+  `accounts_nombadedicatedaccount` table ships in the sqlx baseline
+  migration; fresh databases get it automatically on boot.
 - Password-reset signed tokens are our own HMAC format (900s, single-use);
   Django-issued tokens are not accepted — full flow must run on one backend.
 - PIN-reset OTP/token store is in-process memory (600s/300s TTLs), mirroring
   Django's cache usage.
 - Wallet read-modify-write runs in one transaction, matching
-  Django-on-SQLite semantics (`select_for_update` is a no-op there);
+  Django semantics without row locking (`select_for_update` not ported);
   add `FOR UPDATE` when the prod pool moves to Postgres.
 - `pin_reset_success.html` exists in Django but is unreferenced; copied
   over unused for completeness.
@@ -114,3 +202,57 @@ fails sends so handlers return 500, exactly like Django's send failure.
 - Django's payments celery tasks (`call_vtpass_task`,
   `call_group_vtpass_task`) and `process_payment` are never called — the
   views hit VTpass synchronously, so no worker is ported.
+
+## Deploy (VPS cutover: Django stops, Rust starts)
+
+`Dockerfile` (multi-stage release build), `docker-compose.yml` (complete
+stack: `app` + `db` + `nginx` + `certbot`), `nginx.conf`, single `.env`
+file (never committed). No docker daemon is needed locally; build on VPS.
+
+```bash
+# .env (only env file; keep dev and prod values apart — prod needs
+# DEBUG=False, the VPS DATABASE_URL, SITE_URL=https://..., brevo keys):
+DEBUG=False
+DATABASE_NAME=bluesea_mobile
+DATABASE_USER=bluesea_user
+DATABASE_PASSWORD=...
+SECRET_KEY=<same as Django, so tokens cross-verify>
+SITE_URL=https://api.blueseamobile.com
+PIN_RSA_PRIVATE_KEY=<same base64 PEM as Django>
+EMAIL_BACKEND=brevo
+BREVO_API_KEY=...
+EMAIL_HOST_USER=noreply@bluesea.com
+VTPASS_BASE_URL=https://vtpass.com/api
+VTPASS_API_KEY=...
+VTPASS_SECRET_KEY=...
+VTPASS_PUBLIC_KEY=...
+NOMBA_CLIENT_ID=...
+NOMBA_ACCOUNT_ID=...
+NOMBA_SECRET_KEY=...
+NOMBA_SIGNATURE_KEY=...
+# NOMBA_SANDBOX=1   # defaults to DEBUG (Django uses sandbox=NOMBA_DEBUG)
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+APPLE_CLIENT_ID=...
+
+# fresh database: nothing to do — the app runs sqlx migrations on boot
+# (./migrations). Existing Django-migrated databases were marked with the
+# baseline row in _sqlx_migrations at cutover, so boot is a no-op for them.
+
+docker compose up -d --build db
+docker compose up -d nginx          # serve HTTP first for ACME
+docker compose run --rm certbot certonly --webroot -w /var/www/certbot \
+  -d api.blueseamobile.com --email you@example.com --agree-tos --no-eff-email
+docker compose up -d --build        # app + nginx + renew loop
+curl https://api.blueseamobile.com/health
+```
+
+- Cutover: stop the Django compose project on the VPS, then start this
+  stack. Rollback is the reverse (Django compose back up).
+- Single `app` replica: set `AUTOTOPUP_SCHEDULER=0` and
+  `MARKETPLACE_SCHEDULER=0` on any extra replicas.
+- Backups: `pg_dump $DATABASE_URL | gzip > backup.sql.gz` on a cron.
+- Schema history: Django migrations are retired. The single baseline file
+  `migrations/20261010000000_baseline.sql` absorbed the full Django-migrated
+  schema (so the old `payments.0007` fake-apply quirk is gone); new changes
+  are incremental `sqlx migrate add` files run automatically on boot.

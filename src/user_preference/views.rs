@@ -185,7 +185,7 @@ pub async fn update_user(
     }
 
     if let Some(phone) = fields.get("phone") {
-        let _ = sqlx::query("UPDATE accounts_profile SET phone = ? WHERE id = ?")
+        let _ = sqlx::query("UPDATE accounts_profile SET phone = $1 WHERE id = $2")
             .bind(phone)
             .bind(user.id)
             .execute(&s.db)
@@ -221,10 +221,17 @@ pub async fn update_user(
     }
 
     if !updates.is_empty() {
-        let mut set: Vec<String> = updates.keys().map(|k| format!("{k} = ?")).collect();
-        set.push("updated_on = ?".to_string());
+        // PG placeholders are positional: keys first, then updated_on, then
+        // the WHERE user_id last.
+        let mut set: Vec<String> = Vec::new();
+        for (i, k) in updates.keys().enumerate() {
+            set.push(format!("{k} = ${}", i + 1));
+        }
+        let ts_idx = updates.len() + 1;
+        let where_idx = updates.len() + 2;
+        set.push(format!("updated_on = ${ts_idx}"));
         let sql = format!(
-            "UPDATE user_preference_updateusermodel SET {} WHERE user_id = ?",
+            "UPDATE user_preference_updateusermodel SET {} WHERE user_id = ${where_idx}",
             set.join(", ")
         );
         let mut q = sqlx::query(&sql);
@@ -232,7 +239,7 @@ pub async fn update_user(
             q = q.bind(updates.get(k).unwrap().as_deref());
         }
         let now2 = crate::time::now_str();
-        q = q.bind(&now2).bind(user.id);
+        q = q.bind(crate::time::Ts(&now2)).bind(user.id);
         let _ = q.execute(&s.db).await;
         preference = pref_models::get_or_create(&s.db, user.id, &now2).await?;
     }
@@ -268,7 +275,7 @@ pub async fn check_user(
     Path(email): Path<String>,
 ) -> Result<Resp, AppError> {
     let row: Option<(Option<String>,)> = sqlx::query_as(
-        "SELECT surname FROM accounts_profile WHERE email = ? AND email_verified = 1",
+        "SELECT surname FROM accounts_profile WHERE email = $1 AND email_verified = TRUE",
     )
     .bind(&email)
     .fetch_optional(&s.db)

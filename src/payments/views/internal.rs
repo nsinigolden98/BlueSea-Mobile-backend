@@ -84,7 +84,7 @@ pub async fn internal_transfer(
     }
 
     let recipient: Option<(i64, String, String)> = sqlx::query_as(
-        "SELECT id, surname, other_names FROM accounts_profile WHERE lower(email) = lower(?)",
+        "SELECT id, surname, other_names FROM accounts_profile WHERE lower(email) = lower($1)",
     )
     .bind(&recipient_email)
     .fetch_optional(&s.db)
@@ -103,7 +103,7 @@ pub async fn internal_transfer(
     }
 
     let sender_wallet: Option<(i64,)> =
-        sqlx::query_as("SELECT id FROM wallet_wallet WHERE user_id = ?")
+        sqlx::query_as("SELECT id FROM wallet_wallet WHERE user_id = $1")
             .bind(user.id)
             .fetch_optional(&s.db)
             .await?;
@@ -114,7 +114,7 @@ pub async fn internal_transfer(
         ));
     };
     let recipient_wallet: Option<(i64,)> =
-        sqlx::query_as("SELECT id FROM wallet_wallet WHERE user_id = ?")
+        sqlx::query_as("SELECT id FROM wallet_wallet WHERE user_id = $1")
             .bind(recipient_id)
             .fetch_optional(&s.db)
             .await?;
@@ -126,7 +126,7 @@ pub async fn internal_transfer(
     };
 
     let sender_balance: Option<(String,)> = sqlx::query_as(
-        "SELECT CAST(balance AS TEXT) FROM wallet_wallet WHERE id = ?",
+        "SELECT CAST(balance AS TEXT) FROM wallet_wallet WHERE id = $1",
     )
     .bind(sender_wallet_id)
     .fetch_optional(&s.db)
@@ -270,6 +270,15 @@ async fn move_funds(
     )
     .await
     {
+        // Compensate: the sender debit already committed, so refund it
+        // rather than stranding funds (credit only fails on DB error —
+        // references are unique per transfer).
+        let _ = wallet_models::credit(
+            &s.db, &s.wallet_hub, sender_wallet_id, sender_id, amount_display,
+            &format!("Refund of failed internal transfer to {recipient_email}"),
+            Some(&format!("REFUND-{sender_reference}")),
+        )
+        .await;
         return Err(FundsError::Failed(format!("{e:?}")));
     }
     Ok(())

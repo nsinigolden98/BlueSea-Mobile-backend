@@ -1,0 +1,90 @@
+//! Admin models for `bonus`. Generated from the live Postgres schema.
+use super::{ColType, ModelDef, PkType};
+
+pub fn register(out: &mut Vec<ModelDef>) {
+    out.push(ModelDef {
+        name: "bonus.BonusCampaign",
+        label: "Bonus Campaign",
+        table: "bonus_bonuscampaign",
+        pk: "id",
+        pk_type: PkType::Int,
+        columns: &[
+        ("id", ColType::Int),
+        ("name", ColType::Text),
+        ("description", ColType::Text),
+        ("campaign_type", ColType::Text),
+        ("multiplier", ColType::Numeric),
+        ("bonus_amount", ColType::Numeric),
+        ("is_active", ColType::Bool),
+        ("start_date", ColType::DateTime),
+        ("end_date", ColType::DateTime),
+        ("created_at", ColType::DateTime),
+        ("updated_at", ColType::DateTime),
+        ],
+        search: &["name"],
+        default_order: "-created_at",
+    });
+    out.push(ModelDef {
+        name: "bonus.BonusHistory",
+        label: "Bonus History",
+        table: "bonus_bonushistory",
+        pk: "id",
+        pk_type: PkType::Int,
+        columns: &[
+        ("id", ColType::Int),
+        ("transaction_type", ColType::Text),
+        ("points", ColType::Numeric),
+        ("reason", ColType::Text),
+        ("description", ColType::Text),
+        ("reference", ColType::Text),
+        ("balance_before", ColType::Numeric),
+        ("balance_after", ColType::Numeric),
+        ("created_at", ColType::DateTime),
+        ("metadata", ColType::Json),
+        ("created_by_id", ColType::Int),
+        ("user_id", ColType::Int),
+        ],
+        search: &["reference"],
+        default_order: "-created_at",
+    });
+    out.push(ModelDef {
+        name: "bonus.BonusPoint",
+        label: "Bonus Point",
+        table: "bonus_bonuspoint",
+        pk: "id",
+        pk_type: PkType::Int,
+        columns: &[
+        ("id", ColType::Int),
+        ("points", ColType::Numeric),
+        ("lifetime_earned", ColType::Numeric),
+        ("lifetime_redeemed", ColType::Numeric),
+        ("last_daily_login", ColType::Date),
+        ("created_at", ColType::DateTime),
+        ("updated_at", ColType::DateTime),
+        ("user_id", ColType::Int),
+        ],
+        search: &[],
+        default_order: "-created_at",
+    });
+    out.push(ModelDef {
+        name: "bonus.Referral",
+        label: "Referral",
+        table: "bonus_referral",
+        pk: "id",
+        pk_type: PkType::Int,
+        columns: &[
+        ("id", ColType::Int),
+        ("referral_code", ColType::Text),
+        ("status", ColType::Text),
+        ("bonus_awarded", ColType::Bool),
+        ("first_transaction_completed", ColType::Bool),
+        ("created_at", ColType::DateTime),
+        ("completed_at", ColType::DateTime),
+        ("referred_user_id", ColType::Int),
+        ("referrer_id", ColType::Int),
+        ("count", ColType::Int),
+        ],
+        search: &["referral_code"],
+        default_order: "-created_at",
+    });
+}

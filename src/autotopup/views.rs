@@ -25,7 +25,7 @@ async fn public_for(
     let raws: Option<(String, String, Option<String>, String, String)> = sqlx::query_as(
         "SELECT CAST(start_date AS TEXT), CAST(next_run AS TEXT), CAST(last_run AS TEXT),
                 CAST(created_at AS TEXT), CAST(updated_at AS TEXT)
-         FROM autotopup_autotopup WHERE id = ?",
+         FROM autotopup_autotopup WHERE id = $1",
     )
     .bind(t.id)
     .fetch_optional(&s.db)
@@ -33,7 +33,7 @@ async fn public_for(
     let (start_raw, next_raw, last_raw, created_raw, updated_raw) =
         raws.unwrap_or_default();
     let wallet: Option<(String,)> = sqlx::query_as(
-        "SELECT CAST(balance AS TEXT) FROM wallet_wallet WHERE user_id = ?",
+        "SELECT CAST(balance AS TEXT) FROM wallet_wallet WHERE user_id = $1",
     )
     .bind(user_id)
     .fetch_optional(&s.db)
@@ -84,7 +84,7 @@ pub async fn create(
 
     // Create-time balance gate (AutoTopUpCreateSerializer).
     let wallet: Option<(String,)> = sqlx::query_as(
-        "SELECT CAST(balance AS TEXT) FROM wallet_wallet WHERE user_id = ?",
+        "SELECT CAST(balance AS TEXT) FROM wallet_wallet WHERE user_id = $1",
     )
     .bind(user.id)
     .fetch_optional(&s.db)
@@ -104,30 +104,30 @@ pub async fn create(
         .start_date
         .map(|d| d.format("%Y-%m-%d %H:%M:%S%.f").to_string())
         .unwrap_or_else(|| now.clone());
-    let res = sqlx::query(
+    let res = sqlx::query_as::<_, (i64,)>(
         "INSERT INTO autotopup_autotopup (service_type, amount, phone_number, network, plan, start_date,
                 repeat_days, is_active, next_run, is_locked, locked_amount, last_run, total_runs, failed_runs,
                 created_at, updated_at, user_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, '0.00', NULL, 0, 0, ?, ?, ?)",
+         VALUES ($1, CAST($2 AS NUMERIC), $3, $4, $5, $6, $7, $8, $9, FALSE, '0.00', NULL, 0, 0, $10, $11, $12) RETURNING id",
     )
     .bind(input.service_type.clone().unwrap_or_default())
     .bind(amount.to_string())
     .bind(input.phone_number.clone().unwrap_or_default())
     .bind(input.network.clone())
     .bind(input.plan.clone())
-    .bind(&start_storage)
+    .bind(crate::time::Ts(&start_storage))
     .bind(input.repeat_days.unwrap_or(0))
     .bind(input.is_active.unwrap_or(true))
-    .bind(&start_storage)
-    .bind(&now)
-    .bind(&now)
+    .bind(crate::time::Ts(&start_storage))
+    .bind(crate::time::Ts(&now))
+    .bind(crate::time::Ts(&now))
     .bind(user.id)
-    .execute(&s.db)
+    .fetch_one(&s.db)
     .await?;
-    let id = res.last_insert_rowid();
+    let id = res.0;
 
     if !topup_models::lock_funds(&s.db, user.id, id, amount, &now).await? {
-        let _ = sqlx::query("DELETE FROM autotopup_autotopup WHERE id = ?")
+        let _ = sqlx::query("DELETE FROM autotopup_autotopup WHERE id = $1")
             .bind(id)
             .execute(&s.db)
             .await;
@@ -204,7 +204,7 @@ async fn detail_public(
     let mut items = Vec::new();
     for h in &history {
         let raw: Option<(String,)> = sqlx::query_as(
-            "SELECT CAST(executed_at AS TEXT) FROM autotopup_autotopuphistory WHERE id = ?",
+            "SELECT CAST(executed_at AS TEXT) FROM autotopup_autotopuphistory WHERE id = $1",
         )
         .bind(h.id)
         .fetch_optional(&s.db)
@@ -301,14 +301,14 @@ async fn apply_update(
     }
     sets.push("updated_at = ?".to_string());
     let sql = format!(
-        "UPDATE autotopup_autotopup SET {} WHERE id = ? AND user_id = ?",
+        "UPDATE autotopup_autotopup SET {} WHERE id = $1 AND user_id = $2",
         sets.join(", ")
     );
     let mut q = sqlx::query(&sql);
     for b in &binds {
         q = q.bind(b);
     }
-    q.bind(now).bind(id).bind(user_id).execute(&s.db).await?;
+    q.bind(crate::time::Ts(&now)).bind(id).bind(user_id).execute(&s.db).await?;
     Ok(())
 }
 
@@ -428,11 +428,11 @@ pub async fn delete(
     let now = crate::time::now_str();
     let _ = topup_models::unlock_funds(&s.db, user.id, pk, &now).await;
     // Django cascades history rows on delete.
-    let _ = sqlx::query("DELETE FROM autotopup_autotopuphistory WHERE auto_topup_id = ?")
+    let _ = sqlx::query("DELETE FROM autotopup_autotopuphistory WHERE auto_topup_id = $1")
         .bind(pk)
         .execute(&s.db)
         .await;
-    let _ = sqlx::query("DELETE FROM autotopup_autotopup WHERE id = ? AND user_id = ?")
+    let _ = sqlx::query("DELETE FROM autotopup_autotopup WHERE id = $1 AND user_id = $2")
         .bind(pk)
         .bind(user.id)
         .execute(&s.db)
@@ -493,8 +493,8 @@ pub async fn cancel(
     let unlocked = row.locked_amount.clone();
     let service_type = row.service_type.clone();
     let now = crate::time::now_str();
-    let _ = sqlx::query("UPDATE autotopup_autotopup SET is_active = 0, updated_at = ? WHERE id = ?")
-        .bind(&now)
+    let _ = sqlx::query("UPDATE autotopup_autotopup SET is_active = FALSE, updated_at = $1 WHERE id = $2")
+        .bind(crate::time::Ts(&now))
         .bind(pk)
         .execute(&s.db)
         .await;
@@ -568,7 +568,7 @@ pub async fn reactivate(
         ));
     }
     let wallet: Option<(String,)> = sqlx::query_as(
-        "SELECT CAST(balance AS TEXT) FROM wallet_wallet WHERE user_id = ?",
+        "SELECT CAST(balance AS TEXT) FROM wallet_wallet WHERE user_id = $1",
     )
     .bind(user.id)
     .fetch_optional(&s.db)
@@ -585,8 +585,8 @@ pub async fn reactivate(
         ));
     }
     let now = crate::time::now_str();
-    let _ = sqlx::query("UPDATE autotopup_autotopup SET is_active = 1, updated_at = ? WHERE id = ?")
-        .bind(&now)
+    let _ = sqlx::query("UPDATE autotopup_autotopup SET is_active = TRUE, updated_at = $1 WHERE id = $2")
+        .bind(crate::time::Ts(&now))
         .bind(pk)
         .execute(&s.db)
         .await;
@@ -597,7 +597,7 @@ pub async fn reactivate(
         ctx.service_type = row.service_type.clone();
         ctx.locked_amount = locked.clone();
         let next_raw: Option<(String,)> = sqlx::query_as(
-            "SELECT CAST(next_run AS TEXT) FROM autotopup_autotopup WHERE id = ?",
+            "SELECT CAST(next_run AS TEXT) FROM autotopup_autotopup WHERE id = $1",
         )
         .bind(pk)
         .fetch_optional(&s.db)
@@ -658,7 +658,7 @@ pub async fn history(
     let mut out = Vec::new();
     for h in &rows {
         let raw: Option<(String,)> = sqlx::query_as(
-            "SELECT CAST(executed_at AS TEXT) FROM autotopup_autotopuphistory WHERE id = ?",
+            "SELECT CAST(executed_at AS TEXT) FROM autotopup_autotopuphistory WHERE id = $1",
         )
         .bind(h.id)
         .fetch_optional(&s.db)

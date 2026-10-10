@@ -127,10 +127,10 @@ pub async fn history(
     let result: Result<Value, AppError> = async {
         let filter = params.get("type").cloned().unwrap_or_default();
         let mut sql = "SELECT id, transaction_type, CAST(points AS TEXT), reason, description, reference,
-                       CAST(balance_before AS TEXT), CAST(balance_after AS TEXT), CAST(created_at AS TEXT), metadata
-                FROM bonus_bonushistory WHERE user_id = ?".to_string();
+                       CAST(balance_before AS TEXT), CAST(balance_after AS TEXT), CAST(created_at AS TEXT), CAST(metadata AS TEXT) AS metadata
+                FROM bonus_bonushistory WHERE user_id = $1".to_string();
         if !filter.is_empty() {
-            sql.push_str(" AND transaction_type = ?");
+            sql.push_str(" AND transaction_type = $2");
         }
         sql.push_str(" ORDER BY created_at DESC");
         let mut q = sqlx::query_as::<_, (
@@ -314,13 +314,13 @@ pub async fn referral_list(
     let mut data = Vec::new();
     for r in &rows {
         let created: Option<(String,)> = sqlx::query_as(
-            "SELECT CAST(created_at AS TEXT) FROM bonus_referral WHERE id = ?",
+            "SELECT CAST(created_at AS TEXT) FROM bonus_referral WHERE id = $1",
         )
         .bind(r.id)
         .fetch_optional(&s.db)
         .await?;
         let completed: Option<(Option<String>,)> = sqlx::query_as(
-            "SELECT CAST(completed_at AS TEXT) FROM bonus_referral WHERE id = ?",
+            "SELECT CAST(completed_at AS TEXT) FROM bonus_referral WHERE id = $1",
         )
         .bind(r.id)
         .fetch_optional(&s.db)
@@ -382,7 +382,7 @@ pub async fn referral_apply(
         ));
     }
     let referrer: Option<(i64,)> = sqlx::query_as(
-        "SELECT id FROM accounts_profile WHERE referral_code = ?",
+        "SELECT id FROM accounts_profile WHERE referral_code = $1",
     )
     .bind(&code)
     .fetch_optional(&s.db)
@@ -426,13 +426,13 @@ pub async fn referral_apply(
     let row = sqlx::query_as::<_, bonus_models::ReferralRow>(
         "SELECT id, status, bonus_awarded, first_transaction_completed, created_at, completed_at,
                 referred_user_id, referrer_id, count, referral_code
-         FROM bonus_referral WHERE id = ?",
+         FROM bonus_referral WHERE id = $1",
     )
     .bind(referral_id)
     .fetch_one(&s.db)
     .await?;
     let created: (String,) = sqlx::query_as(
-        "SELECT CAST(created_at AS TEXT) FROM bonus_referral WHERE id = ?",
+        "SELECT CAST(created_at AS TEXT) FROM bonus_referral WHERE id = $1",
     )
     .bind(referral_id)
     .fetch_one(&s.db)

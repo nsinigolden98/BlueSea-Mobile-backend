@@ -126,7 +126,7 @@ async fn purchase_stamps(
         _ => "payments_airtime2cash",
     };
     let row: Option<(String, String)> = sqlx::query_as(&format!(
-        "SELECT CAST(created_at AS TEXT), CAST(updated_at AS TEXT) FROM {table} WHERE id = ?"
+        "SELECT CAST(created_at AS TEXT), CAST(updated_at AS TEXT) FROM {table} WHERE id = $1"
     ))
     .bind(id)
     .fetch_optional(&s.db)
@@ -152,7 +152,7 @@ async fn group_status_row(
             "SELECT id, status, vtpass_transaction_id, CAST(created_at AS TEXT), CAST(updated_at AS TEXT),
                     initiated_by_id, group_id
              FROM payments_grouppayment
-             WHERE vtu_reference = ? OR json_extract(service_details, '$.request_id') = ?",
+             WHERE vtu_reference = $1 OR service_details ->> 'request_id' = $2",
         )
         .bind(reference_id)
         .bind(reference_id)
@@ -163,7 +163,7 @@ async fn group_status_row(
 
 async fn is_group_member(s: &AppState, group_id: &str, user_id: i64) -> Result<bool, AppError> {
     let row: Option<(i64,)> = sqlx::query_as(
-        "SELECT id FROM group_payment_groupmember WHERE group_id = ? AND user_id = ?",
+        "SELECT id FROM group_payment_groupmember WHERE group_id = CAST($1 AS UUID) AND user_id = $2",
     )
     .bind(group_id)
     .bind(user_id)

@@ -1,5 +1,5 @@
 //! Group rows. Mirrors `group_payment/models.py`:
-//! UUID PKs stored dashless (char(32)), 6-char uppercase join codes.
+//! UUID PKs stored dashless (UUID), 6-char uppercase join codes.
 
 use sqlx::FromRow;
 
@@ -13,17 +13,17 @@ pub struct GroupRow {
     pub sub_number: String,
     pub plan: String,
     pub plan_type: Option<String>,
-    pub target_amount: i64,
-    pub current_amount: i64,
+    pub target_amount: i32,
+    pub current_amount: i32,
     pub status: String,
     pub active: bool,
     pub invite_members: String,
     pub join_code: String,
-    pub created_at: chrono::NaiveDateTime,
-    pub updated_at: chrono::NaiveDateTime,
+    pub created_at: crate::time::NaiveUtc,
+    pub updated_at: crate::time::NaiveUtc,
 }
 
-const GROUP_COLS: &str = "id, name, description, created_by_id, service_type, sub_number, plan,
+const GROUP_COLS: &str = "CAST(id AS TEXT) AS id, name, description, created_by_id, service_type, sub_number, plan,
         plan_type, target_amount, current_amount, status, active, invite_members, join_code,
         created_at, updated_at";
 
@@ -31,11 +31,11 @@ const GROUP_COLS: &str = "id, name, description, created_by_id, service_type, su
 pub struct MemberRow {
     pub id: i64,
     pub role: String,
-    pub joined_at: chrono::NaiveDateTime,
+    pub joined_at: crate::time::NaiveUtc,
     pub group_id: String,
     pub user_id: i64,
-    pub locked_amount: i64,
-    pub paid_amount: i64,
+    pub locked_amount: i32,
+    pub paid_amount: i32,
     pub payment_status: String,
 }
 
@@ -45,11 +45,11 @@ pub fn generate_join_code() -> String {
 }
 
 pub async fn group_by_id(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     id_hex: &str,
 ) -> Result<Option<GroupRow>, sqlx::Error> {
     sqlx::query_as::<_, GroupRow>(&format!(
-        "SELECT {GROUP_COLS} FROM group_payment_group WHERE id = ?"
+        "SELECT {GROUP_COLS} FROM group_payment_group WHERE id = CAST($1 AS UUID)"
     ))
     .bind(id_hex)
     .fetch_optional(db)
@@ -57,11 +57,11 @@ pub async fn group_by_id(
 }
 
 pub async fn group_by_join_code(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     join_code: &str,
 ) -> Result<Option<GroupRow>, sqlx::Error> {
     sqlx::query_as::<_, GroupRow>(&format!(
-        "SELECT {GROUP_COLS} FROM group_payment_group WHERE lower(join_code) = lower(?) AND active = 1"
+        "SELECT {GROUP_COLS} FROM group_payment_group WHERE lower(join_code) = lower($1) AND active = TRUE"
     ))
     .bind(join_code)
     .fetch_optional(db)
@@ -69,12 +69,12 @@ pub async fn group_by_join_code(
 }
 
 pub async fn members_of(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     group_id: &str,
 ) -> Result<Vec<MemberRow>, sqlx::Error> {
     sqlx::query_as::<_, MemberRow>(
-        "SELECT id, role, joined_at, group_id, user_id, locked_amount, paid_amount, payment_status
-         FROM group_payment_groupmember WHERE group_id = ? ORDER BY id",
+        "SELECT id, role, joined_at, CAST(group_id AS TEXT) AS group_id, user_id, locked_amount, paid_amount, payment_status
+         FROM group_payment_groupmember WHERE group_id = CAST($1 AS UUID) ORDER BY id",
     )
     .bind(group_id)
     .fetch_all(db)
@@ -82,15 +82,20 @@ pub async fn members_of(
 }
 
 pub async fn member_role(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     group_id: &str,
     user_id: i64,
     roles: &[&str],
 ) -> Result<Option<MemberRow>, sqlx::Error> {
-    let placeholders = roles.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+    let placeholders = roles
+        .iter()
+        .enumerate()
+        .map(|(i, _)| format!("${}", i + 3))
+        .collect::<Vec<_>>()
+        .join(",");
     let sql = format!(
-        "SELECT id, role, joined_at, group_id, user_id, locked_amount, paid_amount, payment_status
-         FROM group_payment_groupmember WHERE group_id = ? AND user_id = ? AND role IN ({placeholders})"
+        "SELECT id, role, joined_at, CAST(group_id AS TEXT) AS group_id, user_id, locked_amount, paid_amount, payment_status
+         FROM group_payment_groupmember WHERE group_id = CAST($1 AS UUID) AND user_id = $2 AND role IN ({placeholders})"
     );
     let mut q = sqlx::query_as::<_, MemberRow>(&sql).bind(group_id).bind(user_id);
     for r in roles {
@@ -100,14 +105,14 @@ pub async fn member_role(
 }
 
 pub async fn member_counts(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     group_id: &str,
 ) -> Result<(i64, i64, i64), sqlx::Error> {
     let row: (i64, i64, i64) = sqlx::query_as(
         "SELECT COUNT(*),
                 SUM(CASE WHEN payment_status = 'paid' THEN 1 ELSE 0 END),
                 SUM(CASE WHEN payment_status = 'pending' THEN 1 ELSE 0 END)
-         FROM group_payment_groupmember WHERE group_id = ?",
+         FROM group_payment_groupmember WHERE group_id = CAST($1 AS UUID)",
     )
     .bind(group_id)
     .fetch_optional(db)
@@ -117,12 +122,12 @@ pub async fn member_counts(
 }
 
 pub async fn groups_of_user(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     user_id: i64,
 ) -> Result<Vec<(MemberRow, GroupRow)>, sqlx::Error> {
     let memberships: Vec<MemberRow> = sqlx::query_as(
-        "SELECT id, role, joined_at, group_id, user_id, locked_amount, paid_amount, payment_status
-         FROM group_payment_groupmember WHERE user_id = ? ORDER BY id",
+        "SELECT id, role, joined_at, CAST(group_id AS TEXT) AS group_id, user_id, locked_amount, paid_amount, payment_status
+         FROM group_payment_groupmember WHERE user_id = $1 ORDER BY id",
     )
     .bind(user_id)
     .fetch_all(db)

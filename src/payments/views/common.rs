@@ -183,3 +183,26 @@ pub fn payment_failed(e: impl std::fmt::Display) -> (StatusCode, Json<Value>) {
         Json(json!({"success": false, "error": format!("Payment failed: {e}")})),
     )
 }
+
+/// Map a wallet-ledger failure to the VTU error dialect.
+/// Used for lock/finalize failures on the Nomba rails.
+pub fn lock_failed(e: crate::wallet::models::WalletError) -> (StatusCode, Json<Value>) {
+    match e {
+        crate::wallet::models::WalletError::InsufficientFunds => insufficient_funds(),
+        crate::wallet::models::WalletError::Frozen => (
+            StatusCode::FORBIDDEN,
+            Json(json!({"error": "Account frozen. Contact support.", "success": false})),
+        ),
+        crate::wallet::models::WalletError::LimitExceeded { limit_cents } => (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": format!(
+                "Tier limit exceeded (max {} per account). Upgrade your KYC tier.",
+                crate::accounts::tier::limit_naira_display(limit_cents)
+            ), "success": false})),
+        ),
+        crate::wallet::models::WalletError::WalletNotFound => {
+            payment_failed("Sender wallet not found")
+        }
+        other => payment_failed(format!("{other:?}")),
+    }
+}

@@ -86,6 +86,25 @@ pub fn req_int(body: &Value, name: &str) -> Result<i64, Value> {
     }
 }
 
+/// Naira purchase amount: integer, within 1..=50_000_000.
+/// The upper bound keeps `naira * 100` far from i64 overflow and caps
+/// single-purchase exposure; Nomba-side limits still apply.
+pub fn req_amount_naira(body: &Value, name: &str) -> Result<i64, Value> {
+    let v = req_int(body, name)?;
+    if v < 1 {
+        return Err(err(name, "Ensure this value is greater than or equal to 1."));
+    }
+    if v > 50_000_000 {
+        return Err(err(name, "Ensure this value is less than or equal to 50000000."));
+    }
+    Ok(v)
+}
+
+/// Saturating naira→kobo for validated amounts (no overflow possible).
+pub fn naira_to_cents(naira: i64) -> i64 {
+    naira.saturating_mul(100)
+}
+
 /// DRF DecimalField with min_value, returned as integer cents.
 /// `min_display` is the exact bound text (e.g. "500.00").
 pub fn req_decimal_min(
@@ -220,8 +239,8 @@ pub struct AirtimeParams {
 }
 
 pub fn validate_airtime(body: &Value) -> Result<AirtimeParams, Value> {
-    let amount = req_int(body, "amount")?;
-    let network = req_choice(body, "network", &["mtn", "airtel", "glo", "etisalat"])?;
+    let amount = req_amount_naira(body, "amount")?;
+    let network = req_choice(body, "network", &["mtn", "airtel", "glo", "9mobile"])?;
     let phone = req_str_max(body, "phone_number", 11)?;
     Ok(AirtimeParams { amount_naira: amount, network, phone })
 }
@@ -241,6 +260,22 @@ pub fn validate_data(body: &Value, plans: &[crate::payments::plans::Plan]) -> Re
     let billers_code = req_str_max(body, "billersCode", 20)?;
     let phone = req_str_max(body, "phone_number", 11)?;
     Ok(DataParams { plan: plan_raw, billers_code: billers_code, phone })
+}
+
+/// Nomba data validation: `plan` is the Nomba product id from `/ws/plans/`
+/// (free-form — validated by Nomba, not against the legacy VTpass catalog).
+#[derive(Debug)]
+pub struct NombaDataParams {
+    pub plan: String,
+    pub billers_code: String,
+    pub phone: String,
+}
+
+pub fn validate_data_nomba(body: &Value) -> Result<NombaDataParams, Value> {
+    let plan = req_str_max(body, "plan", 100)?;
+    let billers_code = req_str_max(body, "billersCode", 20)?;
+    let phone = req_str_max(body, "phone_number", 11)?;
+    Ok(NombaDataParams { plan, billers_code, phone })
 }
 
 #[derive(Debug)]
@@ -273,6 +308,23 @@ pub fn validate_cable(
     Ok(CableParams { billers_code, plan: plan_raw, subscription_type, phone })
 }
 
+/// Nomba cable validation: `plan` is the Nomba plan id from `/ws/plans/`
+/// (free-form — validated by Nomba). `subscription_type` is optional
+/// (legacy VTpass field, ignored by Nomba).
+#[derive(Debug)]
+pub struct NombaCableParams {
+    pub billers_code: String,
+    pub plan: String,
+    pub phone: String,
+}
+
+pub fn validate_cable_nomba(body: &Value, plan_field: &str) -> Result<NombaCableParams, Value> {
+    let billers_code = req_str_max(body, "billersCode", 20)?;
+    let plan = req_str_max(body, plan_field, 100)?;
+    let phone = req_str_max(body, "phone_number", 11)?;
+    Ok(NombaCableParams { billers_code, plan, phone })
+}
+
 #[derive(Debug)]
 pub struct ElectricityParams {
     pub biller_code: String,
@@ -281,6 +333,8 @@ pub struct ElectricityParams {
     pub meter_type: String,
 }
 
+/// Legacy VTpass disco ids (reference only — electricity providers now come from Nomba).
+#[allow(dead_code)]
 const BILLERS: &[&str] = &[
     "ikeja-electric", "eko-electric", "kano-electric", "portharcourt-electric",
     "jos-electric", "ibadan-electric", "kaduna-electric", "abuja-electric",
@@ -289,8 +343,10 @@ const BILLERS: &[&str] = &[
 
 pub fn validate_electricity(body: &Value) -> Result<ElectricityParams, Value> {
     let biller_code = req_str_max(body, "billerCode", 20)?;
-    let amount = req_int(body, "amount")?;
-    let biller_name = req_choice(body, "biller_name", BILLERS)?;
+    let amount = req_amount_naira(body, "amount")?;
+    // Nomba provider ids (see GET /payments/electricity/providers/);
+    // any non-blank provider is accepted and validated by Nomba.
+    let biller_name = req_str_max(body, "biller_name", 60)?;
     let meter_type = req_choice(body, "meter_type", &["prepaid", "postpaid"])?;
     Ok(ElectricityParams { biller_code, amount_naira: amount, biller_name, meter_type })
 }
@@ -431,5 +487,34 @@ mod tests {
             e,
             serde_json::json!({"amount": ["Ensure this value is greater than or equal to 500.00."]})
         );
+    }
+}
+
+#[cfg(test)]
+mod security_tests {
+    use super::*;
+
+    #[test]
+    fn amount_bounds_reject_zero_overflow() {
+        for bad in [0, -5, 50_000_001, i64::MAX] {
+            let b = serde_json::json!({"network": "mtn", "phone_number": "08012345678", "amount": bad});
+            assert!(validate_airtime(&b).is_err(), "amount {bad}");
+        }
+        // Upper bound is safe against kobo overflow.
+        let b = serde_json::json!({"network": "mtn", "phone_number": "08012345678", "amount": 50_000_000});
+        let p = validate_airtime(&b).unwrap();
+        assert_eq!(naira_to_cents(p.amount_naira), 5_000_000_000);
+    }
+
+    #[test]
+    fn oversized_strings_rejected() {
+        let big = "x".repeat(200);
+        let b = serde_json::json!({"plan": big, "billersCode": "0801", "phone_number": "0801"});
+        assert!(validate_data_nomba(&b).is_err());
+        let b = serde_json::json!({"provider": big, "customer_id": "1"});
+        // betting caps live in the view layer (req_str_max 60/50).
+        assert!(req_str_max(&b, "provider", 60).is_err());
+        let b = serde_json::json!({"provider": "MSPORT", "customer_id": big});
+        assert!(req_str_max(&b, "customer_id", 50).is_err());
     }
 }

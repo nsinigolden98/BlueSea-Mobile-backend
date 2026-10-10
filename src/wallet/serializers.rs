@@ -22,8 +22,8 @@ impl From<&Wallet> for WalletPublic {
             id: w.id,
             user: w.user_id,
             balance: w.balance.clone(),
-            created_at: w.created_at,
-            updated_at: w.updated_at,
+            created_at: w.created_at.0,
+            updated_at: w.updated_at.0,
             is_active: w.is_active,
         }
     }

@@ -22,7 +22,7 @@ pub struct PinResult {
 /// - On failure increments the counter and locks the account after
 ///   `max_attempts` consecutive failures for `lockout_minutes`.
 pub async fn verify_pin_with_lockout(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     user_id: i64,
     encrypted_pin: &str,
     pin_key: &str,
@@ -30,7 +30,7 @@ pub async fn verify_pin_with_lockout(
     lockout_minutes: i64,
 ) -> Result<PinResult, sqlx::Error> {
     let user: Option<Profile> =
-        sqlx::query_as("SELECT * FROM accounts_profile WHERE id = ?")
+        sqlx::query_as("SELECT * FROM accounts_profile WHERE id = $1")
             .bind(user_id)
             .fetch_optional(db)
             .await?;
@@ -63,7 +63,7 @@ pub async fn verify_pin_with_lockout(
         .unwrap_or(false)
     {
         sqlx::query(
-            "UPDATE accounts_profile SET pin_failed_attempts = 0, pin_locked_until = NULL WHERE id = ?",
+            "UPDATE accounts_profile SET pin_failed_attempts = 0, pin_locked_until = NULL WHERE id = $1",
         )
         .bind(user.id)
         .execute(db)
@@ -81,7 +81,7 @@ pub async fn verify_pin_with_lockout(
 
     if verified {
         sqlx::query(
-            "UPDATE accounts_profile SET pin_failed_attempts = 0, pin_locked_until = NULL WHERE id = ?",
+            "UPDATE accounts_profile SET pin_failed_attempts = 0, pin_locked_until = NULL WHERE id = $1",
         )
         .bind(user.id)
         .execute(db)
@@ -96,13 +96,13 @@ pub async fn verify_pin_with_lockout(
 
     // Failed attempt.
     let attempts = user.pin_failed_attempts + 1;
-    let attempts_remaining = (max_attempts - attempts).max(0);
-    if attempts >= max_attempts {
+    let attempts_remaining = (max_attempts - attempts as i64).max(0);
+    if attempts as i64 >= max_attempts {
         let until = (Utc::now() + chrono::Duration::minutes(lockout_minutes))
             .naive_utc()
             .to_string();
         sqlx::query(
-            "UPDATE accounts_profile SET pin_failed_attempts = ?, pin_locked_until = ? WHERE id = ?",
+            "UPDATE accounts_profile SET pin_failed_attempts = $1, pin_locked_until = $2 WHERE id = $3",
         )
         .bind(attempts)
         .bind(&until)
@@ -116,7 +116,7 @@ pub async fn verify_pin_with_lockout(
             attempts_remaining: 0,
         });
     }
-    sqlx::query("UPDATE accounts_profile SET pin_failed_attempts = ? WHERE id = ?")
+    sqlx::query("UPDATE accounts_profile SET pin_failed_attempts = $1 WHERE id = $2")
         .bind(attempts)
         .bind(user.id)
         .execute(db)

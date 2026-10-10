@@ -24,7 +24,7 @@ pub struct DvaInfo {
     pub dva_account_name: Option<String>,
     pub bank_name: String,
     pub bank_slug: String,
-    pub bank_id: Option<i64>,
+    pub bank_id: Option<i32>,
     pub customer_code: String,
     pub active: bool,
 }
@@ -61,6 +61,8 @@ pub fn current_user_json(
         "referral_code": user.referral_code,
         "created_on": format_naive_lagos(&user.created_on),
         "has_DVA": user.has_dva,
+        "tier": crate::accounts::tier::tier_of(user),
+        "is_frozen": user.is_frozen,
         "dva_account": dva.map(DvaInfo::from_row).map(|d| serde_json::to_value(&d).unwrap_or(Value::Null)),
         "preference": preference_json(preference),
     })

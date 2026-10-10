@@ -1,16 +1,18 @@
-//! Transactions app — wallet history and Paystack funding.
+//! Transactions app — wallet history and Nomba funding.
 //! Django file layout mirrored:
 //!   models.rs      <-> models.py (WalletTransaction, FundWallet)
 //!   serializers.rs <-> serializers.py (live serializers)
 //!   pagination.rs  <-> pagination.py (5 default / 50 max)
-//!   paystack.rs    <-> paystack.py (checkout, resolve, DVA requery)
-//!   views.rs       <-> views.py (split by concern underneath)
+//!   nomba_gateway.rs <-> nomba_gateway.py (async nomba-rs client)
+//!   nomba_views.rs <-> nomba_views.py (funding, DVA, webhook)
+//!   views.rs       <-> history only (Paystack rails removed)
 //!   urls.rs        <-> urls.py
 //! (`utils.py` is fully commented out in Django — nothing to port.)
 
 pub mod models;
+pub mod nomba_gateway;
+pub mod nomba_views;
 pub mod pagination;
-pub mod paystack;
 pub mod serializers;
 pub mod urls;
 pub mod views;

@@ -6,8 +6,8 @@ use crate::accounts::models::Profile;
 use crate::error::AppError;
 use crate::state::AppState;
 
-pub async fn get_profile(db: &sqlx::SqlitePool, id: i64) -> Result<Profile, AppError> {
-    sqlx::query_as::<_, Profile>("SELECT * FROM accounts_profile WHERE id = ?")
+pub async fn get_profile(db: &sqlx::PgPool, id: i64) -> Result<Profile, AppError> {
+    sqlx::query_as::<_, Profile>("SELECT * FROM accounts_profile WHERE id = $1")
         .bind(id)
         .fetch_optional(db)
         .await?

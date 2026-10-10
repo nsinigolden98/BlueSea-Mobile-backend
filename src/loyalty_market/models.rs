@@ -1,5 +1,5 @@
 //! Loyalty rows. Mirrors `loyalty_market/models.py`:
-//! UUID PKs are stored dashless (char(32)); the redemption FK columns are
+//! UUID PKs are stored dashless (UUID); the redemption FK columns are
 //! literally `user_id_id` / `reward_id_id` (Django appends `_id` to the
 //! `user_id`/`reward_id` field names).
 
@@ -11,21 +11,21 @@ pub struct RewardRow {
     pub title: String,
     pub description: String,
     pub image_url: Option<String>,
-    pub points_cost: i64,
+    pub points_cost: i32,
     pub category: Option<String>,
-    pub inventory: Option<i64>,
-    pub availability_end: Option<chrono::NaiveDateTime>,
+    pub inventory: Option<i32>,
+    pub availability_end: Option<crate::time::NaiveUtc>,
     pub fulfilment_type: String,
     pub polarity_score: i64,
-    pub created_at: chrono::NaiveDateTime,
+    pub created_at: crate::time::NaiveUtc,
     pub user_id: i64,
-    pub availability_start: chrono::NaiveDateTime,
+    pub availability_start: crate::time::NaiveUtc,
 }
 
 const REWARD_COLS: &str = "id, title, description, image_url, points_cost, category, inventory,
         availability_end, fulfilment_type, polarity_score, created_at, user_id, availability_start";
 
-pub async fn available_rewards(db: &sqlx::SqlitePool) -> Result<Vec<RewardRow>, sqlx::Error> {
+pub async fn available_rewards(db: &sqlx::PgPool) -> Result<Vec<RewardRow>, sqlx::Error> {
     // inventory__gt=0 excludes NULLs and zeros, like Django.
     sqlx::query_as::<_, RewardRow>(&format!(
         "SELECT {REWARD_COLS} FROM loyalty_market_reward WHERE inventory > 0 ORDER BY created_at DESC"
@@ -35,11 +35,11 @@ pub async fn available_rewards(db: &sqlx::SqlitePool) -> Result<Vec<RewardRow>, 
 }
 
 pub async fn reward_by_id(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     id_hex: &str,
 ) -> Result<Option<RewardRow>, sqlx::Error> {
     sqlx::query_as::<_, RewardRow>(&format!(
-        "SELECT {REWARD_COLS} FROM loyalty_market_reward WHERE id = ?"
+        "SELECT {REWARD_COLS} FROM loyalty_market_reward WHERE id = CAST($1 AS UUID)"
     ))
     .bind(id_hex)
     .fetch_optional(db)
@@ -49,29 +49,29 @@ pub async fn reward_by_id(
 #[derive(Debug, Clone, FromRow)]
 pub struct RedemptionRow {
     pub id: String,
-    pub points_deducted: i64,
+    pub points_deducted: i32,
     pub status: String,
-    pub created_at: chrono::NaiveDateTime,
-    pub redeemed_at: Option<chrono::NaiveDateTime>,
+    pub created_at: crate::time::NaiveUtc,
+    pub redeemed_at: Option<crate::time::NaiveUtc>,
     pub fulfilment_payload: Option<String>,
     pub user_id_id: i64,
     pub reward_id_id: String,
 }
 
 pub async fn redemptions_for(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     user_id: i64,
 ) -> Result<Vec<(RedemptionRow, Option<String>)>, sqlx::Error> {
     // (redemption, reward title or "Unknown"), newest first.
     let rows: Vec<(
-        String, i64, String, chrono::NaiveDateTime, Option<chrono::NaiveDateTime>,
+        String, i32, String, chrono::DateTime<chrono::Utc>, Option<chrono::DateTime<chrono::Utc>>,
         Option<String>, i64, String, Option<String>,
     )> = sqlx::query_as(
-        "SELECT r.id, r.points_deducted, r.status, r.created_at, r.redeemed_at,
-                r.fulfilment_payload, r.user_id_id, r.reward_id_id, w.title
+        "SELECT CAST(r.id AS TEXT) AS id, r.points_deducted, r.status, r.created_at, r.redeemed_at,
+                r.fulfilment_payload, r.user_id_id, CAST(r.reward_id_id AS TEXT) AS reward_id_id, w.title
          FROM loyalty_market_redemptiontransaction r
          LEFT JOIN loyalty_market_reward w ON w.id = r.reward_id_id
-         WHERE r.user_id_id = ? ORDER BY r.created_at DESC",
+         WHERE r.user_id_id = $1 ORDER BY r.created_at DESC",
     )
     .bind(user_id)
     .fetch_all(db)
@@ -85,8 +85,8 @@ pub async fn redemptions_for(
                         id,
                         points_deducted: points,
                         status,
-                        created_at: created,
-                        redeemed_at: redeemed,
+                        created_at: crate::time::NaiveUtc(created.naive_utc()),
+                        redeemed_at: redeemed.map(|d| crate::time::NaiveUtc(d.naive_utc())),
                         fulfilment_payload: payload,
                         user_id_id: uid,
                         reward_id_id: rid,

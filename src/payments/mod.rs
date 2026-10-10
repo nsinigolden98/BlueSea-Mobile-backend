@@ -12,6 +12,7 @@
 //! synchronously — so no worker is ported.)
 
 pub mod models;
+pub mod nomba_withdrawal;
 pub mod plans;
 pub mod serializers;
 pub mod urls;

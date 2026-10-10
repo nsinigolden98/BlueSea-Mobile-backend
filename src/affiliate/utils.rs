@@ -14,13 +14,13 @@ fn dec(raw: &str) -> Decimal {
 }
 
 pub async fn active_link(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     affiliate_id: i64,
     event_id: &str,
 ) -> Result<Option<affiliate_models::AffiliateLinkRow>, sqlx::Error> {
     sqlx::query_as::<_, affiliate_models::AffiliateLinkRow>(
-        "SELECT id, CAST(commission_rate AS TEXT) AS commission_rate, clicks, is_active, created_at, event_id, affiliate_id
-         FROM affiliate_affiliatelink WHERE affiliate_id = ? AND event_id = ? AND is_active = 1",
+        "SELECT id, CAST(commission_rate AS TEXT) AS commission_rate, clicks, is_active, created_at, CAST(event_id AS TEXT) AS event_id, affiliate_id
+         FROM affiliate_affiliatelink WHERE affiliate_id = $1 AND event_id = CAST($2 AS UUID) AND is_active = TRUE",
     )
     .bind(affiliate_id)
     .bind(event_id)
@@ -28,8 +28,8 @@ pub async fn active_link(
     .await
 }
 
-pub async fn increment_clicks(db: &sqlx::SqlitePool, link_id: i64) -> Result<(), sqlx::Error> {
-    sqlx::query("UPDATE affiliate_affiliatelink SET clicks = clicks + 1 WHERE id = ?")
+pub async fn increment_clicks(db: &sqlx::PgPool, link_id: i64) -> Result<(), sqlx::Error> {
+    sqlx::query("UPDATE affiliate_affiliatelink SET clicks = clicks + 1 WHERE id = $1")
         .bind(link_id)
         .execute(db)
         .await?;
@@ -43,7 +43,7 @@ pub struct Attribution {
 
 /// First-attribution-wins click recording. Returns None when invalid.
 pub async fn record_attribution(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     buyer_id: i64,
     event: &affiliate_models::EventView,
     affiliate_name: &str,
@@ -67,34 +67,34 @@ pub async fn record_attribution(
         }));
     }
     let now = crate::time::now_str();
-    let res = sqlx::query(
+    let res = sqlx::query_as::<_, (i64,)>(
         "INSERT INTO affiliate_affiliatesale (ticket_count, gross_amount, commission_rate, commission_amount,
                 status, created_at, payable_at, paid_at, revoked_at, affiliate_id, buyer_id, event_id,
                 issued_ticket_id, link_id)
-         VALUES (0, '0.00', ?, '0.00', 'pending', ?, NULL, NULL, NULL, ?, ?, ?, NULL, ?)",
+         VALUES (0, '0.00', CAST($1 AS NUMERIC), '0.00', 'pending', $2, NULL, NULL, NULL, $3, $4, CAST($5 AS UUID), NULL, $6) RETURNING id",
     )
     .bind(&link.commission_rate)
-    .bind(&now)
+    .bind(crate::time::Ts(&now))
     .bind(affiliate.id)
     .bind(buyer_id)
     .bind(&event.id)
     .bind(link.id)
-    .execute(db)
+    .fetch_one(db)
     .await?;
     increment_clicks(db, link.id).await?;
     Ok(Some(Attribution {
-        sale_id: res.last_insert_rowid(),
+        sale_id: res.0,
         status: "pending".to_string(),
     }))
 }
 
 async fn sale_for_buyer(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     buyer_id: i64,
     event_id: &str,
 ) -> Result<Option<(i64, String)>, sqlx::Error> {
     sqlx::query_as::<_, (i64, String)>(
-        "SELECT id, status FROM affiliate_affiliatesale WHERE buyer_id = ? AND event_id = ? ORDER BY id LIMIT 1",
+        "SELECT id, status FROM affiliate_affiliatesale WHERE buyer_id = $1 AND event_id = CAST($2 AS UUID) ORDER BY id LIMIT 1",
     )
     .bind(buyer_id)
     .bind(event_id)
@@ -107,12 +107,12 @@ async fn sale_for_buyer(
 /// `total` is the purchase gross in naira-cents; `first_ticket_hex` is the
 /// dashless issued-ticket id (or None).
 pub async fn complete_sale(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     buyer_id: i64,
     event: &affiliate_models::EventView,
     affiliate_name: &str,
     first_ticket_hex: Option<&str>,
-    quantity: i64,
+    quantity: i32,
     total_cents: i64,
 ) -> Result<Option<i64>, sqlx::Error> {
     let affiliate = affiliate_models::profile_by_name(db, affiliate_name).await?;
@@ -140,7 +140,7 @@ pub async fn complete_sale(
 
     if let Some((sale_id, sale_status)) = sale_for_buyer(db, buyer_id, &event.id).await? {
         let owner: Option<(i64,)> = sqlx::query_as(
-            "SELECT affiliate_id FROM affiliate_affiliatesale WHERE id = ?",
+            "SELECT affiliate_id FROM affiliate_affiliatesale WHERE id = $1",
         )
         .bind(sale_id)
         .fetch_optional(db)
@@ -150,8 +150,8 @@ pub async fn complete_sale(
         }
         if sale_status == "pending" {
             sqlx::query(
-                "UPDATE affiliate_affiliatesale SET status = 'success', link_id = ?, issued_ticket_id = ?,
-                 ticket_count = ?, gross_amount = ?, commission_rate = ?, commission_amount = ? WHERE id = ?",
+                "UPDATE affiliate_affiliatesale SET status = 'success', link_id = $1, issued_ticket_id = CAST($2 AS UUID),
+                 ticket_count = $3, gross_amount = CAST($4 AS NUMERIC), commission_rate = CAST($5 AS NUMERIC), commission_amount = CAST($6 AS NUMERIC) WHERE id = $7",
             )
             .bind(link.id)
             .bind(first_ticket_hex)
@@ -166,30 +166,30 @@ pub async fn complete_sale(
         return Ok(Some(sale_id));
     }
 
-    let res = sqlx::query(
+    let res = sqlx::query_as::<_, (i64,)>(
         "INSERT INTO affiliate_affiliatesale (ticket_count, gross_amount, commission_rate, commission_amount,
                 status, created_at, payable_at, paid_at, revoked_at, affiliate_id, buyer_id, event_id,
                 issued_ticket_id, link_id)
-         VALUES (?, ?, ?, ?, 'success', ?, NULL, NULL, NULL, ?, ?, ?, ?, ?)",
+         VALUES ($1, CAST($2 AS NUMERIC), CAST($3 AS NUMERIC), CAST($4 AS NUMERIC), 'success', $5, NULL, NULL, NULL, $6, $7, CAST($8 AS UUID), CAST($9 AS UUID), $10) RETURNING id",
     )
     .bind(quantity)
     .bind(total.to_string())
     .bind(&link.commission_rate)
     .bind(commission.to_string())
-    .bind(&now)
+    .bind(crate::time::Ts(&now))
     .bind(affiliate.id)
     .bind(buyer_id)
     .bind(&event.id)
     .bind(first_ticket_hex)
     .bind(link.id)
-    .execute(db)
+    .fetch_one(db)
     .await?;
-    Ok(Some(res.last_insert_rowid()))
+    Ok(Some(res.0))
 }
 
 /// Mark past-event success sales payable. Returns the updated count.
 pub async fn sweep_payable(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     affiliate_id: Option<i64>,
     now: &str,
 ) -> Result<i64, sqlx::Error> {
@@ -197,9 +197,9 @@ pub async fn sweep_payable(
         sqlx::query_as(
             "SELECT s.id FROM affiliate_affiliatesale s
              JOIN market_place_eventinfo e ON e.id = s.event_id
-             WHERE s.status = 'success' AND e.event_date <= ? AND s.affiliate_id = ?",
+             WHERE s.status = 'success' AND e.event_date <= $1 AND s.affiliate_id = $2",
         )
-        .bind(now)
+        .bind(crate::time::Ts(&now))
         .bind(aid)
         .fetch_all(db)
         .await?
@@ -207,17 +207,17 @@ pub async fn sweep_payable(
         sqlx::query_as(
             "SELECT s.id FROM affiliate_affiliatesale s
              JOIN market_place_eventinfo e ON e.id = s.event_id
-             WHERE s.status = 'success' AND e.event_date <= ?",
+             WHERE s.status = 'success' AND e.event_date <= $1",
         )
-        .bind(now)
+        .bind(crate::time::Ts(&now))
         .fetch_all(db)
         .await?
     };
     for (id,) in &rows {
         sqlx::query(
-            "UPDATE affiliate_affiliatesale SET status = 'payable', payable_at = ? WHERE id = ?",
+            "UPDATE affiliate_affiliatesale SET status = 'payable', payable_at = $1 WHERE id = $2",
         )
-        .bind(now)
+        .bind(crate::time::Ts(&now))
         .bind(id)
         .execute(db)
         .await?;
@@ -236,7 +236,7 @@ pub async fn pay_out(
     sweep_payable(&state.db, Some(affiliate_id), &now).await?;
     let rows: Vec<(i64, String)> = sqlx::query_as(
         "SELECT id, CAST(commission_amount AS TEXT) FROM affiliate_affiliatesale
-         WHERE affiliate_id = ? AND status = 'payable' ORDER BY id",
+         WHERE affiliate_id = $1 AND status = 'payable' ORDER BY id",
     )
     .bind(affiliate_id)
     .fetch_all(&state.db)
@@ -248,9 +248,9 @@ pub async fn pay_out(
     let mut paid = Vec::new();
     for (id, amount_raw) in &rows {
         sqlx::query(
-            "UPDATE affiliate_affiliatesale SET status = 'paid', paid_at = ? WHERE id = ?",
+            "UPDATE affiliate_affiliatesale SET status = 'paid', paid_at = $1 WHERE id = $2",
         )
-        .bind(&now)
+        .bind(crate::time::Ts(&now))
         .bind(id)
         .execute(&state.db)
         .await?;
@@ -260,7 +260,7 @@ pub async fn pay_out(
     let mut reference = None;
     if total > Decimal::ZERO {
         let wallet: Option<(i64,)> =
-            sqlx::query_as("SELECT id FROM wallet_wallet WHERE user_id = ?")
+            sqlx::query_as("SELECT id FROM wallet_wallet WHERE user_id = $1")
                 .bind(user_id)
                 .fetch_optional(&state.db)
                 .await?;
@@ -283,22 +283,28 @@ pub async fn pay_out(
 
 /// Revoke a success/payable sale whose ticket was canceled.
 pub async fn revoke_sale(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     issued_ticket_hex: &str,
     now: &str,
 ) -> Result<Option<i64>, sqlx::Error> {
+    // Garbage ids match nothing (Django raises DoesNotExist -> None); an
+    // unparseable value would also fail the UUID cast, so bail out first.
+    let Ok(ticket_uuid) = uuid::Uuid::parse_str(issued_ticket_hex.trim()) else {
+        return Ok(None);
+    };
+    let ticket_id = ticket_uuid.hyphenated().to_string();
     let row: Option<(i64,)> = sqlx::query_as(
         "SELECT id FROM affiliate_affiliatesale
-         WHERE issued_ticket_id = ? AND status IN ('success', 'payable') ORDER BY id LIMIT 1",
+         WHERE issued_ticket_id = CAST($1 AS UUID) AND status IN ('success', 'payable') ORDER BY id LIMIT 1",
     )
-    .bind(issued_ticket_hex)
+    .bind(&ticket_id)
     .fetch_optional(db)
     .await?;
     if let Some((id,)) = row {
         sqlx::query(
-            "UPDATE affiliate_affiliatesale SET status = 'revoked', revoked_at = ? WHERE id = ?",
+            "UPDATE affiliate_affiliatesale SET status = 'revoked', revoked_at = $1 WHERE id = $2",
         )
-        .bind(now)
+        .bind(crate::time::Ts(&now))
         .bind(id)
         .execute(db)
         .await?;
@@ -312,87 +318,84 @@ mod tests {
     use super::*;
     use crate::state::AppState;
 
-    async fn memory_db() -> sqlx::SqlitePool {
-        let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.unwrap();
-        for ddl in [
-            "CREATE TABLE accounts_profile (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, password varchar(128) NOT NULL,
-             last_login datetime NULL, is_superuser bool NOT NULL, first_name varchar(150) NOT NULL, last_name varchar(150) NOT NULL,
-             date_joined datetime NOT NULL, email varchar(300) NOT NULL UNIQUE, surname varchar(100) NOT NULL, other_names varchar(100) NOT NULL,
-             phone varchar(200) NULL, image varchar(100) NULL, verification_code varchar(100) NULL, is_active bool NOT NULL,
-             is_staff bool NOT NULL, is_admin bool NOT NULL, role varchar(200) NOT NULL, email_verified bool NOT NULL,
-             created_on datetime NOT NULL, pin_is_set bool NOT NULL, transaction_pin varchar(255) NULL,
-             referral_code varchar(6) NOT NULL UNIQUE, pin_failed_attempts integer NOT NULL, pin_locked_until datetime NULL, has_DVA bool NOT NULL)",
-            "CREATE TABLE wallet_wallet (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, balance decimal NOT NULL,
-             locked_balance decimal NOT NULL, created_at datetime NOT NULL, updated_at datetime NOT NULL,
-             is_active bool NOT NULL, user_id bigint NOT NULL UNIQUE)",
-            "CREATE TABLE transactions_wallettransaction (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, amount decimal NOT NULL,
+    async fn memory_db() -> sqlx::PgPool {
+        let pool = crate::db::test_support::fresh_db(&[
+            "CREATE TABLE accounts_profile (id BIGSERIAL PRIMARY KEY, password varchar(128) NOT NULL,
+             last_login TIMESTAMPTZ NULL, is_superuser BOOLEAN NOT NULL, first_name varchar(150) NOT NULL, last_name varchar(150) NOT NULL,
+             date_joined TIMESTAMPTZ NOT NULL, email varchar(300) NOT NULL UNIQUE, surname varchar(100) NOT NULL, other_names varchar(100) NOT NULL,
+             phone varchar(200) NULL, image varchar(100) NULL, verification_code varchar(100) NULL, is_active BOOLEAN NOT NULL,
+             is_staff BOOLEAN NOT NULL, is_admin BOOLEAN NOT NULL, role varchar(200) NOT NULL, email_verified BOOLEAN NOT NULL,
+             created_on TIMESTAMPTZ NOT NULL, pin_is_set BOOLEAN NOT NULL, transaction_pin varchar(255) NULL,
+             referral_code varchar(6) NOT NULL UNIQUE, pin_failed_attempts integer NOT NULL, pin_locked_until TIMESTAMPTZ NULL, nin_encrypted text NULL, bvn_encrypted text NULL, house_address text NULL, utility_bill_image varchar(100) NULL, is_frozen BOOLEAN NOT NULL DEFAULT FALSE, frozen_reason varchar(200) NULL, \"has_DVA\" BOOLEAN NOT NULL)",
+            "CREATE TABLE wallet_wallet (id BIGSERIAL PRIMARY KEY, balance NUMERIC NOT NULL,
+             locked_balance NUMERIC NOT NULL, total_in NUMERIC NOT NULL DEFAULT 0, total_out NUMERIC NOT NULL DEFAULT 0,  created_at TIMESTAMPTZ NOT NULL, updated_at TIMESTAMPTZ NOT NULL,
+             is_active BOOLEAN NOT NULL, user_id bigint NOT NULL UNIQUE)",
+            "CREATE TABLE transactions_wallettransaction (id BIGSERIAL PRIMARY KEY, amount NUMERIC NOT NULL,
              transaction_type varchar(6) NOT NULL, status varchar(10) NOT NULL, description text NULL,
-             reference varchar(100) NOT NULL UNIQUE, created_at datetime NOT NULL, wallet_id bigint NOT NULL)",
-            "CREATE TABLE market_place_ticketvendor (id char(32) NOT NULL PRIMARY KEY, is_verified bool NOT NULL,
-             created_at datetime NOT NULL, updated_at datetime NOT NULL)",
-            "CREATE TABLE market_place_eventinfo (id char(32) NOT NULL PRIMARY KEY, event_title varchar(255) NOT NULL,
+             reference varchar(100) NOT NULL UNIQUE, created_at TIMESTAMPTZ NOT NULL, wallet_id bigint NOT NULL)",
+            "CREATE TABLE market_place_ticketvendor (id UUID NOT NULL PRIMARY KEY, is_verified BOOLEAN NOT NULL,
+             created_at TIMESTAMPTZ NOT NULL, updated_at TIMESTAMPTZ NOT NULL)",
+            "CREATE TABLE market_place_eventinfo (id UUID NOT NULL PRIMARY KEY, event_title varchar(255) NOT NULL,
              hosted_by varchar(255) NOT NULL, category varchar(50) NOT NULL, event_banner varchar(100) NOT NULL,
-             event_date datetime NOT NULL, is_free bool NOT NULL, is_approved bool NOT NULL, created_at datetime NOT NULL,
-             vendor_id char(32) NOT NULL, event_mode varchar(10) NOT NULL, cancel_failed integer NOT NULL,
+             event_date TIMESTAMPTZ NOT NULL, is_free BOOLEAN NOT NULL, is_approved BOOLEAN NOT NULL, created_at TIMESTAMPTZ NOT NULL,
+             vendor_id UUID NOT NULL, event_mode varchar(10) NOT NULL, cancel_failed integer NOT NULL,
              cancel_processed integer NOT NULL, cancel_refunded integer NOT NULL, cancel_status varchar(30) NOT NULL,
-             cancel_total integer NOT NULL, is_canceled bool NOT NULL)",
-            "CREATE TABLE affiliate_affiliateprofile (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, status varchar(20) NOT NULL,
-             commission_rate decimal NOT NULL, facebook varchar(200) NULL, instagram varchar(200) NULL, twitter varchar(200) NULL,
-             tiktok varchar(200) NULL, agreement_accepted bool NOT NULL, rejected_reason text NULL, created_at datetime NOT NULL,
-             updated_at datetime NOT NULL, user_id bigint NOT NULL UNIQUE, affiliate_name varchar(13) NOT NULL UNIQUE)",
-            "CREATE TABLE affiliate_affiliatelink (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, commission_rate decimal NOT NULL,
-             clicks integer NOT NULL, is_active bool NOT NULL, created_at datetime NOT NULL, event_id char(32) NOT NULL, affiliate_id bigint NOT NULL)",
-            "CREATE TABLE affiliate_affiliatesale (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, ticket_count integer NOT NULL,
-             gross_amount decimal NOT NULL, commission_rate decimal NOT NULL, commission_amount decimal NOT NULL, status varchar(20) NOT NULL,
-             created_at datetime NOT NULL, payable_at datetime NULL, paid_at datetime NULL, revoked_at datetime NULL,
-             affiliate_id bigint NOT NULL, buyer_id bigint NOT NULL, event_id char(32) NOT NULL,
-             issued_ticket_id char(32) NULL, link_id bigint NULL)",
-        ] {
-            sqlx::query(ddl).execute(&pool).await.unwrap();
-        }
+             cancel_total integer NOT NULL, is_canceled BOOLEAN NOT NULL)",
+            "CREATE TABLE affiliate_affiliateprofile (id BIGSERIAL PRIMARY KEY, status varchar(20) NOT NULL,
+             commission_rate NUMERIC NOT NULL, facebook varchar(200) NULL, instagram varchar(200) NULL, twitter varchar(200) NULL,
+             tiktok varchar(200) NULL, agreement_accepted BOOLEAN NOT NULL, rejected_reason text NULL, created_at TIMESTAMPTZ NOT NULL,
+             updated_at TIMESTAMPTZ NOT NULL, user_id bigint NOT NULL UNIQUE, affiliate_name varchar(13) NOT NULL UNIQUE)",
+            "CREATE TABLE affiliate_affiliatelink (id BIGSERIAL PRIMARY KEY, commission_rate NUMERIC NOT NULL,
+             clicks integer NOT NULL, is_active BOOLEAN NOT NULL, created_at TIMESTAMPTZ NOT NULL, event_id UUID NOT NULL, affiliate_id bigint NOT NULL)",
+            "CREATE TABLE affiliate_affiliatesale (id BIGSERIAL PRIMARY KEY, ticket_count integer NOT NULL,
+             gross_amount NUMERIC NOT NULL, commission_rate NUMERIC NOT NULL, commission_amount NUMERIC NOT NULL, status varchar(20) NOT NULL,
+             created_at TIMESTAMPTZ NOT NULL, payable_at TIMESTAMPTZ NULL, paid_at TIMESTAMPTZ NULL, revoked_at TIMESTAMPTZ NULL,
+             affiliate_id bigint NOT NULL, buyer_id bigint NOT NULL, event_id UUID NOT NULL,
+             issued_ticket_id UUID NULL, link_id bigint NULL)",
+        ]).await;
         for (email, code) in [("aff@example.com", "AFFAAA"), ("buy@example.com", "BUYBBB")] {
             sqlx::query(
                 "INSERT INTO accounts_profile (password, is_superuser, first_name, last_name, date_joined, email, surname, other_names,
-                 is_active, is_staff, is_admin, role, email_verified, created_on, pin_is_set, referral_code, pin_failed_attempts, has_DVA)
-                 VALUES ('x', 0, '', '', '2026-01-01 00:00:00', ?, 'S', 'O', 1, 0, 0, 'user', 1, '2026-01-01 00:00:00', 0, ?, 0, 0)",
+                 is_active, is_staff, is_admin, role, email_verified, created_on, pin_is_set, referral_code, pin_failed_attempts, \"has_DVA\")
+                 VALUES ('x', FALSE, '', '', '2026-01-01 00:00:00', $1, 'S', 'O', TRUE, FALSE, FALSE, 'user', TRUE, '2026-01-01 00:00:00', FALSE, $2, 0, FALSE)",
             ).bind(email).bind(code).execute(&pool).await.unwrap();
         }
         sqlx::query(
             "INSERT INTO wallet_wallet (balance, locked_balance, created_at, updated_at, is_active, user_id)
-             VALUES (0, 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00', 1, 1)",
+             VALUES (0, 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00', TRUE, 1)",
         ).execute(&pool).await.unwrap();
         sqlx::query(
             "INSERT INTO market_place_ticketvendor (id, is_verified, created_at, updated_at)
-             VALUES ('ffffffffffffffffffffffffffffffff', 1, '2026-01-01 00:00:00', '2026-01-01 00:00:00')",
+             VALUES ('ffffffff-ffff-ffff-ffff-ffffffffffff', TRUE, '2026-01-01 00:00:00', '2026-01-01 00:00:00')",
         ).execute(&pool).await.unwrap();
         // approved, past event
         sqlx::query(
             "INSERT INTO market_place_eventinfo (id, event_title, hosted_by, category, event_banner, event_date,
                     is_free, is_approved, created_at, vendor_id, event_mode, cancel_failed, cancel_processed,
                     cancel_refunded, cancel_status, cancel_total, is_canceled)
-             VALUES ('eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', 'Show', 'H', 'music', 'b.jpg', '2020-01-01 00:00:00',
-                     0, 1, '2026-01-01 00:00:00', 'ffffffffffffffffffffffffffffffff', 'offline', 0, 0, 0, 'pending', 0, 0)",
+             VALUES ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'Show', 'H', 'music', 'b.jpg', '2020-01-01 00:00:00',
+                     FALSE, TRUE, '2026-01-01 00:00:00', 'ffffffff-ffff-ffff-ffff-ffffffffffff', 'offline', 0, 0, 0, 'pending', 0, FALSE)",
         ).execute(&pool).await.unwrap();
         // future event (sweep must skip)
         sqlx::query(
             "INSERT INTO market_place_eventinfo (id, event_title, hosted_by, category, event_banner, event_date,
                     is_free, is_approved, created_at, vendor_id, event_mode, cancel_failed, cancel_processed,
                     cancel_refunded, cancel_status, cancel_total, is_canceled)
-             VALUES ('ffffffffffffffffffffffffffffffff', 'Future', 'H', 'music', 'b.jpg', '2999-01-01 00:00:00',
-                     0, 1, '2026-01-01 00:00:00', 'ffffffffffffffffffffffffffffffff', 'offline', 0, 0, 0, 'pending', 0, 0)",
+             VALUES ('ffffffff-ffff-ffff-ffff-ffffffffffff', 'Future', 'H', 'music', 'b.jpg', '2999-01-01 00:00:00',
+                     FALSE, TRUE, '2026-01-01 00:00:00', 'ffffffff-ffff-ffff-ffff-ffffffffffff', 'offline', 0, 0, 0, 'pending', 0, FALSE)",
         ).execute(&pool).await.unwrap();
         sqlx::query(
             "INSERT INTO affiliate_affiliateprofile (status, commission_rate, agreement_accepted, created_at, updated_at, user_id, affiliate_name)
-             VALUES ('approved', '2.00', 1, '2026-01-01 00:00:00', '2026-01-01 00:00:00', 1, 'Promo123')",
+             VALUES ('approved', '2.00', TRUE, '2026-01-01 00:00:00', '2026-01-01 00:00:00', 1, 'Promo123')",
         ).execute(&pool).await.unwrap();
         sqlx::query(
             "INSERT INTO affiliate_affiliatelink (commission_rate, clicks, is_active, created_at, event_id, affiliate_id)
-             VALUES ('2.00', 0, 1, '2026-01-01 00:00:00', 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', 1)",
+             VALUES ('2.00', 0, TRUE, '2026-01-01 00:00:00', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 1)",
         ).execute(&pool).await.unwrap();
         pool
     }
 
-    fn test_state(db: sqlx::SqlitePool) -> AppState {
+    fn test_state(db: sqlx::PgPool) -> AppState {
         let mut config = crate::settings::Config::from_env();
         config.email_backend = "console".to_string();
         config.debug = true;
@@ -401,6 +404,9 @@ mod tests {
             config,
             http: reqwest::Client::new(),
             wallet_hub: crate::wallet::hub::WalletHub::default(),
+            support_hub: crate::support::hub::SupportHub::default(),
+            plans_store: crate::plans_cache::PlansStore::default(),
+            notification_hub: crate::notifications::hub::NotificationHub::default(),
         }
     }
 
@@ -420,7 +426,7 @@ mod tests {
         assert_eq!(a1.status, "pending");
         let a2 = record_attribution(&db, 2, &event, "Promo123").await.unwrap().unwrap();
         assert_eq!(a1.sale_id, a2.sale_id);
-        let clicks: (i64,) = sqlx::query_as("SELECT clicks FROM affiliate_affiliatelink WHERE id = 1")
+        let clicks: (i32,) = sqlx::query_as("SELECT clicks FROM affiliate_affiliatelink WHERE id = 1")
             .fetch_one(&db).await.unwrap();
         assert_eq!(clicks.0, 2);
 
@@ -428,9 +434,9 @@ mod tests {
         let sale = complete_sale(&db, 2, &event, "Promo123", None, 2, 1_000_000)
             .await.unwrap().unwrap();
         assert_eq!(sale, a1.sale_id);
-        let row: (String, String, String, i64) = sqlx::query_as(
+        let row: (String, String, String, i32) = sqlx::query_as(
             "SELECT status, CAST(commission_amount AS TEXT), CAST(gross_amount AS TEXT), ticket_count
-             FROM affiliate_affiliatesale WHERE id = ?",
+             FROM affiliate_affiliatesale WHERE id = $1",
         ).bind(sale).fetch_one(&db).await.unwrap();
         // NUMERIC affinity normalizes storage; output quantization happens
         // at serialization (dec2), like DRF's DecimalField.
@@ -451,7 +457,7 @@ mod tests {
         assert!(reference.unwrap().starts_with("AFF-"));
         let bal: (String,) = sqlx::query_as("SELECT CAST(balance AS TEXT) FROM wallet_wallet WHERE user_id = 1")
             .fetch_one(&db).await.unwrap();
-        assert_eq!(bal.0, "200");
+        assert_eq!(bal.0, "200.00");
 
         // second payout: nothing payable
         let (paid, total, reference) = pay_out(&s, 1, 1).await.unwrap();

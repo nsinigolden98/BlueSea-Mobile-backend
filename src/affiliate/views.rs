@@ -37,7 +37,7 @@ async fn status_public(
     p: &affiliate_models::AffiliateProfileRow,
 ) -> Value {
     let created: Option<(String,)> = sqlx::query_as(
-        "SELECT CAST(created_at AS TEXT) FROM affiliate_affiliateprofile WHERE id = ?",
+        "SELECT CAST(created_at AS TEXT) FROM affiliate_affiliateprofile WHERE id = $1",
     )
     .bind(p.id)
     .fetch_optional(&s.db)
@@ -83,8 +83,8 @@ pub async fn apply(
     let existing = affiliate_models::profile_for_user(&s.db, user.id).await?;
     if let Some(p) = existing {
         sqlx::query(
-            "UPDATE affiliate_affiliateprofile SET affiliate_name = ?, facebook = ?, instagram = ?,
-             twitter = ?, tiktok = ?, agreement_accepted = ?, updated_at = ? WHERE id = ?",
+            "UPDATE affiliate_affiliateprofile SET affiliate_name = $1, facebook = $2, instagram = $3,
+             twitter = $4, tiktok = $5, agreement_accepted = $6, updated_at = $7 WHERE id = $8",
         )
         .bind(&params.affiliate_name)
         .bind(params.facebook.as_deref())
@@ -92,12 +92,12 @@ pub async fn apply(
         .bind(params.twitter.as_deref())
         .bind(params.tiktok.as_deref())
         .bind(params.agreement)
-        .bind(&now)
+        .bind(crate::time::Ts(&now))
         .bind(p.id)
         .execute(&s.db)
         .await?;
         if p.status == "rejected" {
-            let _ = sqlx::query("UPDATE affiliate_affiliateprofile SET status = 'pending' WHERE id = ?")
+            let _ = sqlx::query("UPDATE affiliate_affiliateprofile SET status = 'pending' WHERE id = $1")
                 .bind(p.id)
                 .execute(&s.db)
                 .await;
@@ -106,15 +106,15 @@ pub async fn apply(
         sqlx::query(
             "INSERT INTO affiliate_affiliateprofile (status, commission_rate, facebook, instagram, twitter, tiktok,
                     agreement_accepted, rejected_reason, created_at, updated_at, user_id, affiliate_name)
-             VALUES ('pending', '2.00', ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)",
+             VALUES ('pending', '2.00', $1, $2, $3, $4, $5, NULL, $6, $7, $8, $9)",
         )
         .bind(params.facebook.as_deref())
         .bind(params.instagram.as_deref())
         .bind(params.twitter.as_deref())
         .bind(params.tiktok.as_deref())
         .bind(params.agreement)
-        .bind(&now)
-        .bind(&now)
+        .bind(crate::time::Ts(&now))
+        .bind(crate::time::Ts(&now))
         .bind(user.id)
         .bind(&params.affiliate_name)
         .execute(&s.db)
@@ -158,14 +158,14 @@ async fn link_public(
     created_raw: &str,
 ) -> Value {
     let title: Option<(String,)> =
-        sqlx::query_as("SELECT event_title FROM market_place_eventinfo WHERE id = ?")
+        sqlx::query_as("SELECT event_title FROM market_place_eventinfo WHERE id = CAST($1 AS UUID)")
             .bind(event_hex)
             .fetch_optional(&s.db)
             .await
             .unwrap_or(None);
     let name: Option<(String,)> = sqlx::query_as(
         "SELECT affiliate_name FROM affiliate_affiliateprofile WHERE id =
-         (SELECT affiliate_id FROM affiliate_affiliatelink WHERE id = ?)",
+         (SELECT affiliate_id FROM affiliate_affiliatelink WHERE id = $1)",
     )
     .bind(link_id)
     .fetch_optional(&s.db)
@@ -206,7 +206,7 @@ pub async fn links_list(
     };
     let rows: Vec<(i64, String, i64, bool, String, String)> = sqlx::query_as(
         "SELECT id, CAST(commission_rate AS TEXT), clicks, is_active, event_id, CAST(created_at AS TEXT)
-         FROM affiliate_affiliatelink WHERE affiliate_id = ? ORDER BY created_at DESC",
+         FROM affiliate_affiliatelink WHERE affiliate_id = $1 ORDER BY created_at DESC",
     )
     .bind(profile.id)
     .fetch_all(&s.db)
@@ -258,7 +258,9 @@ pub async fn links_create(
             Json(json!({"error": "event_id is required"})),
         ));
     }
-    let hex = event_id.replace('-', "").to_lowercase();
+    let Some(hex) = crate::market_place::models::norm_id(event_id) else {
+        return Ok(not_found_detail());
+    };
     let event = match affiliate_models::event_by_id(&s.db, &hex).await? {
         Some(e) => e,
         None => return Ok(not_found_detail()),
@@ -271,7 +273,7 @@ pub async fn links_create(
     }
     let existing: Option<(i64, String, i64, bool, String)> = sqlx::query_as(
         "SELECT id, CAST(commission_rate AS TEXT), clicks, is_active, CAST(created_at AS TEXT)
-         FROM affiliate_affiliatelink WHERE affiliate_id = ? AND event_id = ?",
+         FROM affiliate_affiliatelink WHERE affiliate_id = $1 AND event_id = CAST($2 AS UUID)",
     )
     .bind(profile.id)
     .bind(&event.id)
@@ -281,22 +283,22 @@ pub async fn links_create(
         Some((id, _, _, _, _)) => (id, false),
         None => {
             let now = crate::time::now_str();
-            let res = sqlx::query(
+            let res = sqlx::query_as::<_, (i64,)>(
                 "INSERT INTO affiliate_affiliatelink (commission_rate, clicks, is_active, created_at, event_id, affiliate_id)
-                 VALUES (?, 0, 1, ?, ?, ?)",
+                 VALUES ($1, 0, TRUE, $2, CAST($3 AS UUID), $4) RETURNING id",
             )
             .bind(&profile.commission_rate)
-            .bind(&now)
+            .bind(crate::time::Ts(&now))
             .bind(&event.id)
             .bind(profile.id)
-            .execute(&s.db)
+            .fetch_one(&s.db)
             .await?;
-            (res.last_insert_rowid(), true)
+            (res.0, true)
         }
     };
     let row: Option<(String, i64, bool, String)> = sqlx::query_as(
         "SELECT CAST(commission_rate AS TEXT), clicks, is_active, CAST(created_at AS TEXT)
-         FROM affiliate_affiliatelink WHERE id = ?",
+         FROM affiliate_affiliatelink WHERE id = $1",
     )
     .bind(link_id)
     .fetch_optional(&s.db)
@@ -341,7 +343,9 @@ pub async fn attribution(
             Json(json!({"error": "event_id and affiliate_username are required"})),
         ));
     }
-    let hex = event_id.replace('-', "").to_lowercase();
+    let Some(hex) = crate::market_place::models::norm_id(event_id) else {
+        return Ok(not_found_detail());
+    };
     let event = match affiliate_models::event_by_id(&s.db, &hex).await? {
         Some(e) => e,
         None => return Ok(not_found_detail()),
@@ -384,20 +388,20 @@ async fn sale_public(
     event_hex: &str,
 ) -> Value {
     let aff_name: Option<(String,)> = sqlx::query_as(
-        "SELECT affiliate_name FROM affiliate_affiliateprofile WHERE id = ?",
+        "SELECT affiliate_name FROM affiliate_affiliateprofile WHERE id = $1",
     )
     .bind(affiliate_id)
     .fetch_optional(&s.db)
     .await
     .unwrap_or(None);
     let buyer_email: Option<(String,)> =
-        sqlx::query_as("SELECT email FROM accounts_profile WHERE id = ?")
+        sqlx::query_as("SELECT email FROM accounts_profile WHERE id = $1")
             .bind(buyer_id)
             .fetch_optional(&s.db)
             .await
             .unwrap_or(None);
     let event_title: Option<(String,)> =
-        sqlx::query_as("SELECT event_title FROM market_place_eventinfo WHERE id = ?")
+        sqlx::query_as("SELECT event_title FROM market_place_eventinfo WHERE id = CAST($1 AS UUID)")
             .bind(event_hex)
             .fetch_optional(&s.db)
             .await
@@ -444,7 +448,7 @@ pub async fn dashboard(
     let now = crate::time::now_str();
     let _ = affiliate_utils::sweep_payable(&s.db, Some(profile.id), &now).await;
     let clicks: Option<(Option<i64>,)> = sqlx::query_as(
-        "SELECT SUM(clicks) FROM affiliate_affiliatelink WHERE affiliate_id = ?",
+        "SELECT SUM(clicks) FROM affiliate_affiliatelink WHERE affiliate_id = $1",
     )
     .bind(profile.id)
     .fetch_optional(&s.db)
@@ -459,7 +463,7 @@ pub async fn dashboard(
                 CAST(SUM(CASE WHEN status = 'pending' THEN commission_amount ELSE 0 END) AS TEXT),
                 CAST(SUM(CASE WHEN status = 'payable' THEN commission_amount ELSE 0 END) AS TEXT),
                 CAST(SUM(CASE WHEN status = 'paid' THEN commission_amount ELSE 0 END) AS TEXT)
-         FROM affiliate_affiliatesale WHERE affiliate_id = ?",
+         FROM affiliate_affiliatesale WHERE affiliate_id = $1",
     )
     .bind(profile.id)
     .fetch_optional(&s.db)
@@ -527,7 +531,7 @@ pub async fn payout(
         ));
     }
     let balance: Option<(String,)> = sqlx::query_as(
-        "SELECT CAST(balance AS TEXT) FROM wallet_wallet WHERE user_id = ?",
+        "SELECT CAST(balance AS TEXT) FROM wallet_wallet WHERE user_id = $1",
     )
     .bind(user.id)
     .fetch_optional(&s.db)
@@ -573,7 +577,7 @@ pub async fn sales(
                 CAST(commission_amount AS TEXT), status, CAST(created_at AS TEXT),
                 CAST(payable_at AS TEXT), CAST(paid_at AS TEXT),
                 affiliate_id, buyer_id, event_id
-         FROM affiliate_affiliatesale WHERE affiliate_id = ? ORDER BY created_at DESC",
+         FROM affiliate_affiliatesale WHERE affiliate_id = $1 ORDER BY created_at DESC",
     )
     .bind(profile.id)
     .fetch_all(&s.db)

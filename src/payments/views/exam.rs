@@ -120,8 +120,11 @@ async fn buy_exam(
         Ok(None) => return common::payment_failed("Sender wallet not found"),
         Err(e) => return common::payment_failed(e),
     };
-    if wallet_models::parse_cents(&wallet.balance).unwrap_or(0) < amount_cents {
-        return common::insufficient_funds();
+    // Lock funds BEFORE the gateway call (double-spend guard, like Nomba rails).
+    match wallet_models::lock_amount(&s.db, wallet.id, user.id, amount_cents, crate::accounts::tier::limit_cents(&user)).await {
+        Ok(true) => {}
+        Ok(false) => return common::insufficient_funds(),
+        Err(e) => return common::lock_failed(e),
     }
 
     let mut payload = serde_json::json!({
@@ -139,7 +142,10 @@ async fn buy_exam(
     // WAEC payloads carry no billersCode/amount by design.
     let resp = match vtpass::top_up(&s.http, &s.config, &payload).await {
         Ok(r) => r,
-        Err(e) => return common::payment_failed(e),
+        Err(e) => {
+            let _ = wallet_models::unlock_amount(&s.db, wallet.id, amount_cents).await;
+            return common::payment_failed(e);
+        }
     };
 
     if vtpass::is_successful(&resp) {
@@ -149,12 +155,13 @@ async fn buy_exam(
         } else {
             common::waec_desc(price_naira, purchased)
         };
-        if let Err(e) = wallet_models::debit(
-            &s.db, &s.wallet_hub, wallet.id, user.id,
-            &wallet_models::cents_to_decimal(amount_cents), &desc, Some(&request_id),
+        if let Err(e) = wallet_models::finalize_locked_debit(
+            &s.db, &s.wallet_hub, wallet.id, user.id, amount_cents, &desc, &request_id,
         )
         .await
         {
+            let _ = wallet_models::unlock_amount(&s.db, wallet.id, amount_cents).await;
+            tracing::error!("exam delivered but settle failed for {request_id}: {e:?}");
             return common::payment_failed(format!("{e:?}"));
         }
         common::settle_success(

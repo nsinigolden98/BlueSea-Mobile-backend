@@ -22,7 +22,7 @@ async fn reward_datetimes(
 ) -> (String, Option<String>, String) {
     let row: Option<(String, Option<String>, String)> = sqlx::query_as(
         "SELECT CAST(availability_start AS TEXT), CAST(availability_end AS TEXT), CAST(created_at AS TEXT)
-         FROM loyalty_market_reward WHERE id = ?",
+         FROM loyalty_market_reward WHERE id = CAST($1 AS UUID)",
     )
     .bind(id_hex)
     .fetch_optional(&s.db)
@@ -162,10 +162,10 @@ pub async fn redeem(
             ))
         }
     };
-    let balance: i64 = points
+    let balance: i32 = points
         .points
         .parse::<rust_decimal::Decimal>()
-        .map(|d| (d.trunc()).to_string().parse::<i64>().unwrap_or(0))
+        .map(|d| (d.trunc()).to_string().parse::<i32>().unwrap_or(0))
         .unwrap_or(0);
     if balance < reward.points_cost {
         return Ok((
@@ -216,12 +216,12 @@ pub async fn redeem(
     let _ = sqlx::query(
         "INSERT INTO loyalty_market_redemptiontransaction
          (id, points_deducted, status, created_at, redeemed_at, fulfilment_payload, user_id_id, reward_id_id)
-         VALUES (?, ?, 'completed', ?, ?, ?, ?, ?)",
+         VALUES (CAST($1 AS UUID), $2, 'completed', $3, $4, $5, $6, $7)",
     )
     .bind(&redemption_id)
     .bind(reward.points_cost)
-    .bind(&now)
-    .bind(&now)
+    .bind(crate::time::Ts(&now))
+    .bind(crate::time::Ts(&now))
     .bind(&payload)
     .bind(user.id)
     .bind(&reward.id)
@@ -229,7 +229,7 @@ pub async fn redeem(
     .await;
     if reward.inventory.map(|i| i != 0).unwrap_or(false) {
         let _ = sqlx::query(
-            "UPDATE loyalty_market_reward SET inventory = inventory - 1 WHERE id = ?",
+            "UPDATE loyalty_market_reward SET inventory = inventory - 1 WHERE id = CAST($1 AS UUID)",
         )
         .bind(&reward.id)
         .execute(&s.db)
@@ -272,7 +272,7 @@ pub async fn redemptions(
     let mut out = Vec::new();
     for (r, title) in &rows {
         let raw: Option<(String,)> = sqlx::query_as(
-            "SELECT CAST(created_at AS TEXT) FROM loyalty_market_redemptiontransaction WHERE id = ?",
+            "SELECT CAST(created_at AS TEXT) FROM loyalty_market_redemptiontransaction WHERE id = CAST($1 AS UUID)",
         )
         .bind(&r.id)
         .fetch_optional(&s.db)

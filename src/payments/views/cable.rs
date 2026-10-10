@@ -10,10 +10,10 @@ use serde_json::Value;
 use crate::error::AppError;
 use crate::payments::models as pay_models;
 use crate::payments::plans::{self, Plan};
-use crate::payments::serializers::validate_cable;
+use crate::payments::serializers::validate_cable_nomba;
 use crate::payments::views::common;
-use crate::payments::vtpass;
 use crate::state::AppState;
+use crate::transactions::nomba_gateway;
 use crate::wallet::models as wallet_models;
 
 type Resp = (StatusCode, Json<Value>);
@@ -23,48 +23,43 @@ struct CableKind {
     plan_col: &'static str,
     plan_field: &'static str,
     plans: &'static [Plan],
-    service_id: &'static str,
+    /// Nomba provider id (`DSTV|GOTV|STARTIMES|SHOWMAX`) + cache key.
+    provider: &'static str,
+    cache_key: &'static str,
     desc_kind: &'static str,
     ref_prefix: &'static str,
-    needs_subscription_type: bool,
     title: &'static str,
     subject: &'static str,
     notify_label: &'static str,
-    /// None = notify like the others; ShowMax never notifies (Django KeyError).
-    notify_smartcard: bool,
 }
 
 const DSTV: CableKind = CableKind {
     table: "payments_dstvpayment", plan_col: "dstv_plan", plan_field: "dstv_plan",
-    plans: plans::DSTV_PLANS, service_id: "dstv", desc_kind: "showmax",
-    ref_prefix: "BS-TV-DS", needs_subscription_type: true,
+    plans: plans::DSTV_PLANS, provider: "DSTV", cache_key: "dstv", desc_kind: "dstv",
+    ref_prefix: "BS-TV-DS",
     title: "DSTV Subscription Successful", subject: "BlueSea Mobile - DSTV Subscription",
     notify_label: "DSTV",
-    notify_smartcard: true,
 };
 const GOTV: CableKind = CableKind {
     table: "payments_gotvpayment", plan_col: "gotv_plan", plan_field: "gotv_plan",
-    plans: plans::GOTV_PLANS, service_id: "gotv", desc_kind: "gotv",
-    ref_prefix: "BS-TV-GO", needs_subscription_type: true,
+    plans: plans::GOTV_PLANS, provider: "GOTV", cache_key: "gotv", desc_kind: "gotv",
+    ref_prefix: "BS-TV-GO",
     title: "GOTV Subscription Successful", subject: "BlueSea Mobile - GOTV Subscription",
     notify_label: "GOTV",
-    notify_smartcard: true,
 };
 const STARTIMES: CableKind = CableKind {
     table: "payments_startimespayment", plan_col: "startimes_plan", plan_field: "startimes_plan",
-    plans: plans::STARTIMES_PLANS, service_id: "startimes", desc_kind: "startimes",
-    ref_prefix: "BS-TV-STA", needs_subscription_type: false,
+    plans: plans::STARTIMES_PLANS, provider: "STARTIMES", cache_key: "startimes", desc_kind: "startimes",
+    ref_prefix: "BS-TV-STA",
     title: "Startimes Subscription Successful", subject: "BlueSea Mobile - Startimes Subscription",
     notify_label: "Startimes",
-    notify_smartcard: true,
 };
 const SHOWMAX: CableKind = CableKind {
     table: "payments_showmaxpayment", plan_col: "showmax_plan", plan_field: "showmax_plan",
-    plans: plans::SHOWMAX_PLANS, service_id: "showmax", desc_kind: "showmax",
-    ref_prefix: "BS-TV-SM", needs_subscription_type: false,
+    plans: plans::SHOWMAX_PLANS, provider: "SHOWMAX", cache_key: "showmax", desc_kind: "showmax",
+    ref_prefix: "BS-TV-SM",
     title: "ShowMax Subscription Successful", subject: "BlueSea Mobile - ShowMAx Subscription",
     notify_label: "ShowMax",
-    notify_smartcard: false,
 };
 
 async fn buy_cable(
@@ -77,25 +72,46 @@ async fn buy_cable(
         Ok(u) => u,
         Err(e) => return e,
     };
-    let params = match validate_cable(body, kind.plan_field, kind.plans, kind.needs_subscription_type) {
+    let params = match validate_cable_nomba(body, kind.plan_field) {
         Ok(p) => p,
         Err(e) => return (StatusCode::BAD_REQUEST, Json(e)),
     };
-    // ShowMax posts phone_number as billersCode and has no billersCode field.
-    let billers_code = if kind.service_id == "showmax" {
-        params.phone.clone()
-    } else {
-        params.billers_code.clone()
+    let billers_code = params.billers_code.clone();
+    // Debit amount: plans cache first, legacy static price second, body
+    // `amount` third.
+    let amount_naira: i64 = match crate::plans_cache::cable_price(&s.plans_store, kind.cache_key, &params.plan) {
+        Some(p) => p,
+        None => match plans::find_plan(kind.plans, &params.plan) {
+            Some(plan) => plan.price_naira,
+            None => match body.get("amount").and_then(|v| match v {
+                Value::Number(n) => n.as_i64(),
+                Value::String(st) => st.trim().parse::<i64>().ok(),
+                _ => None,
+            }) {
+                Some(a) if (1..=50_000_000).contains(&a) => a,
+                Some(_) => {
+                    return (
+                        StatusCode::BAD_REQUEST,
+                        Json(serde_json::json!({"amount": ["Ensure this value is less than or equal to 50000000."]})),
+                    )
+                }
+                None => {
+                    return (
+                        StatusCode::BAD_REQUEST,
+                        Json(serde_json::json!({"amount": ["This field is required."]})),
+                    )
+                }
+            },
+        },
     };
-    let plan = plans::find_plan(kind.plans, &params.plan).expect("validated plan");
-    let amount_cents = plan.price_naira * 100;
+    let amount_cents = crate::payments::serializers::naira_to_cents(amount_naira);
 
-    let request_id = format!("{}{}", kind.ref_prefix, vtpass::generate_reference_id());
+    let request_id = format!("{}{}", kind.ref_prefix, crate::payments::vtpass::generate_reference_id());
     let now = crate::time::now_str();
     if let Err(e) = pay_models::insert_cable(
         &s.db, kind.table, kind.plan_col, user.id,
-        if kind.service_id == "showmax" { None } else { Some(billers_code.as_str()) },
-        &params.plan, params.subscription_type.as_deref(), &params.phone,
+        Some(billers_code.as_str()),
+        &params.plan, body.get("subscription_type").and_then(|v| v.as_str()), &params.phone,
         &request_id, &now,
     )
     .await
@@ -108,63 +124,50 @@ async fn buy_cable(
         Ok(None) => return common::payment_failed("Sender wallet not found"),
         Err(e) => return common::payment_failed(e),
     };
-    if wallet_models::parse_cents(&wallet.balance).unwrap_or(0) < amount_cents {
-        return common::insufficient_funds();
+    // Lock funds BEFORE the gateway call (double-spend guard).
+    match wallet_models::lock_amount(&s.db, wallet.id, user.id, amount_cents, crate::accounts::tier::limit_cents(&user)).await {
+        Ok(true) => {}
+        Ok(false) => return common::insufficient_funds(),
+        Err(e) => return common::lock_failed(e),
     }
 
-    let payload = serde_json::json!({
-        "request_id": request_id,
-        "serviceID": kind.service_id,
-        "billersCode": billers_code,
-        "variation_code": plan.code,
-        "amount": plan.price_naira,
-        "phone": params.phone,
+    let (ok, data) = nomba_gateway::subscribe_cable(
+        &s.config, kind.provider, &billers_code, &params.plan, amount_naira,
+        &request_id, Some(params.phone.clone()),
+    )
+    .await;
+    if !ok {
+        let _ = wallet_models::unlock_amount(&s.db, wallet.id, amount_cents).await;
+        let msg = data.as_str().unwrap_or("Cable subscription failed").to_string();
+        return common::payment_failed(msg);
+    }
+    let resp = serde_json::json!({
+        "success": true,
+        "code": "00",
+        "description": "TRANSACTION SUCCESSFUL",
+        "requestId": request_id,
+        "reference": request_id,
+        "data": data,
     });
-    let resp = match vtpass::top_up(&s.http, &s.config, &payload).await {
-        Ok(r) => r,
-        Err(e) => return common::payment_failed(e),
-    };
 
-    if vtpass::is_successful(&resp) {
-        // DSTV quirk: description uses kind "showmax" with empty phone/plan.
-        let (desc_phone, desc_plan) = if kind.service_id == "dstv" {
-            ("", "".to_string())
-        } else if kind.service_id == "showmax" {
-            // ShowMax quirk: phone lookup misses (no billersCode field).
-            ("", params.plan.clone())
-        } else {
-            (params.billers_code.as_str(), params.plan.clone())
-        };
-        let desc = common::cable_desc(kind.desc_kind, desc_phone, &desc_plan, plan.price_naira);
-        if let Err(e) = wallet_models::debit(
-            &s.db, &s.wallet_hub, wallet.id, user.id,
-            &wallet_models::cents_to_decimal(amount_cents), &desc, Some(&request_id),
+    {
+        let desc = common::cable_desc(kind.desc_kind, &billers_code, &params.plan, amount_naira);
+        if let Err(e) = wallet_models::finalize_locked_debit(
+            &s.db, &s.wallet_hub, wallet.id, user.id, amount_cents, &desc, &request_id,
         )
         .await
         {
+            let _ = wallet_models::unlock_amount(&s.db, wallet.id, amount_cents).await;
+            tracing::error!("cable delivered but settle failed for {request_id}: {e:?}");
             return common::payment_failed(format!("{e:?}"));
         }
-        if kind.notify_smartcard {
-            // ShowMax never notifies: Django's f-string raises KeyError on the
-            // missing billersCode inside the notify try-block, which only logs.
-            common::settle_success(
-                s, &user, amount_cents, &request_id,
-                kind.title,
-                &format!("{} subscription purchased for {}", kind.notify_label, billers_code),
-                kind.subject,
-            )
-            .await;
-        } else {
-            // Still run bonus hooks (outside the notify block in Django).
-            crate::bonus::utils::award_vtu_purchase_points(s, user.id, amount_cents, &request_id).await;
-            match crate::bonus::utils::mark_first_transaction_completed(&s.db, user.id).await {
-                Ok(Some(referrer)) => {
-                    crate::bonus::utils::award_referral_bonus(s, referrer, user.id, &user.email).await
-                }
-                Ok(None) => {}
-                Err(e) => tracing::error!("referral flag error: {e}"),
-            }
-        }
+        common::settle_success(
+            s, &user, amount_cents, &request_id,
+            kind.title,
+            &format!("{} subscription purchased for {}", kind.notify_label, billers_code),
+            kind.subject,
+        )
+        .await;
     }
     (StatusCode::OK, Json(resp))
 }
@@ -176,7 +179,7 @@ macro_rules! cable_view {
             summary = $summary, description = $desc,
             request_body = crate::payments::serializers::CableBody,
             responses(
-                (status = 200, description = "VTpass response"),
+                (status = 200, description = "Nomba response"),
                 (status = 400, description = "Validation, PIN or funds failure"),
             ),
             security(("bearer" = [])),

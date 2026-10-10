@@ -69,11 +69,11 @@ async fn notify_redeemed(
 }
 
 async fn profile_email(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     user_id: i64,
 ) -> Option<(String, String)> {
     sqlx::query_as::<_, (String, String)>(
-        "SELECT email, other_names FROM accounts_profile WHERE id = ?",
+        "SELECT email, other_names FROM accounts_profile WHERE id = $1",
     )
     .bind(user_id)
     .fetch_optional(db)
@@ -327,18 +327,18 @@ pub async fn award_daily_login_bonus(
 /// the bonus itself is awarded by `award_referral_bonus`).
 /// Returns the referrer id when a pending referral was found.
 pub async fn mark_first_transaction_completed(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     referred_user_id: i64,
 ) -> Result<Option<i64>, sqlx::Error> {
     let row: Option<(i64, i64)> = sqlx::query_as(
         "SELECT id, referrer_id FROM bonus_referral
-         WHERE referred_user_id = ? AND status = 'pending' AND first_transaction_completed = 0",
+         WHERE referred_user_id = $1 AND status = 'pending' AND first_transaction_completed = 0",
     )
     .bind(referred_user_id)
     .fetch_optional(db)
     .await?;
     if let Some((id, referrer_id)) = row {
-        sqlx::query("UPDATE bonus_referral SET first_transaction_completed = 1 WHERE id = ?")
+        sqlx::query("UPDATE bonus_referral SET first_transaction_completed = 1 WHERE id = $1")
             .bind(id)
             .execute(db)
             .await?;
@@ -387,7 +387,7 @@ pub async fn redeem_points(
     .await
     .map_err(|e| e.to_string())?;
 
-    let wallet: Option<(i64,)> = sqlx::query_as("SELECT id FROM wallet_wallet WHERE user_id = ?")
+    let wallet: Option<(i64,)> = sqlx::query_as("SELECT id FROM wallet_wallet WHERE user_id = $1")
         .bind(user_id)
         .fetch_optional(&state.db)
         .await
@@ -460,7 +460,7 @@ pub async fn user_points_summary(
                 String, String, String, String, String,
             )> = sqlx::query_as(
                 "SELECT transaction_type, CAST(points AS TEXT), description, CAST(created_at AS TEXT), CAST(balance_after AS TEXT)
-                 FROM bonus_bonushistory WHERE user_id = ? ORDER BY created_at DESC LIMIT 10",
+                 FROM bonus_bonushistory WHERE user_id = $1 ORDER BY created_at DESC LIMIT 10",
             )
             .bind(user_id)
             .fetch_all(&state.db)
@@ -508,14 +508,14 @@ pub async fn user_points_summary(
     }
 }
 
-async fn referral_counts(db: &sqlx::SqlitePool, user_id: i64) -> Result<(i64, i64), String> {    let total: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM bonus_referral WHERE referrer_id = ?")
+async fn referral_counts(db: &sqlx::PgPool, user_id: i64) -> Result<(i64, i64), String> {    let total: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM bonus_referral WHERE referrer_id = $1")
         .bind(user_id)
         .fetch_optional(db)
         .await
         .map_err(|e| e.to_string())?
         .unwrap_or((0,));
     let completed: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM bonus_referral WHERE referrer_id = ? AND status = 'completed'",
+        "SELECT COUNT(*) FROM bonus_referral WHERE referrer_id = $1 AND status = 'completed'",
     )
     .bind(user_id)
     .fetch_optional(db)
@@ -530,58 +530,56 @@ mod tests {
     use super::*;
     use crate::state::AppState;
 
-    async fn memory_db() -> sqlx::SqlitePool {
-        let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.unwrap();
-        for ddl in [
-            "CREATE TABLE accounts_profile (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, password varchar(128) NOT NULL,
-             last_login datetime NULL, is_superuser bool NOT NULL, first_name varchar(150) NOT NULL, last_name varchar(150) NOT NULL,
-             date_joined datetime NOT NULL, email varchar(300) NOT NULL UNIQUE, surname varchar(100) NOT NULL, other_names varchar(100) NOT NULL,
-             phone varchar(200) NULL, image varchar(100) NULL, verification_code varchar(100) NULL, is_active bool NOT NULL,
-             is_staff bool NOT NULL, is_admin bool NOT NULL, role varchar(200) NOT NULL, email_verified bool NOT NULL,
-             created_on datetime NOT NULL, pin_is_set bool NOT NULL, transaction_pin varchar(255) NULL,
-             referral_code varchar(6) NOT NULL UNIQUE, pin_failed_attempts integer NOT NULL, pin_locked_until datetime NULL, has_DVA bool NOT NULL)",
-            "CREATE TABLE wallet_wallet (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, balance decimal NOT NULL,
-             locked_balance decimal NOT NULL, created_at datetime NOT NULL, updated_at datetime NOT NULL,
-             is_active bool NOT NULL, user_id bigint NOT NULL UNIQUE)",
-            "CREATE TABLE transactions_wallettransaction (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, amount decimal NOT NULL,
+
+async fn memory_db() -> sqlx::PgPool {
+        let pool = crate::db::test_support::fresh_db(&[
+            "CREATE TABLE accounts_profile (id BIGSERIAL PRIMARY KEY, password varchar(128) NOT NULL,
+             last_login TIMESTAMPTZ NULL, is_superuser BOOLEAN NOT NULL, first_name varchar(150) NOT NULL, last_name varchar(150) NOT NULL,
+             date_joined TIMESTAMPTZ NOT NULL, email varchar(300) NOT NULL UNIQUE, surname varchar(100) NOT NULL, other_names varchar(100) NOT NULL,
+             phone varchar(200) NULL, image varchar(100) NULL, verification_code varchar(100) NULL, is_active BOOLEAN NOT NULL,
+             is_staff BOOLEAN NOT NULL, is_admin BOOLEAN NOT NULL, role varchar(200) NOT NULL, email_verified BOOLEAN NOT NULL,
+             created_on TIMESTAMPTZ NOT NULL, pin_is_set BOOLEAN NOT NULL, transaction_pin varchar(255) NULL,
+             referral_code varchar(6) NOT NULL UNIQUE, pin_failed_attempts integer NOT NULL, pin_locked_until TIMESTAMPTZ NULL, nin_encrypted text NULL, bvn_encrypted text NULL, house_address text NULL, utility_bill_image varchar(100) NULL, is_frozen BOOLEAN NOT NULL DEFAULT FALSE, frozen_reason varchar(200) NULL, \"has_DVA\" BOOLEAN NOT NULL)",
+            "CREATE TABLE wallet_wallet (id BIGSERIAL PRIMARY KEY, balance NUMERIC NOT NULL,
+             locked_balance NUMERIC NOT NULL, total_in NUMERIC NOT NULL DEFAULT 0, total_out NUMERIC NOT NULL DEFAULT 0,  created_at TIMESTAMPTZ NOT NULL, updated_at TIMESTAMPTZ NOT NULL,
+             is_active BOOLEAN NOT NULL, user_id bigint NOT NULL UNIQUE)",
+            "CREATE TABLE transactions_wallettransaction (id BIGSERIAL PRIMARY KEY, amount NUMERIC NOT NULL,
              transaction_type varchar(6) NOT NULL, status varchar(10) NOT NULL, description text NULL,
-             reference varchar(100) NOT NULL UNIQUE, created_at datetime NOT NULL, wallet_id bigint NOT NULL)",
-            "CREATE TABLE notifications_notification (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, title varchar(200) NOT NULL,
-             message text NOT NULL, notification_type varchar(20) NOT NULL, is_read bool NOT NULL, created_at datetime NOT NULL,
-             read_at datetime NULL, user_id bigint NOT NULL, broadcast_id bigint NULL)",
-            "CREATE TABLE bonus_bonuspoint (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, lifetime_earned decimal NOT NULL,
-             lifetime_redeemed decimal NOT NULL, last_daily_login date NULL, created_at datetime NOT NULL, updated_at datetime NOT NULL,
-             user_id bigint NOT NULL UNIQUE, points decimal NOT NULL)",
-            "CREATE TABLE bonus_bonushistory (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, transaction_type varchar(20) NOT NULL,
-             reason varchar(50) NULL, description text NOT NULL, reference varchar(100) NULL, balance_before decimal NOT NULL,
-             balance_after decimal NOT NULL, created_at datetime NOT NULL, metadata text NULL, created_by_id bigint NULL, user_id bigint NOT NULL,
-             points decimal NOT NULL)",
-            "CREATE TABLE bonus_bonuscampaign (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, name varchar(200) NOT NULL,
-             description text NOT NULL, campaign_type varchar(20) NOT NULL, bonus_amount decimal NOT NULL, is_active bool NOT NULL,
-             start_date datetime NOT NULL, end_date datetime NOT NULL, created_at datetime NOT NULL, updated_at datetime NOT NULL,
-             multiplier decimal NOT NULL)",
-            "CREATE TABLE bonus_referral (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, status varchar(20) NOT NULL,
-             bonus_awarded bool NOT NULL, first_transaction_completed bool NOT NULL, created_at datetime NOT NULL,
-             completed_at datetime NULL, referred_user_id bigint NOT NULL UNIQUE, referrer_id bigint NOT NULL,
+             reference varchar(100) NOT NULL UNIQUE, created_at TIMESTAMPTZ NOT NULL, wallet_id bigint NOT NULL)",
+            "CREATE TABLE notifications_notification (id BIGSERIAL PRIMARY KEY, title varchar(200) NOT NULL,
+             message text NOT NULL, notification_type varchar(20) NOT NULL, is_read BOOLEAN NOT NULL, created_at TIMESTAMPTZ NOT NULL,
+             read_at TIMESTAMPTZ NULL, user_id bigint NOT NULL, broadcast_id bigint NULL)",
+            "CREATE TABLE bonus_bonuspoint (id BIGSERIAL PRIMARY KEY, lifetime_earned NUMERIC NOT NULL,
+             lifetime_redeemed NUMERIC NOT NULL, last_daily_login date NULL, created_at TIMESTAMPTZ NOT NULL, updated_at TIMESTAMPTZ NOT NULL,
+             user_id bigint NOT NULL UNIQUE, points NUMERIC NOT NULL)",
+            "CREATE TABLE bonus_bonushistory (id BIGSERIAL PRIMARY KEY, transaction_type varchar(20) NOT NULL,
+             reason varchar(50) NULL, description text NOT NULL, reference varchar(100) NULL, balance_before NUMERIC NOT NULL,
+             balance_after NUMERIC NOT NULL, created_at TIMESTAMPTZ NOT NULL, metadata text NULL, created_by_id bigint NULL, user_id bigint NOT NULL,
+             points NUMERIC NOT NULL)",
+            "CREATE TABLE bonus_bonuscampaign (id BIGSERIAL PRIMARY KEY, name varchar(200) NOT NULL,
+             description text NOT NULL, campaign_type varchar(20) NOT NULL, bonus_amount NUMERIC NOT NULL, is_active BOOLEAN NOT NULL,
+             start_date TIMESTAMPTZ NOT NULL, end_date TIMESTAMPTZ NOT NULL, created_at TIMESTAMPTZ NOT NULL, updated_at TIMESTAMPTZ NOT NULL,
+             multiplier NUMERIC NOT NULL)",
+            "CREATE TABLE bonus_referral (id BIGSERIAL PRIMARY KEY, status varchar(20) NOT NULL,
+             bonus_awarded BOOLEAN NOT NULL, first_transaction_completed BOOLEAN NOT NULL, created_at TIMESTAMPTZ NOT NULL,
+             completed_at TIMESTAMPTZ NULL, referred_user_id bigint NOT NULL UNIQUE, referrer_id bigint NOT NULL,
              count integer NOT NULL, referral_code varchar(20) NOT NULL)",
-        ] {
-            sqlx::query(ddl).execute(&pool).await.unwrap();
-        }
+        ]).await;
         for (email, code) in [("ref@example.com", "REFERR"), ("new@example.com", "NEWWWW")] {
             sqlx::query(
                 "INSERT INTO accounts_profile (password, is_superuser, first_name, last_name, date_joined, email, surname, other_names,
-                 is_active, is_staff, is_admin, role, email_verified, created_on, pin_is_set, referral_code, pin_failed_attempts, has_DVA)
-                 VALUES ('x', 0, '', '', '2026-01-01 00:00:00', ?, 'S', 'O', 1, 0, 0, 'user', 1, '2026-01-01 00:00:00', 0, ?, 0, 0)",
+                 is_active, is_staff, is_admin, role, email_verified, created_on, pin_is_set, referral_code, pin_failed_attempts, \"has_DVA\")
+                 VALUES ('x', FALSE, '', '', '2026-01-01 00:00:00', $1, 'S', 'O', TRUE, FALSE, FALSE, 'user', TRUE, '2026-01-01 00:00:00', FALSE, $2, 0, FALSE)",
             ).bind(email).bind(code).execute(&pool).await.unwrap();
         }
         sqlx::query(
             "INSERT INTO wallet_wallet (balance, locked_balance, created_at, updated_at, is_active, user_id)
-             VALUES (0, 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00', 1, 2)",
+             VALUES (0, 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00', TRUE, 2)",
         ).execute(&pool).await.unwrap();
         pool
     }
 
-    fn test_state(db: sqlx::SqlitePool) -> AppState {
+    fn test_state(db: sqlx::PgPool) -> AppState {
         let mut config = crate::settings::Config::from_env();
         config.email_backend = "console".to_string();
         config.debug = true;
@@ -590,6 +588,9 @@ mod tests {
             config,
             http: reqwest::Client::new(),
             wallet_hub: crate::wallet::hub::WalletHub::default(),
+            support_hub: crate::support::hub::SupportHub::default(),
+            plans_store: crate::plans_cache::PlansStore::default(),
+            notification_hub: crate::notifications::hub::NotificationHub::default(),
         }
     }
 
@@ -601,7 +602,7 @@ mod tests {
         // referred user applies referrer's code -> pending referral + 20 signup points
         sqlx::query(
             "INSERT INTO bonus_referral (status, bonus_awarded, first_transaction_completed, created_at, referred_user_id, referrer_id, count, referral_code)
-             VALUES ('pending', 0, 0, '2026-01-01 00:00:00', 2, 1, 0, 'REFERR')",
+             VALUES ('pending', FALSE, FALSE, '2026-01-01 00:00:00', 2, 1, 0, 'REFERR')",
         ).execute(&db).await.unwrap();
         assert!(award_signup_bonus(&s, 2).await);
         let pts: (String,) =
@@ -624,11 +625,11 @@ mod tests {
             sqlx::query_as("SELECT CAST(points AS TEXT) FROM bonus_bonuspoint WHERE user_id = 1")
                 .fetch_one(&db).await.unwrap();
         assert_eq!(rpts.0, "50");
-        let st: (String, i64) =
+        let st: (String, bool) =
             sqlx::query_as("SELECT status, bonus_awarded FROM bonus_referral WHERE referred_user_id = 2")
                 .fetch_one(&db).await.unwrap();
         assert_eq!(st.0, "completed");
-        assert_eq!(st.1, 1);
+        assert_eq!(st.1, true);
 
         // daily login: 10 points once, then None
         let first = award_daily_login_bonus(&s, 2).await.unwrap();
@@ -650,7 +651,7 @@ mod tests {
         let bal: (String,) =
             sqlx::query_as("SELECT CAST(balance AS TEXT) FROM wallet_wallet WHERE user_id = 2")
                 .fetch_one(&db).await.unwrap();
-        assert_eq!(bal.0, "2");
+        assert_eq!(bal.0, "2.00");
 
         // invalid redemptions
         assert!(redeem_points(&s, 2, 15).await.is_err());
@@ -663,7 +664,7 @@ mod tests {
         let s = test_state(db.clone());
         sqlx::query(
             "INSERT INTO bonus_bonuscampaign (name, description, campaign_type, bonus_amount, is_active, start_date, end_date, created_at, updated_at, multiplier)
-             VALUES ('Double', 'x2', 'multiplier', '0.00', 1, '2020-01-01 00:00:00', '2030-01-01 00:00:00', '2026-01-01 00:00:00', '2026-01-01 00:00:00', '2.00')",
+             VALUES ('Double', 'x2', 'multiplier', '0.00', TRUE, '2020-01-01 00:00:00', '2030-01-01 00:00:00', '2026-01-01 00:00:00', '2026-01-01 00:00:00', '2.00')",
         ).execute(&db).await.unwrap();
         award_vtu_purchase_points(&s, 2, 50_000, "VTU-C").await;
         let pts: (String,) =

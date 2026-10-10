@@ -1,0 +1,13 @@
+target/
+.git/
+.gitignore
+media/
+admin-panel/node_modules/
+admin-panel/dist/
+*.sqlite3
+*.db
+.env
+.env.*
+.vscode/
+*.log
+nohup.out

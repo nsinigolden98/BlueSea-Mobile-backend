@@ -16,9 +16,9 @@ pub struct RewardPublic {
     pub title: String,
     pub description: String,
     pub image_url: Option<String>,
-    pub points_cost: i64,
+    pub points_cost: i32,
     pub category: Option<String>,
-    pub inventory: Option<i64>,
+    pub inventory: Option<i32>,
     pub availability_start: String,
     pub availability_end: Option<String>,
     pub fulfilment_type: String,
@@ -66,14 +66,16 @@ pub fn dashed_uuid(hex: &str) -> String {
 
 /// Accept dashed or dashless ids from the path, like Django's UUID converter.
 pub fn normalize_uuid(raw: &str) -> String {
-    raw.replace('-', "").to_lowercase()
+    uuid::Uuid::parse_str(raw.trim())
+        .map(|u| u.hyphenated().to_string())
+        .unwrap_or_default()
 }
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct RedemptionPublic {
     pub id: String,
     pub reward: String,
-    pub points_deducted: i64,
+    pub points_deducted: i32,
     pub status: String,
     pub created_at: String,
 }
@@ -88,12 +90,12 @@ mod tests {
             dashed_uuid("12345678123456781234567812345678"),
             "12345678-1234-5678-1234-567812345678"
         );
-        assert_eq!(normalize_uuid("12345678-1234-5678-1234-567812345678"), "12345678123456781234567812345678");
+        assert_eq!(normalize_uuid("12345678123456781234567812345678"), "12345678-1234-5678-1234-567812345678");
     }
 
     #[test]
     fn lagos_helper_reexport() {
         let _ =
-            crate::transactions::serializers::format_naive_lagos(&chrono::NaiveDateTime::MIN);
+            crate::transactions::serializers::format_naive_lagos(&crate::time::NaiveUtc(chrono::NaiveDateTime::MIN));
     }
 }

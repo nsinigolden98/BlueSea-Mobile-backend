@@ -13,7 +13,7 @@ pub struct WalletTransaction {
     pub status: String,
     pub description: Option<String>,
     pub reference: String,
-    pub created_at: chrono::NaiveDateTime,
+    pub created_at: crate::time::NaiveUtc,
 }
 
 #[derive(Debug, Clone, FromRow)]
@@ -23,17 +23,17 @@ pub struct FundWallet {
     pub payment_reference: String,
     pub gateway_reference: Option<String>,
     pub status: String,
-    pub created_at: chrono::NaiveDateTime,
-    pub completed_at: Option<chrono::NaiveDateTime>,
+    pub created_at: crate::time::NaiveUtc,
+    pub completed_at: Option<crate::time::NaiveUtc>,
     pub user_id: i64,
 }
 
 pub async fn reference_exists(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     reference: &str,
 ) -> Result<bool, sqlx::Error> {
     let row: Option<(i64,)> =
-        sqlx::query_as("SELECT id FROM transactions_wallettransaction WHERE reference = ?")
+        sqlx::query_as("SELECT id FROM transactions_wallettransaction WHERE reference = $1")
             .bind(reference)
             .fetch_optional(db)
             .await?;
@@ -41,9 +41,9 @@ pub async fn reference_exists(
 }
 
 /// A DEBIT ledger row exists for `reference` (drives webhook idempotency).
-pub async fn debit_exists(db: &sqlx::SqlitePool, reference: &str) -> Result<bool, sqlx::Error> {
+pub async fn debit_exists(db: &sqlx::PgPool, reference: &str) -> Result<bool, sqlx::Error> {
     let row: Option<(i64,)> = sqlx::query_as(
-        "SELECT id FROM transactions_wallettransaction WHERE reference = ? AND transaction_type = 'DEBIT'",
+        "SELECT id FROM transactions_wallettransaction WHERE reference = $1 AND transaction_type = 'DEBIT'",
     )
     .bind(reference)
     .fetch_optional(db)
@@ -52,12 +52,12 @@ pub async fn debit_exists(db: &sqlx::SqlitePool, reference: &str) -> Result<bool
 }
 
 pub async fn find_pending_funding(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     payment_reference: &str,
 ) -> Result<Option<FundWallet>, sqlx::Error> {
     sqlx::query_as::<_, FundWallet>(
         "SELECT id, CAST(amount AS TEXT) AS amount, payment_reference, gateway_reference, status, created_at, completed_at, user_id
-         FROM transactions_fundwallet WHERE payment_reference = ? AND status = 'PENDING'",
+         FROM transactions_fundwallet WHERE payment_reference = $1 AND status = 'PENDING'",
     )
     .bind(payment_reference)
     .fetch_optional(db)
@@ -65,7 +65,7 @@ pub async fn find_pending_funding(
 }
 
 pub async fn create_pending_funding(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     user_id: i64,
     amount_cents: i64,
     payment_reference: &str,
@@ -73,11 +73,11 @@ pub async fn create_pending_funding(
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         "INSERT INTO transactions_fundwallet (amount, payment_reference, gateway_reference, status, created_at, completed_at, user_id)
-         VALUES (?, ?, NULL, 'PENDING', ?, NULL, ?)",
+         VALUES (CAST($1 AS NUMERIC), $2, NULL, 'PENDING', $3, NULL, $4)",
     )
     .bind(crate::wallet::models::cents_to_decimal(amount_cents))
     .bind(payment_reference)
-    .bind(now)
+    .bind(crate::time::Ts(&now))
     .bind(user_id)
     .execute(db)
     .await?;
@@ -85,11 +85,11 @@ pub async fn create_pending_funding(
 }
 
 pub async fn reference_exists_tx(
-    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     reference: &str,
 ) -> Result<bool, sqlx::Error> {
     let row: Option<(i64,)> =
-        sqlx::query_as("SELECT id FROM transactions_wallettransaction WHERE reference = ?")
+        sqlx::query_as("SELECT id FROM transactions_wallettransaction WHERE reference = $1")
             .bind(reference)
             .fetch_optional(&mut **tx)
             .await?;
@@ -97,7 +97,7 @@ pub async fn reference_exists_tx(
 }
 
 pub async fn record_tx(
-    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     wallet_id: i64,
     amount_cents: i64,
     transaction_type: &str,
@@ -118,7 +118,7 @@ pub async fn record_tx(
 }
 
 pub async fn record_tx_str(
-    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     wallet_id: i64,
     amount_display: &str,
     transaction_type: &str,
@@ -128,14 +128,14 @@ pub async fn record_tx_str(
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         "INSERT INTO transactions_wallettransaction (wallet_id, amount, transaction_type, status, description, reference, created_at)
-         VALUES (?, ?, ?, 'COMPLETED', ?, ?, ?)",
+         VALUES ($1, CAST($2 AS NUMERIC), $3, 'COMPLETED', $4, $5, $6)",
     )
     .bind(wallet_id)
     .bind(amount_display)
     .bind(transaction_type)
     .bind(description)
     .bind(reference)
-    .bind(now)
+    .bind(crate::time::Ts(&now))
     .execute(&mut **tx)
     .await?;
     Ok(())

@@ -26,7 +26,7 @@ impl From<&Profile> for ProfilePublic {
             email_verified: p.email_verified,
             is_staff: p.is_staff,
             is_admin: p.is_admin,
-            created_on: p.created_on,
+            created_on: p.created_on.0,
         }
     }
 }

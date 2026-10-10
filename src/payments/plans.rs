@@ -191,7 +191,7 @@ pub const GLO_PLANS: &[Plan] = &[
     Plan { display: "Glo TV VOD 6GB 30days", code: "glo-tv-1400", price_naira: 1400 },
 ];
 
-pub const ETISALAT_PLANS: &[Plan] = &[
+pub const NINEMOBILE_PLANS: &[Plan] = &[
     Plan { display: "9mobile 10 GB SME plan", code: "9mobile-sme-data-10gb", price_naira: 1400 },
     Plan { display: "9mobile 100 GB SME plan", code: "9mobile-sme-data-100gb", price_naira: 14000 },
     Plan { display: "9mobile 100mb SME plan", code: "9mobile-sme-data-100mb", price_naira: 14 },
@@ -339,8 +339,8 @@ mod tests {
         assert_eq!(super::GLO_PLANS.len(), 78);
     }
     #[test]
-    fn etisalat_plans_count() {
-        assert_eq!(super::ETISALAT_PLANS.len(), 27);
+    fn ninemobile_plans_count() {
+        assert_eq!(super::NINEMOBILE_PLANS.len(), 27);
     }
     #[test]
     fn dstv_plans_count() {

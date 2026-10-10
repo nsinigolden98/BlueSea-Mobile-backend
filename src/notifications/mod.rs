@@ -6,7 +6,10 @@
 //!   urls.rs        <-> urls.py
 //!   utils.rs       <-> utils.py (send + group notification emails)
 
+pub mod consumers;
+pub mod hub;
 pub mod models;
+pub mod routing;
 pub mod serializers;
 pub mod urls;
 pub mod utils;

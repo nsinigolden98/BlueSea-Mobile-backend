@@ -15,8 +15,8 @@ pub struct AffiliateProfileRow {
     pub tiktok: Option<String>,
     pub agreement_accepted: bool,
     pub rejected_reason: Option<String>,
-    pub created_at: chrono::NaiveDateTime,
-    pub updated_at: chrono::NaiveDateTime,
+    pub created_at: crate::time::NaiveUtc,
+    pub updated_at: crate::time::NaiveUtc,
     pub user_id: i64,
     pub affiliate_name: String,
 }
@@ -29,9 +29,9 @@ const PROFILE_COLS: &str = "id, status, CAST(commission_rate AS TEXT) AS commiss
 pub struct AffiliateLinkRow {
     pub id: i64,
     pub commission_rate: String,
-    pub clicks: i64,
+    pub clicks: i32,
     pub is_active: bool,
-    pub created_at: chrono::NaiveDateTime,
+    pub created_at: crate::time::NaiveUtc,
     pub event_id: String,
     pub affiliate_id: i64,
 }
@@ -39,15 +39,15 @@ pub struct AffiliateLinkRow {
 #[derive(Debug, Clone, FromRow)]
 pub struct AffiliateSaleRow {
     pub id: i64,
-    pub ticket_count: i64,
+    pub ticket_count: i32,
     pub gross_amount: String,
     pub commission_rate: String,
     pub commission_amount: String,
     pub status: String,
-    pub created_at: chrono::NaiveDateTime,
-    pub payable_at: Option<chrono::NaiveDateTime>,
-    pub paid_at: Option<chrono::NaiveDateTime>,
-    pub revoked_at: Option<chrono::NaiveDateTime>,
+    pub created_at: crate::time::NaiveUtc,
+    pub payable_at: Option<crate::time::NaiveUtc>,
+    pub paid_at: Option<crate::time::NaiveUtc>,
+    pub revoked_at: Option<crate::time::NaiveUtc>,
     pub affiliate_id: i64,
     pub buyer_id: i64,
     pub event_id: String,
@@ -65,12 +65,12 @@ pub struct EventView {
 }
 
 pub async fn event_by_id(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     id_hex: &str,
 ) -> Result<Option<EventView>, sqlx::Error> {
     let row: Option<(String, String, bool, bool, String)> = sqlx::query_as(
-        "SELECT id, event_title, is_free, is_approved, CAST(event_date AS TEXT)
-         FROM market_place_eventinfo WHERE id = ?",
+        "SELECT CAST(id AS TEXT) AS id, event_title, is_free, is_approved, CAST(event_date AS TEXT)
+         FROM market_place_eventinfo WHERE id = CAST($1 AS UUID)",
     )
     .bind(id_hex)
     .fetch_optional(db)
@@ -85,11 +85,11 @@ pub async fn event_by_id(
 }
 
 pub async fn profile_for_user(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     user_id: i64,
 ) -> Result<Option<AffiliateProfileRow>, sqlx::Error> {
     sqlx::query_as::<_, AffiliateProfileRow>(&format!(
-        "SELECT {PROFILE_COLS} FROM affiliate_affiliateprofile WHERE user_id = ?"
+        "SELECT {PROFILE_COLS} FROM affiliate_affiliateprofile WHERE user_id = $1"
     ))
     .bind(user_id)
     .fetch_optional(db)
@@ -97,11 +97,11 @@ pub async fn profile_for_user(
 }
 
 pub async fn profile_by_name(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     name: &str,
 ) -> Result<Option<AffiliateProfileRow>, sqlx::Error> {
     sqlx::query_as::<_, AffiliateProfileRow>(&format!(
-        "SELECT {PROFILE_COLS} FROM affiliate_affiliateprofile WHERE affiliate_name = ?"
+        "SELECT {PROFILE_COLS} FROM affiliate_affiliateprofile WHERE affiliate_name = $1"
     ))
     .bind(name)
     .fetch_optional(db)
@@ -109,13 +109,13 @@ pub async fn profile_by_name(
 }
 
 pub async fn name_taken_by_other(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     name: &str,
     user_id: i64,
 ) -> Result<bool, sqlx::Error> {
     // iexact match excluding self, like the serializer validator.
     let row: Option<(i64,)> = sqlx::query_as(
-        "SELECT id FROM affiliate_affiliateprofile WHERE lower(affiliate_name) = lower(?) AND user_id != ?",
+        "SELECT id FROM affiliate_affiliateprofile WHERE lower(affiliate_name) = lower($1) AND user_id != $2",
     )
     .bind(name)
     .bind(user_id)

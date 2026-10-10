@@ -7,8 +7,8 @@ use crate::error::AppError;
 use crate::payments::models as pay_models;
 use crate::payments::serializers::validate_airtime;
 use crate::payments::views::common;
-use crate::payments::vtpass;
 use crate::state::AppState;
+use crate::transactions::nomba_gateway;
 use crate::wallet::models as wallet_models;
 
 type Resp = (StatusCode, Json<Value>);
@@ -40,7 +40,7 @@ pub async fn airtime(
         Err(e) => return Ok((StatusCode::BAD_REQUEST, Json(e))),
     };
 
-    let request_id = format!("BS-AIRT{}", vtpass::generate_reference_id());
+    let request_id = format!("BS-AIRT{}", crate::payments::vtpass::generate_reference_id());
     let now = crate::time::now_str();
     if let Err(e) = pay_models::insert_airtime(
         &s.db, user.id, params.amount_naira, &params.network, &params.phone, &request_id, &now,
@@ -55,30 +55,45 @@ pub async fn airtime(
         Ok(None) => return Ok(common::payment_failed("Sender wallet not found")),
         Err(e) => return Ok(common::payment_failed(e)),
     };
-    let amount_cents = params.amount_naira * 100;
-    if wallet_models::parse_cents(&wallet.balance).unwrap_or(0) < amount_cents {
-        return Ok(common::insufficient_funds());
+    let amount_cents = crate::payments::serializers::naira_to_cents(params.amount_naira);
+    // Lock funds BEFORE the gateway call: concurrent requests serialize on
+    // the row, so two purchases can't both spend the same balance.
+    match wallet_models::lock_amount(&s.db, wallet.id, user.id, amount_cents, crate::accounts::tier::limit_cents(&user)).await {
+        Ok(true) => {}
+        Ok(false) => return Ok(common::insufficient_funds()),
+        Err(e) => return Ok(common::lock_failed(e)),
     }
 
-    let payload = serde_json::json!({
-        "request_id": request_id,
-        "serviceID": params.network,
-        "amount": params.amount_naira,
-        "phone": params.phone,
+    let network_upper = params.network.to_uppercase();
+    let (ok, data) = nomba_gateway::purchase_airtime(
+        &s.config, params.amount_naira, &params.phone, &network_upper, &request_id,
+    )
+    .await;
+    if !ok {
+        let _ = wallet_models::unlock_amount(&s.db, wallet.id, amount_cents).await;
+        let msg = data.as_str().unwrap_or("Airtime purchase failed").to_string();
+        return Ok(common::payment_failed(msg));
+    }
+    let resp = serde_json::json!({
+        "success": true,
+        "code": "00",
+        "description": "TRANSACTION SUCCESSFUL",
+        "requestId": request_id,
+        "reference": request_id,
+        "data": data,
     });
-    let resp = match vtpass::top_up(&s.http, &s.config, &payload).await {
-        Ok(r) => r,
-        Err(e) => return Ok(common::payment_failed(e)),
-    };
 
-    if vtpass::is_successful(&resp) {
+    {
         let desc = common::airtime_desc(&params.network, &params.phone, params.amount_naira);
-        if let Err(e) = wallet_models::debit(
-            &s.db, &s.wallet_hub, wallet.id, user.id,
-            &wallet_models::cents_to_decimal(amount_cents), &desc, Some(&request_id),
+        if let Err(e) = wallet_models::finalize_locked_debit(
+            &s.db, &s.wallet_hub, wallet.id, user.id, amount_cents, &desc, &request_id,
         )
         .await
         {
+            // Gateway already delivered: unlock so funds don't stay frozen,
+            // then surface loudly (reconciliation needed).
+            let _ = wallet_models::unlock_amount(&s.db, wallet.id, amount_cents).await;
+            tracing::error!("airtime delivered but settle failed for {request_id}: {e:?}");
             return Ok(common::payment_failed(format!("{e:?}")));
         }
         common::settle_success(

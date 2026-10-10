@@ -134,7 +134,7 @@ pub async fn create(
     if !invite_raw.is_empty() {
         for email in invite_raw.split(',').map(|e| e.trim()).filter(|e| !e.is_empty()) {
             let hit: Option<(i64,)> = sqlx::query_as(
-                "SELECT id FROM accounts_profile WHERE lower(email) = lower(?)",
+                "SELECT id FROM accounts_profile WHERE lower(email) = lower($1)",
             )
             .bind(email)
             .fetch_optional(&s.db)
@@ -176,7 +176,7 @@ pub async fn create(
     let join_code = loop {
         let code = group_models::generate_join_code();
         let hit: Option<(i64,)> =
-            sqlx::query_as("SELECT 1 FROM group_payment_group WHERE join_code = ?")
+            sqlx::query_as("SELECT 1 FROM group_payment_group WHERE join_code = $1")
                 .bind(&code)
                 .fetch_optional(&s.db)
                 .await?;
@@ -188,7 +188,7 @@ pub async fn create(
         "INSERT INTO group_payment_group (id, name, description, created_by_id, service_type, sub_number,
                 plan, plan_type, target_amount, current_amount, status, active, invite_members, join_code,
                 created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 1, ?, ?, ?, ?)",
+         VALUES (CAST($1 AS UUID), $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending', TRUE, $11, $12, $13, $14)",
     )
     .bind(&group_id)
     .bind(&name)
@@ -198,28 +198,28 @@ pub async fn create(
     .bind(&sub_number)
     .bind(&plan)
     .bind(&plan_type)
-    .bind(target)
-    .bind(per_member)
+    .bind(target as i32)
+    .bind(per_member as i32)
     .bind(&invite_stored)
     .bind(&join_code)
-    .bind(&now)
-    .bind(&now)
+    .bind(crate::time::Ts(&now))
+    .bind(crate::time::Ts(&now))
     .execute(&s.db)
     .await?;
     sqlx::query(
         "INSERT INTO group_payment_groupmember (role, joined_at, group_id, user_id, locked_amount, paid_amount, payment_status)
-         VALUES ('owner', ?, ?, ?, ?, ?, 'paid')",
+         VALUES ('owner', $1, CAST($2 AS UUID), $3, $4, $5, 'paid')",
     )
-    .bind(&now)
+    .bind(crate::time::Ts(&now))
     .bind(&group_id)
     .bind(user.id)
-    .bind(per_member)
-    .bind(target)
+    .bind(per_member as i32)
+    .bind(target as i32)
     .execute(&s.db)
     .await?;
 
     let created_raw: Option<(String,)> = sqlx::query_as(
-        "SELECT CAST(created_at AS TEXT) FROM group_payment_group WHERE id = ?",
+        "SELECT CAST(created_at AS TEXT) FROM group_payment_group WHERE id = CAST($1 AS UUID)",
     )
     .bind(&group_id)
     .fetch_optional(&s.db)
@@ -298,7 +298,7 @@ pub async fn add_member(
     }
 
     let user_to_add: Option<(i64, String)> = sqlx::query_as(
-        "SELECT id, email FROM accounts_profile WHERE email = ?",
+        "SELECT id, email FROM accounts_profile WHERE email = $1",
     )
     .bind(user_email)
     .fetch_optional(&s.db)
@@ -309,7 +309,7 @@ pub async fn add_member(
 
     let dupe: Option<(i64,)> = sqlx::query_as(
         "SELECT m.id FROM group_payment_groupmember m JOIN accounts_profile p ON p.id = m.user_id
-         WHERE m.group_id = ? AND p.email = ?",
+         WHERE m.group_id = CAST($1 AS UUID) AND p.email = $2",
     )
     .bind(&group.id)
     .bind(&add_email)
@@ -327,19 +327,19 @@ pub async fn add_member(
     let invite_next = format!("{},{}", group.invite_members, user_email);
     let invited: Vec<&str> = invite_next.split(',').collect();
     let paid: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM group_payment_groupmember WHERE payment_status = 'paid' AND group_id = ?",
+        "SELECT COUNT(*) FROM group_payment_groupmember WHERE payment_status = 'paid' AND group_id = CAST($1 AS UUID)",
     )
     .bind(&group.id)
     .fetch_optional(&s.db)
     .await?
     .unwrap_or((0,));
-    let current = ceil_div(group.target_amount, invited.len() as i64 + 1) * paid.0;
+    let current = ceil_div(group.target_amount as i64, invited.len() as i64 + 1) * paid.0;
     let _ = sqlx::query(
-        "UPDATE group_payment_group SET invite_members = ?, current_amount = ?, updated_at = ? WHERE id = ?",
+        "UPDATE group_payment_group SET invite_members = $1, current_amount = $2, updated_at = $3 WHERE id = CAST($4 AS UUID)",
     )
     .bind(&invite_next)
-    .bind(current)
-    .bind(&now)
+    .bind(current as i32)
+    .bind(crate::time::Ts(&now))
     .bind(&group.id)
     .execute(&s.db)
     .await;
@@ -374,7 +374,7 @@ pub async fn my_groups(
     for (m, g) in &memberships {
         let (total, paid, pending) = group_models::member_counts(&s.db, &g.id).await?;
         let created_raw: Option<(String,)> = sqlx::query_as(
-            "SELECT CAST(created_at AS TEXT) FROM group_payment_group WHERE id = ?",
+            "SELECT CAST(created_at AS TEXT) FROM group_payment_group WHERE id = CAST($1 AS UUID)",
         )
         .bind(&g.id)
         .fetch_optional(&s.db)
@@ -444,7 +444,7 @@ pub async fn details(
     {
         // Any membership role counts; fall back to a plain membership check.
         let any: Option<(i64,)> = sqlx::query_as(
-            "SELECT id FROM group_payment_groupmember WHERE group_id = ? AND user_id = ?",
+            "SELECT id FROM group_payment_groupmember WHERE group_id = CAST($1 AS UUID) AND user_id = $2",
         )
         .bind(&group.id)
         .bind(user.id)
@@ -473,7 +473,7 @@ pub async fn details(
         }));
     }
     let created_raw: Option<(String,)> = sqlx::query_as(
-        "SELECT CAST(created_at AS TEXT) FROM group_payment_group WHERE id = ?",
+        "SELECT CAST(created_at AS TEXT) FROM group_payment_group WHERE id = CAST($1 AS UUID)",
     )
     .bind(&group.id)
     .fetch_optional(&s.db)
@@ -546,10 +546,10 @@ pub async fn update(
         if !sub.is_empty() {
             let now = crate::time::now_str();
             let _ = sqlx::query(
-                "UPDATE group_payment_group SET sub_number = ?, updated_at = ? WHERE id = ?",
+                "UPDATE group_payment_group SET sub_number = $1, updated_at = $2 WHERE id = CAST($3 AS UUID)",
             )
             .bind(sub)
-            .bind(&now)
+            .bind(crate::time::Ts(&now))
             .bind(&group.id)
             .execute(&s.db)
             .await;
@@ -617,7 +617,7 @@ pub async fn join(
         }
     };
     let already: Option<(i64,)> = sqlx::query_as(
-        "SELECT id FROM group_payment_groupmember WHERE group_id = ? AND user_id = ?",
+        "SELECT id FROM group_payment_groupmember WHERE group_id = CAST($1 AS UUID) AND user_id = $2",
     )
     .bind(&group.id)
     .bind(user.id)
@@ -649,24 +649,24 @@ pub async fn join(
 
     // NOTE: Django divides the float target here; targets are ints in
     // practice, so integer math matches.
-    let share = ceil_div(group.target_amount, invited.len() as i64 + 1);
+    let share = ceil_div(group.target_amount as i64, invited.len() as i64 + 1);
     let now = crate::time::now_str();
-    let _ = sqlx::query("UPDATE group_payment_group SET current_amount = current_amount + ?, updated_at = ? WHERE id = ?")
-        .bind(share)
-        .bind(&now)
+    let _ = sqlx::query("UPDATE group_payment_group SET current_amount = current_amount + $1, updated_at = $2 WHERE id = CAST($3 AS UUID)")
+        .bind(share as i32)
+        .bind(crate::time::Ts(&now))
         .bind(&group.id)
         .execute(&s.db)
         .await;
     // locked_amount truncates the float division, like Django's int() cast.
-    let locked = group.target_amount / (invited.len() as i64 + 1);
+    let locked = group.target_amount as i64 / (invited.len() as i64 + 1);
     let _ = sqlx::query(
         "INSERT INTO group_payment_groupmember (role, joined_at, group_id, user_id, locked_amount, paid_amount, payment_status)
-         VALUES ('member', ?, ?, ?, ?, ?, 'paid')",
+         VALUES ('member', $1, CAST($2 AS UUID), $3, $4, $5, 'paid')",
     )
-    .bind(&now)
+    .bind(crate::time::Ts(&now))
     .bind(&group.id)
     .bind(user.id)
-    .bind(locked)
+    .bind(locked as i32)
     .bind(group.target_amount)
     .execute(&s.db)
     .await;
@@ -725,8 +725,8 @@ pub async fn leave(
         None => return Ok(not_found_detail()),
     };
     let member: Option<group_models::MemberRow> = sqlx::query_as(
-        "SELECT id, role, joined_at, group_id, user_id, locked_amount, paid_amount, payment_status
-         FROM group_payment_groupmember WHERE group_id = ? AND user_id = ?",
+        "SELECT id, role, joined_at, CAST(group_id AS TEXT) AS group_id, user_id, locked_amount, paid_amount, payment_status
+         FROM group_payment_groupmember WHERE group_id = CAST($1 AS UUID) AND user_id = $2",
     )
     .bind(&group.id)
     .bind(user.id)
@@ -750,17 +750,17 @@ pub async fn leave(
     } else {
         group.invite_members.split(',').count()
     };
-    let share = ceil_div(group.target_amount, invited_len as i64 + 1);
+    let share = ceil_div(group.target_amount as i64, invited_len as i64 + 1);
     let now = crate::time::now_str();
     let _ = sqlx::query(
-        "UPDATE group_payment_group SET current_amount = current_amount - ?, updated_at = ? WHERE id = ?",
+        "UPDATE group_payment_group SET current_amount = current_amount - $1, updated_at = $2 WHERE id = CAST($3 AS UUID)",
     )
-    .bind(share)
-    .bind(&now)
+    .bind(share as i32)
+    .bind(crate::time::Ts(&now))
     .bind(&group.id)
     .execute(&s.db)
     .await;
-    let _ = sqlx::query("DELETE FROM group_payment_groupmember WHERE id = ?")
+    let _ = sqlx::query("DELETE FROM group_payment_groupmember WHERE id = $1")
         .bind(member.id)
         .execute(&s.db)
         .await;
@@ -821,9 +821,9 @@ pub async fn cancel(
     }
     let now = crate::time::now_str();
     let _ = sqlx::query(
-        "UPDATE group_payment_group SET status = 'canceled', active = 0, updated_at = ? WHERE id = ?",
+        "UPDATE group_payment_group SET status = 'canceled', active = FALSE, updated_at = $1 WHERE id = CAST($2 AS UUID)",
     )
-    .bind(&now)
+    .bind(crate::time::Ts(&now))
     .bind(&group.id)
     .execute(&s.db)
     .await;
@@ -838,43 +838,40 @@ mod tests {
     use super::*;
     use crate::state::AppState;
 
-    async fn memory_db() -> sqlx::SqlitePool {
-        let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.unwrap();
-        for ddl in [
-            "CREATE TABLE accounts_profile (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, password varchar(128) NOT NULL,
-             last_login datetime NULL, is_superuser bool NOT NULL, first_name varchar(150) NOT NULL, last_name varchar(150) NOT NULL,
-             date_joined datetime NOT NULL, email varchar(300) NOT NULL UNIQUE, surname varchar(100) NOT NULL, other_names varchar(100) NOT NULL,
-             phone varchar(200) NULL, image varchar(100) NULL, verification_code varchar(100) NULL, is_active bool NOT NULL,
-             is_staff bool NOT NULL, is_admin bool NOT NULL, role varchar(200) NOT NULL, email_verified bool NOT NULL,
-             created_on datetime NOT NULL, pin_is_set bool NOT NULL, transaction_pin varchar(255) NULL,
-             referral_code varchar(6) NOT NULL UNIQUE, pin_failed_attempts integer NOT NULL, pin_locked_until datetime NULL, has_DVA bool NOT NULL)",
-            "CREATE TABLE group_payment_group (id char(32) NOT NULL PRIMARY KEY, name varchar(255) NOT NULL,
-             description text NULL, created_at datetime NOT NULL, updated_at datetime NOT NULL, created_by_id bigint NULL,
+    async fn memory_db() -> sqlx::PgPool {
+        let pool = crate::db::test_support::fresh_db(&[
+            "CREATE TABLE accounts_profile (id BIGSERIAL PRIMARY KEY, password varchar(128) NOT NULL,
+             last_login TIMESTAMPTZ NULL, is_superuser BOOLEAN NOT NULL, first_name varchar(150) NOT NULL, last_name varchar(150) NOT NULL,
+             date_joined TIMESTAMPTZ NOT NULL, email varchar(300) NOT NULL UNIQUE, surname varchar(100) NOT NULL, other_names varchar(100) NOT NULL,
+             phone varchar(200) NULL, image varchar(100) NULL, verification_code varchar(100) NULL, is_active BOOLEAN NOT NULL,
+             is_staff BOOLEAN NOT NULL, is_admin BOOLEAN NOT NULL, role varchar(200) NOT NULL, email_verified BOOLEAN NOT NULL,
+             created_on TIMESTAMPTZ NOT NULL, pin_is_set BOOLEAN NOT NULL, transaction_pin varchar(255) NULL,
+             referral_code varchar(6) NOT NULL UNIQUE, pin_failed_attempts integer NOT NULL, pin_locked_until TIMESTAMPTZ NULL, nin_encrypted text NULL, bvn_encrypted text NULL, house_address text NULL, utility_bill_image varchar(100) NULL, is_frozen BOOLEAN NOT NULL DEFAULT FALSE, frozen_reason varchar(200) NULL, \"has_DVA\" BOOLEAN NOT NULL)",
+            "CREATE TABLE group_payment_group (id UUID NOT NULL PRIMARY KEY, name varchar(255) NOT NULL,
+             description text NULL, created_at TIMESTAMPTZ NOT NULL, updated_at TIMESTAMPTZ NOT NULL, created_by_id bigint NULL,
              invite_members text NOT NULL, plan varchar(100) NOT NULL, plan_type varchar(100) NULL, sub_number varchar(20) NOT NULL,
-             target_amount integer NOT NULL, active bool NOT NULL, current_amount integer NOT NULL, status varchar(20) NOT NULL,
+             target_amount integer NOT NULL, active BOOLEAN NOT NULL, current_amount integer NOT NULL, status varchar(20) NOT NULL,
              join_code varchar(10) NOT NULL UNIQUE, service_type varchar(20) NOT NULL)",
-            "CREATE TABLE group_payment_groupmember (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, role varchar(20) NOT NULL,
-             joined_at datetime NOT NULL, group_id char(32) NOT NULL, user_id bigint NOT NULL, locked_amount integer NOT NULL,
+            "CREATE TABLE group_payment_groupmember (id BIGSERIAL PRIMARY KEY, role varchar(20) NOT NULL,
+             joined_at TIMESTAMPTZ NOT NULL, group_id UUID NOT NULL, user_id bigint NOT NULL, locked_amount integer NOT NULL,
              paid_amount integer NOT NULL, payment_status varchar(20) NOT NULL)",
-            "CREATE TABLE token_blacklist_outstandingtoken (token text NOT NULL, created_at datetime NULL,
-             expires_at datetime NOT NULL, user_id bigint NULL, jti varchar(255) NOT NULL UNIQUE,
-             id integer NOT NULL PRIMARY KEY AUTOINCREMENT)",
-            "CREATE TABLE token_blacklist_blacklistedtoken (blacklisted_at datetime NOT NULL,
-             token_id bigint NOT NULL UNIQUE, id integer NOT NULL PRIMARY KEY AUTOINCREMENT)",
-        ] {
-            sqlx::query(ddl).execute(&pool).await.unwrap();
-        }
+            "CREATE TABLE token_blacklist_outstandingtoken (token text NOT NULL, created_at TIMESTAMPTZ NULL,
+             expires_at TIMESTAMPTZ NOT NULL, user_id bigint NULL, jti varchar(255) NOT NULL UNIQUE,
+             id BIGSERIAL PRIMARY KEY)",
+            "CREATE TABLE token_blacklist_blacklistedtoken (blacklisted_at TIMESTAMPTZ NOT NULL,
+             token_id bigint NOT NULL UNIQUE, id BIGSERIAL PRIMARY KEY)",
+        ]).await;
         for (email, code) in [("o@x.com", "OOOOOO"), ("m@x.com", "MMMMMM"), ("n@x.com", "NNNNNN")] {
             sqlx::query(
                 "INSERT INTO accounts_profile (password, is_superuser, first_name, last_name, date_joined, email, surname, other_names,
-                 is_active, is_staff, is_admin, role, email_verified, created_on, pin_is_set, referral_code, pin_failed_attempts, has_DVA)
-                 VALUES ('x', 0, '', '', '2026-01-01 00:00:00', ?, 'S', 'O', 1, 0, 0, 'user', 1, '2026-01-01 00:00:00', 1, ?, 0, 0)",
+                 is_active, is_staff, is_admin, role, email_verified, created_on, pin_is_set, referral_code, pin_failed_attempts, \"has_DVA\")
+                 VALUES ('x', FALSE, '', '', '2026-01-01 00:00:00', $1, 'S', 'O', TRUE, FALSE, FALSE, 'user', TRUE, '2026-01-01 00:00:00', TRUE, $2, 0, FALSE)",
             ).bind(email).bind(code).execute(&pool).await.unwrap();
         }
         pool
     }
 
-    fn test_state(db: sqlx::SqlitePool) -> (AppState, String) {
+    fn test_state(db: sqlx::PgPool) -> (AppState, String) {
         let mut config = crate::settings::Config::from_env();
         config.email_backend = "console".to_string();
         config.debug = true;
@@ -884,6 +881,9 @@ mod tests {
             config,
             http: reqwest::Client::new(),
             wallet_hub: crate::wallet::hub::WalletHub::default(),
+            support_hub: crate::support::hub::SupportHub::default(),
+            plans_store: crate::plans_cache::PlansStore::default(),
+            notification_hub: crate::notifications::hub::NotificationHub::default(),
         };
         (state, secret)
     }
@@ -896,14 +896,13 @@ mod tests {
         h
     }
 
-    async fn seed_group(db: &sqlx::SqlitePool) -> String {
-        let gid = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    async fn seed_group(db: &sqlx::PgPool) -> String {
+        let gid = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
         sqlx::query(
             "INSERT INTO group_payment_group (id, name, description, created_by_id, service_type, sub_number, plan,
                     plan_type, target_amount, current_amount, status, active, invite_members, join_code,
                     created_at, updated_at)
-             VALUES (?, 'G', 'd', 1, 'airtime', '0801', '', '', 1000, 500, 'pending', 1, 'm@x.com', 'JOIN01',
-                     '2026-01-01 00:00:00', '2026-01-01 00:00:00')",
+             VALUES (CAST($1 AS UUID), 'G', 'd', 1, 'airtime', '0801', '', '', 1000, 500, 'pending', TRUE, 'm@x.com', 'JOIN01', '2026-01-01 00:00:00', '2026-01-01 00:00:00')",
         )
         .bind(gid)
         .execute(db)
@@ -911,7 +910,7 @@ mod tests {
         .unwrap();
         sqlx::query(
             "INSERT INTO group_payment_groupmember (role, joined_at, group_id, user_id, locked_amount, paid_amount, payment_status)
-             VALUES ('owner', '2026-01-01 00:00:00', ?, 1, 500, 1000, 'paid')",
+             VALUES ('owner', '2026-01-01 00:00:00', CAST($1 AS UUID), 1, 500, 1000, 'paid')",
         )
         .bind(gid)
         .execute(db)
@@ -925,10 +924,7 @@ mod tests {
         let db = memory_db().await;
         let (s, secret) = test_state(db.clone());
         let gid = seed_group(&db).await;
-        let dashed = format!(
-            "{}-{}-{}-{}-{}",
-            &gid[0..8], &gid[8..12], &gid[12..16], &gid[16..20], &gid[20..32]
-        );
+        let dashed = gid.clone();
 
         // non-admin member gets 403
         let resp = add_member(
@@ -949,8 +945,8 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(resp.0, StatusCode::INTERNAL_SERVER_ERROR);
-        let row: (String, i64) = sqlx::query_as(
-            "SELECT invite_members, current_amount FROM group_payment_group WHERE id = ?",
+        let row: (String, i32) = sqlx::query_as(
+            "SELECT invite_members, current_amount FROM group_payment_group WHERE id = CAST($1 AS UUID)",
         )
         .bind(&gid)
         .fetch_one(&db)
@@ -980,16 +976,13 @@ mod tests {
         // add Bob as member row directly, then leave
         sqlx::query(
             "INSERT INTO group_payment_groupmember (role, joined_at, group_id, user_id, locked_amount, paid_amount, payment_status)
-             VALUES ('member', '2026-01-01 00:00:00', ?, 2, 500, 1000, 'paid')",
+             VALUES ('member', '2026-01-01 00:00:00', CAST($1 AS UUID), 2, 500, 1000, 'paid')",
         )
         .bind(&gid)
         .execute(&db)
         .await
         .unwrap();
-        let dashed = format!(
-            "{}-{}-{}-{}-{}",
-            &gid[0..8], &gid[8..12], &gid[12..16], &gid[16..20], &gid[20..32]
-        );
+        let dashed = gid.clone();
         let resp = leave(
             State(s.clone()),
             bearer(&secret, 2),
@@ -999,7 +992,7 @@ mod tests {
         .unwrap();
         assert_eq!(resp.0, StatusCode::OK);
         let left: Option<(i64,)> = sqlx::query_as(
-            "SELECT id FROM group_payment_groupmember WHERE group_id = ? AND user_id = 2",
+            "SELECT id FROM group_payment_groupmember WHERE group_id = CAST($1 AS UUID) AND user_id = 2",
         )
         .bind(&gid)
         .fetch_optional(&db)
@@ -1034,12 +1027,12 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(resp.0, StatusCode::OK);
-        let st: (String, i64) =
-            sqlx::query_as("SELECT status, active FROM group_payment_group WHERE id = ?")
+        let st: (String, bool) =
+            sqlx::query_as("SELECT status, active FROM group_payment_group WHERE id = CAST($1 AS UUID)")
                 .bind(&gid)
                 .fetch_one(&db)
                 .await
                 .unwrap();
-        assert_eq!((st.0.as_str(), st.1), ("canceled", 0));
+        assert_eq!((st.0.as_str(), st.1), ("canceled", false));
     }
 }

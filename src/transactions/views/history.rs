@@ -53,14 +53,14 @@ pub async fn history(
         params.get("page_size").and_then(|v| v.parse().ok()),
     );
     let count: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM transactions_wallettransaction WHERE wallet_id = ?",
+        "SELECT COUNT(*) FROM transactions_wallettransaction WHERE wallet_id = $1",
     )
     .bind(wallet.id)
     .fetch_one(&s.db)
     .await?;
     let rows: Vec<(i64, i64, String, String, String, Option<String>, String, String)> = sqlx::query_as(
         "SELECT id, wallet_id, CAST(amount AS TEXT), transaction_type, status, description, reference, CAST(created_at AS TEXT)
-         FROM transactions_wallettransaction WHERE wallet_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+         FROM transactions_wallettransaction WHERE wallet_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3",
     )
     .bind(wallet.id)
     .bind(page.size)

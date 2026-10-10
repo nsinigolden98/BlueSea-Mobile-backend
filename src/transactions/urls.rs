@@ -4,26 +4,27 @@ use axum::{Router, routing::{get, post}};
 
 use crate::state::AppState;
 
-use super::views;
+use super::nomba_views;
 
 pub fn router(state: AppState) -> Router {
     Router::new()
-        .route("/transactions/history/", get(views::history::history))
+        .route("/transactions/history/", get(crate::transactions::views::history::history))
         .route(
-            "/transactions/fund-wallet/",
-            post(views::funding::initialize_funding),
+            "/transactions/nomba/fund-wallet/",
+            post(nomba_views::initialize_funding),
         )
         .route(
-            "/transactions/webhook/paystack/",
-            post(views::webhook::paystack_webhook),
+            "/transactions/nomba/account-name/",
+            post(nomba_views::account_name),
         )
         .route(
-            "/transactions/account-name/",
-            post(views::account_name::account_name),
+            "/transactions/nomba/dva/assign/",
+            post(nomba_views::dva_assign),
         )
         .route(
-            "/transactions/dva/refresh/",
-            post(views::dva_refresh::dva_refresh),
+            "/transactions/nomba/dva/confirm/",
+            post(nomba_views::dva_confirm),
         )
+        .route("/transactions/nomba/webhook/", post(nomba_views::webhook))
         .with_state(state)
 }

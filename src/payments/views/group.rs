@@ -46,7 +46,7 @@ async fn member_contexts(
     let mut out = Vec::new();
     for m in members {
         let prof: Option<(String, String)> = sqlx::query_as(
-            "SELECT other_names, email FROM accounts_profile WHERE id = ?",
+            "SELECT other_names, email FROM accounts_profile WHERE id = $1",
         )
         .bind(m.user_id)
         .fetch_optional(&s.db)
@@ -55,7 +55,7 @@ async fn member_contexts(
             continue;
         };
         let w: Option<(i64, String)> = sqlx::query_as(
-            "SELECT id, CAST(balance AS TEXT) FROM wallet_wallet WHERE user_id = ?",
+            "SELECT id, CAST(balance AS TEXT) FROM wallet_wallet WHERE user_id = $1",
         )
         .bind(m.user_id)
         .fetch_optional(&s.db)
@@ -269,11 +269,18 @@ pub async fn create_group_payment(
         }
     };
 
-    if vtpass_ok(&vtu_response) {
+    if nomba_ok(&vtu_response) {
         let vtu_ref = vtu_response
             .get("requestId")
             .and_then(|v| v.as_str())
             .or_else(|| vtu_response.get("reference").and_then(|v| v.as_str()))
+            .or_else(|| {
+                vtu_response.get("data").and_then(|d| {
+                    d.get("id")
+                        .or_else(|| d.get("transactionId"))
+                        .and_then(|v| v.as_str())
+                })
+            })
             .map(|v| v.to_string());
         let _ = pay_models::set_group_payment_status(&s.db, payment_id, "completed", vtu_ref.as_deref(), &now).await;
         let _ = pay_models::set_group_status(&s.db, &group_id, "completed").await;
@@ -314,7 +321,7 @@ pub async fn create_group_payment(
             "success": false,
             "error": format!(
                 "VTU service failed: {}. All debits have been reversed.",
-                vtu_response.get("response_description").and_then(|v| v.as_str()).unwrap_or("Unknown error")
+vtu_response.get("description").and_then(|v| v.as_str()).unwrap_or("Unknown error")
             ),
             "payment_id": payment_id,
         })),
@@ -365,12 +372,138 @@ async fn notify_all_failed(
     }
 }
 
-fn vtpass_ok(resp: &Value) -> bool {
-    resp.get("response_description").and_then(|v| v.as_str()) == Some("TRANSACTION SUCCESSFUL")
+fn nomba_ok(resp: &Value) -> bool {
+    // Nomba success envelope: {"code": "00", ...}.
+    resp.get("code").and_then(|v| v.as_str()) == Some("00")
 }
 
-/// Sync VTU dispatch for a group payment. Mirrors `vtu_api()`.
+fn nomba_err(e: nomba_rs::NombaError) -> String {
+    match &e {
+        nomba_rs::NombaError::Api { status_code, code, message, .. } => {
+            format!(
+                "Nomba error {}: {}",
+                status_code.map(|s| s.to_string()).unwrap_or_default(),
+                code.as_deref().unwrap_or(message)
+            )
+        }
+        _ => e.to_string(),
+    }
+}
+
+async fn nomba_client(s: &AppState) -> Result<nomba_rs::AsyncNomba, String> {
+    let config = &s.config;
+    let fut = async {
+        if config.nomba_sandbox {
+            nomba_rs::AsyncNomba::new_sandbox(
+                config.nomba_client_id.clone(),
+                config.nomba_secret_key.clone(),
+                config.nomba_account_id.clone(),
+            )
+            .await
+        } else {
+            nomba_rs::AsyncNomba::new(
+                config.nomba_client_id.clone(),
+                config.nomba_secret_key.clone(),
+                config.nomba_account_id.clone(),
+            )
+            .await
+        }
+    };
+    fut.await.map_err(nomba_err)
+}
+
+/// Sync Nomba dispatch for a group payment. Airtime/data/cable/electricity
+/// go over the Nomba rails; exams (jamb/waec-*) stay on VTpass.
 async fn vtu_api_call(
+    s: &AppState,
+    payment_type: &str,
+    details: &Value,
+    total: &Decimal,
+) -> Result<Value, String> {
+    // Exams stay on VTpass.
+    if matches!(payment_type, "jamb" | "waec-registration" | "waec-result") {
+        return vtu_api_call_vtpass(s, payment_type, details, total).await;
+    }
+    let get = |k: &str| details.get(k).and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let client = nomba_client(s).await?;
+    let reference_id = vtpass::generate_reference_id();
+    let resp_value = match payment_type {
+        "airtime" => {
+            let amount = total.to_string().parse::<f64>().unwrap_or(0.0);
+            let r = client
+                .airtime_data
+                .purchase_airtime_parent(
+                    amount,
+                    get("phone_number"),
+                    get("network").to_uppercase(),
+                    reference_id.clone(),
+                    None,
+                )
+                .await
+                .map_err(nomba_err)?;
+            serde_json::to_value(r).unwrap_or(Value::Null)
+        }
+        "data" => {
+            // Nomba product ids come from the plans cache (/ws/plans);
+            // legacy VTpass variation codes are rejected, not attempted.
+            let plan_id = get("plan_id");
+            let r = client
+                .airtime_data
+                .vend_data_parent(
+                    plan_id,
+                    get("phone_number"),
+                    get("network").to_uppercase(),
+                    reference_id.clone(),
+                    None,
+                )
+                .await
+                .map_err(nomba_err)?;
+            serde_json::to_value(r).unwrap_or(Value::Null)
+        }
+        "electricity" => {
+            let amount = total.to_string().parse::<f64>().unwrap_or(0.0);
+            let r = client
+                .electricity
+                .vend_parent(
+                    get("disco"),
+                    get("billersCode"),
+                    amount,
+                    reference_id.clone(),
+                    Some(get("phone_number")),
+                    Some(get("meter_type")),
+                )
+                .await
+                .map_err(nomba_err)?;
+            serde_json::to_value(r).unwrap_or(Value::Null)
+        }
+        "dstv" | "gotv" | "startimes" | "showmax" => {
+            let amount = total.to_string().parse::<f64>().unwrap_or(0.0);
+            let r = client
+                .cabletv
+                .subscribe_parent(
+                    payment_type.to_uppercase(),
+                    get("billersCode"),
+                    get("plan_id"),
+                    amount,
+                    reference_id.clone(),
+                    Some(get("phone_number")),
+                )
+                .await
+                .map_err(nomba_err)?;
+            serde_json::to_value(r).unwrap_or(Value::Null)
+        }
+        other => return Err(format!("unsupported payment_type {other}")),
+    };
+    // Stash the gateway reference for the status row, like VTpass did.
+    let mut out = resp_value;
+    if let Some(obj) = out.as_object_mut() {
+        obj.insert("reference".to_string(), Value::String(reference_id));
+    }
+    Ok(out)
+}
+
+/// Legacy VTpass dispatch, kept for exams only.
+async fn vtu_api_call_vtpass(
     s: &AppState,
     payment_type: &str,
     details: &Value,
@@ -394,7 +527,7 @@ async fn vtu_api_call(
                 "mtn" => plans::MTN_PLANS,
                 "airtel" => plans::AIRTEL_PLANS,
                 "glo" => plans::GLO_PLANS,
-                "etisalat" => plans::ETISALAT_PLANS,
+                "9mobile" => plans::NINEMOBILE_PLANS,
                 _ => return Err(format!("unsupported network {net}")),
             };
             let plan = plans::find_plan(dict, &plan_id)
@@ -493,7 +626,7 @@ pub async fn group_history(
     let mut rows: Vec<GroupHistoryRow> = Vec::new();
     if let Some(gid) = query.get("group_id") {
         let member: Option<(i64,)> = sqlx::query_as(
-            "SELECT id FROM group_payment_groupmember WHERE group_id = ? AND user_id = ?",
+            "SELECT id FROM group_payment_groupmember WHERE group_id = CAST($1 AS UUID) AND user_id = $2",
         )
         .bind(gid)
         .bind(user.id)
@@ -506,24 +639,24 @@ pub async fn group_history(
             ));
         }
         rows = sqlx::query_as::<_, GroupHistoryRow>(
-            "SELECT id, payment_type, CAST(total_amount AS TEXT), service_details, status,
+            "SELECT id, payment_type, CAST(total_amount AS TEXT), CAST(service_details AS TEXT), status,
                     CAST(created_at AS TEXT), CAST(updated_at AS TEXT), group_id, initiated_by_id, vtu_reference
-             FROM payments_grouppayment WHERE group_id = ? ORDER BY created_at DESC",
+             FROM payments_grouppayment WHERE group_id = $1 ORDER BY created_at DESC",
         )
         .bind(gid)
         .fetch_all(&s.db)
         .await?;
     } else {
         let my_groups: Vec<(String,)> =
-            sqlx::query_as("SELECT group_id FROM group_payment_groupmember WHERE user_id = ?")
+            sqlx::query_as("SELECT group_id FROM group_payment_groupmember WHERE user_id = $1")
                 .bind(user.id)
                 .fetch_all(&s.db)
                 .await?;
         for (gid,) in my_groups {
             let mut r: Vec<GroupHistoryRow> = sqlx::query_as(
-                "SELECT id, payment_type, CAST(total_amount AS TEXT), service_details, status,
+                "SELECT id, payment_type, CAST(total_amount AS TEXT), CAST(service_details AS TEXT), status,
                         CAST(created_at AS TEXT), CAST(updated_at AS TEXT), group_id, initiated_by_id, vtu_reference
-                 FROM payments_grouppayment WHERE group_id = ? ORDER BY created_at DESC",
+                 FROM payments_grouppayment WHERE group_id = $1 ORDER BY created_at DESC",
             )
             .bind(&gid)
             .fetch_all(&s.db)
@@ -553,8 +686,8 @@ struct GroupHistoryRow {
     vtu_reference: Option<String>,
 }
 
-impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for GroupHistoryRow {
-    fn from_row(row: &'r sqlx::sqlite::SqliteRow) -> Result<Self, sqlx::Error> {
+impl<'r> sqlx::FromRow<'r, sqlx::postgres::PgRow> for GroupHistoryRow {
+    fn from_row(row: &'r sqlx::postgres::PgRow) -> Result<Self, sqlx::Error> {
         use sqlx::Row;
         Ok(Self {
             id: row.try_get("id")?,
@@ -576,14 +709,14 @@ async fn group_public(
     r: &GroupHistoryRow,
 ) -> Result<Value, AppError> {
     let group_name: Option<(String,)> =
-        sqlx::query_as("SELECT name FROM group_payment_group WHERE id = ?")
+        sqlx::query_as("SELECT name FROM group_payment_group WHERE id = CAST($1 AS UUID)")
             .bind(&r.group_id)
             .fetch_optional(&s.db)
             .await?;
     let (init_name, init_id) = match r.initiated_by {
         Some(uid) => {
             let p: Option<(String, String)> = sqlx::query_as(
-                "SELECT surname, other_names FROM accounts_profile WHERE id = ?",
+                "SELECT surname, other_names FROM accounts_profile WHERE id = $1",
             )
             .bind(uid)
             .fetch_optional(&s.db)

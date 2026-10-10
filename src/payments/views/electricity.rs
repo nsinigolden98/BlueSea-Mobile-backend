@@ -10,8 +10,8 @@ use crate::error::AppError;
 use crate::payments::models as pay_models;
 use crate::payments::serializers::validate_electricity;
 use crate::payments::views::common;
-use crate::payments::vtpass;
 use crate::state::AppState;
+use crate::transactions::nomba_gateway;
 use crate::wallet::models as wallet_models;
 
 type Resp = (StatusCode, Json<Value>);
@@ -42,9 +42,9 @@ pub async fn electricity(
         Ok(p) => p,
         Err(e) => return Ok((StatusCode::BAD_REQUEST, Json(e))),
     };
-    let amount_cents = params.amount_naira * 100;
+    let amount_cents = crate::payments::serializers::naira_to_cents(params.amount_naira);
 
-    let request_id = format!("BS-LIB{}", vtpass::generate_reference_id());
+    let request_id = format!("BS-LIB{}", crate::payments::vtpass::generate_reference_id());
     let now = crate::time::now_str();
     if let Err(e) = pay_models::insert_electricity(
         &s.db, user.id, &params.biller_code, params.amount_naira, &params.biller_name,
@@ -60,32 +60,47 @@ pub async fn electricity(
         Ok(None) => return Ok(common::payment_failed("Sender wallet not found")),
         Err(e) => return Ok(common::payment_failed(e)),
     };
-    if wallet_models::parse_cents(&wallet.balance).unwrap_or(0) < amount_cents {
-        return Ok(common::insufficient_funds());
+    // Lock funds BEFORE the gateway call (double-spend guard).
+    match wallet_models::lock_amount(&s.db, wallet.id, user.id, amount_cents, crate::accounts::tier::limit_cents(&user)).await {
+        Ok(true) => {}
+        Ok(false) => return Ok(common::insufficient_funds()),
+        Err(e) => return Ok(common::lock_failed(e)),
     }
 
-    let payload = serde_json::json!({
-        "request_id": request_id,
-        "serviceID": params.biller_name,
-        "billersCode": params.biller_code,
-        "variation_code": params.meter_type,
-        "amount": params.amount_naira,
-        "phone": user.phone.clone().unwrap_or_default(),
+    let phone = user.phone.clone().unwrap_or_default();
+    let (ok, data) = nomba_gateway::vend_electricity(
+        &s.config, &params.biller_name, &params.biller_code, params.amount_naira,
+        &request_id, Some(phone), Some(params.meter_type.clone()),
+    )
+    .await;
+    if !ok {
+        let _ = wallet_models::unlock_amount(&s.db, wallet.id, amount_cents).await;
+        let msg = data.as_str().unwrap_or("Electricity purchase failed").to_string();
+        return Ok(common::payment_failed(msg));
+    }
+    let token = data.get("token").and_then(|v| v.as_str())
+        .or_else(|| data.get("purchased_code").and_then(|v| v.as_str()))
+        .or_else(|| data.get("meterToken").and_then(|v| v.as_str()))
+        .map(|v| v.to_string());
+    let resp = serde_json::json!({
+        "success": true,
+        "code": "00",
+        "description": "TRANSACTION SUCCESSFUL",
+        "requestId": request_id,
+        "reference": request_id,
+        "purchased_code": token,
+        "data": data,
     });
-    let resp = match vtpass::top_up(&s.http, &s.config, &payload).await {
-        Ok(r) => r,
-        Err(e) => return Ok(common::payment_failed(e)),
-    };
 
-    if vtpass::is_successful(&resp) {
-        let purchased = resp.get("purchased_code").and_then(|v| v.as_str());
-        let desc = common::electricity_desc(&params.biller_name, purchased);
-        if let Err(e) = wallet_models::debit(
-            &s.db, &s.wallet_hub, wallet.id, user.id,
-            &wallet_models::cents_to_decimal(amount_cents), &desc, Some(&request_id),
+    {
+        let desc = common::electricity_desc(&params.biller_name, token.as_deref());
+        if let Err(e) = wallet_models::finalize_locked_debit(
+            &s.db, &s.wallet_hub, wallet.id, user.id, amount_cents, &desc, &request_id,
         )
         .await
         {
+            let _ = wallet_models::unlock_amount(&s.db, wallet.id, amount_cents).await;
+            tracing::error!("electricity delivered but settle failed for {request_id}: {e:?}");
             return Ok(common::payment_failed(format!("{e:?}")));
         }
         common::settle_success(

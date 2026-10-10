@@ -1,13 +1,5 @@
-//! View handlers for the transactions app (mirrors `transactions/views.py`),
-//! split by concern:
-//!   history.rs      <-> GetWalletTransaction
-//!   funding.rs      <-> InitializeFunding
-//!   webhook.rs      <-> PaymentWebhook (excluded from OpenAPI, like Django)
-//!   dva_refresh.rs  <-> DvaRefreshView
-//!   account_name.rs <-> AccountNameView
+//! View handlers for the transactions app: wallet history plus the
+//! Nomba endpoints (which live in `nomba_views.rs`). Paystack rails
+//! (funding init, account-name, DVA refresh, webhook) were removed.
 
-pub mod account_name;
-pub mod dva_refresh;
-pub mod funding;
 pub mod history;
-pub mod webhook;

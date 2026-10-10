@@ -133,14 +133,14 @@ pub struct ReferralPublic {
 
 impl ReferralPublic {
     pub async fn from_row(
-        db: &sqlx::SqlitePool,
+        db: &sqlx::PgPool,
         r: &ReferralRow,
         created_raw: &str,
         completed_raw: Option<&str>,
     ) -> Self {
         let email = |id: i64| async move {
             sqlx::query_as::<_, (String,)>(
-                "SELECT email FROM accounts_profile WHERE id = ?",
+                "SELECT email FROM accounts_profile WHERE id = $1",
             )
             .bind(id)
             .fetch_optional(db)

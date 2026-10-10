@@ -70,7 +70,7 @@ pub async fn pin_set(
         return Err(AppError::bad_request("Transaction pin is already set"));
     }
     let hashed = auth_password::hash_password(&plain.0);
-    sqlx::query("UPDATE accounts_profile SET transaction_pin = ?, pin_is_set = 1, pin_failed_attempts = 0, pin_locked_until = NULL WHERE id = ?")
+    sqlx::query("UPDATE accounts_profile SET transaction_pin = $1, pin_is_set = TRUE, pin_failed_attempts = 0, pin_locked_until = NULL WHERE id = $2")
         .bind(&hashed).bind(user.id).execute(&s.db).await?;
     Ok(Json(json!({"message": "Transaction pin set successfully", "state": true})))
 }
@@ -172,7 +172,7 @@ pub async fn pin_change(
         return Err(AppError::bad_request("New PINs do not match"));
     }
     let hashed = auth_password::hash_password(&plain_new);
-    sqlx::query("UPDATE accounts_profile SET transaction_pin = ?, pin_is_set = 1, pin_failed_attempts = 0, pin_locked_until = NULL WHERE id = ?")
+    sqlx::query("UPDATE accounts_profile SET transaction_pin = $1, pin_is_set = TRUE, pin_failed_attempts = 0, pin_locked_until = NULL WHERE id = $2")
         .bind(&hashed).bind(user.id).execute(&s.db).await?;
     Ok(Json(
         json!({"message": "Transaction pin changed successfully", "state": true}),
@@ -310,7 +310,7 @@ pub async fn pin_reset_new(
         return Err(AppError::bad_request("PINs do not match"));
     }
     let hashed = auth_password::hash_password(&plain_new);
-    sqlx::query("UPDATE accounts_profile SET transaction_pin = ?, pin_is_set = 1, pin_failed_attempts = 0, pin_locked_until = NULL WHERE id = ?")
+    sqlx::query("UPDATE accounts_profile SET transaction_pin = $1, pin_is_set = TRUE, pin_failed_attempts = 0, pin_locked_until = NULL WHERE id = $2")
         .bind(&hashed).bind(user.id).execute(&s.db).await?;
     pin_store().lock().unwrap().tokens.remove(&user.email);
     Ok(Json(

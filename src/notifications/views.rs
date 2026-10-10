@@ -43,7 +43,7 @@ pub async fn list(
 ) -> Result<Resp, AppError> {
     let user = auth_user(State(s.clone()), headers.clone()).await?;
 
-    let mut where_sql = "user_id = ?".to_string();
+    let mut where_sql = "user_id = $1".to_string();
     if let Some(f) = params.get("is_read") {
         // Mirrors Django: any value other than "true" means unread.
         let want = if f.to_lowercase() == "true" { 1 } else { 0 };
@@ -69,7 +69,7 @@ pub async fn list(
     .await?;
     let rows: Vec<Notification> = sqlx::query_as(&format!(
         "SELECT id, title, message, notification_type, is_read, created_at, read_at, user_id, broadcast_id
-         FROM notifications_notification WHERE {where_sql} ORDER BY created_at DESC LIMIT ? OFFSET ?"
+         FROM notifications_notification WHERE {where_sql} ORDER BY created_at DESC LIMIT $2 OFFSET $3"
     ))
     .bind(user.id)
     .bind(size)
@@ -80,7 +80,7 @@ pub async fn list(
     let mut results = Vec::new();
     for n in &rows {
         let raws: Option<(String, Option<String>)> = sqlx::query_as(
-            "SELECT CAST(created_at AS TEXT), CAST(read_at AS TEXT) FROM notifications_notification WHERE id = ?",
+            "SELECT CAST(created_at AS TEXT), CAST(read_at AS TEXT) FROM notifications_notification WHERE id = $1",
         )
         .bind(n.id)
         .fetch_optional(&s.db)
@@ -95,7 +95,7 @@ pub async fn list(
     }
 
     let unread: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM notifications_notification WHERE user_id = ? AND is_read = 0",
+        "SELECT COUNT(*) FROM notifications_notification WHERE user_id = $1 AND is_read = FALSE",
     )
     .bind(user.id)
     .fetch_one(&s.db)
@@ -158,7 +158,7 @@ pub async fn mark_read(
         .map_err(|_| AppError::unauthorized("Authentication required"))?;
     let row: Option<Notification> = sqlx::query_as(
         "SELECT id, title, message, notification_type, is_read, created_at, read_at, user_id, broadcast_id
-         FROM notifications_notification WHERE id = ? AND user_id = ?",
+         FROM notifications_notification WHERE id = $1 AND user_id = $2",
     )
     .bind(notification_id)
     .bind(user.id)
@@ -173,7 +173,7 @@ pub async fn mark_read(
     // mark_as_read: no-op when already read (read_at untouched).
     if !n.is_read {
         let _ = sqlx::query(
-            "UPDATE notifications_notification SET is_read = 1, read_at = ? WHERE id = ?",
+            "UPDATE notifications_notification SET is_read = TRUE, read_at = $1 WHERE id = $2",
         )
         .bind(now_str())
         .bind(n.id)
@@ -181,7 +181,7 @@ pub async fn mark_read(
         .await;
     }
     let raws: Option<(String, Option<String>)> = sqlx::query_as(
-        "SELECT CAST(created_at AS TEXT), CAST(read_at AS TEXT) FROM notifications_notification WHERE id = ?",
+        "SELECT CAST(created_at AS TEXT), CAST(read_at AS TEXT) FROM notifications_notification WHERE id = $1",
     )
     .bind(n.id)
     .fetch_optional(&s.db)
@@ -213,7 +213,7 @@ pub async fn mark_all_read(
         .await
         .map_err(|_| AppError::unauthorized("Authentication required"))?;
     let res = sqlx::query(
-        "UPDATE notifications_notification SET is_read = 1, read_at = ? WHERE user_id = ? AND is_read = 0",
+        "UPDATE notifications_notification SET is_read = TRUE, read_at = $1 WHERE user_id = $2 AND is_read = FALSE",
     )
     .bind(now_str())
     .bind(user.id)
@@ -243,7 +243,7 @@ pub async fn delete(
         .await
         .map_err(|_| AppError::unauthorized("Authentication required"))?;
     let res = sqlx::query(
-        "DELETE FROM notifications_notification WHERE id = ? AND user_id = ?",
+        "DELETE FROM notifications_notification WHERE id = $1 AND user_id = $2",
     )
     .bind(notification_id)
     .bind(user.id)

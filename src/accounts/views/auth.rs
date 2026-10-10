@@ -47,7 +47,7 @@ pub async fn sign_up(
         return Err(AppError::bad_request("Registration Failed"));
     }
     let exists: Option<(i64,)> =
-        sqlx::query_as("SELECT id FROM accounts_profile WHERE email = ?")
+        sqlx::query_as("SELECT id FROM accounts_profile WHERE email = $1")
             .bind(&b.email)
             .fetch_optional(&s.db)
             .await?;
@@ -62,7 +62,7 @@ pub async fn sign_up(
     let ref_code = loop {
         let c: String = referral_code();
         let hit: Option<(i64,)> =
-            sqlx::query_as("SELECT id FROM accounts_profile WHERE referral_code = ?")
+            sqlx::query_as("SELECT id FROM accounts_profile WHERE referral_code = $1")
                 .bind(&c)
                 .fetch_optional(&s.db)
                 .await?;
@@ -70,22 +70,22 @@ pub async fn sign_up(
             break c;
         }
     };
-    let res = sqlx::query(
-        "INSERT INTO accounts_profile (password, last_login, is_superuser, first_name, last_name, date_joined, email, surname, other_names, phone, image, verification_code, is_active, is_staff, is_admin, role, email_verified, created_on, pin_is_set, transaction_pin, referral_code, pin_failed_attempts, pin_locked_until, has_DVA)
-         VALUES (?, NULL, 0, '', '', ?, ?, ?, ?, ?, NULL, NULL, 1, 0, 0, 'user', 0, ?, 0, NULL, ?, 0, NULL, 0)")
-        .bind(&pw).bind(&now).bind(&b.email).bind(&b.surname).bind(&b.other_names).bind(&b.phone).bind(&now).bind(&ref_code)
-        .execute(&s.db).await?;
-    let user_id = res.last_insert_rowid();
-    sqlx::query("INSERT INTO wallet_wallet (balance, locked_balance, created_at, updated_at, is_active, user_id) VALUES ('0.00', '0.00', ?, ?, 1, ?)")
-        .bind(&now).bind(&now).bind(user_id).execute(&s.db).await?;
+    let res = sqlx::query_as::<_, (i64,)>(
+        "INSERT INTO accounts_profile (password, last_login, is_superuser, first_name, last_name, date_joined, email, surname, other_names, phone, image, verification_code, is_active, is_staff, is_admin, role, email_verified, created_on, pin_is_set, transaction_pin, referral_code, pin_failed_attempts, pin_locked_until, \"has_DVA\")
+         VALUES ($1, NULL, FALSE, '', '', $2, $3, $4, $5, $6, NULL, NULL, TRUE, FALSE, FALSE, 'user', FALSE, $7, FALSE, NULL, $8, 0, NULL, FALSE) RETURNING id")
+        .bind(&pw).bind(crate::time::Ts(&now)).bind(&b.email).bind(&b.surname).bind(&b.other_names).bind(&b.phone).bind(crate::time::Ts(&now)).bind(&ref_code)
+        .fetch_one(&s.db).await?;
+    let user_id = res.0;
+    sqlx::query("INSERT INTO wallet_wallet (balance, locked_balance, created_at, updated_at, is_active, user_id) VALUES ('0.00', '0.00', $1, $2, TRUE, $3)")
+        .bind(crate::time::Ts(&now)).bind(crate::time::Ts(&now)).bind(user_id).execute(&s.db).await?;
     // Mirrors the post_save signal: every user gets a bonus account.
     let _ = crate::bonus::models::ensure_point(&s.db, user_id, &now).await;
 
     let otp = six_digit_otp();
     let rendered = signup_verification_email(&s.config.site_url, &b.email, &otp);
     send_rendered_email(&s, &rendered).await;
-    sqlx::query("INSERT INTO accounts_emailverification (email, otp, timestamp) VALUES (?, ?, ?) ON CONFLICT(email) DO UPDATE SET otp=excluded.otp, timestamp=excluded.timestamp")
-        .bind(&b.email).bind(otp.parse::<i64>().unwrap_or(0)).bind(&now).execute(&s.db).await?;
+    sqlx::query("INSERT INTO accounts_emailverification (email, otp, timestamp) VALUES ($1, $2, $3) ON CONFLICT (email) DO UPDATE SET otp=excluded.otp, timestamp=excluded.timestamp")
+        .bind(&b.email).bind(otp.parse::<i64>().unwrap_or(0)).bind(crate::time::Ts(&now)).execute(&s.db).await?;
 
     Ok((
         StatusCode::CREATED,
@@ -110,17 +110,17 @@ pub async fn verify_email(
     Json(b): Json<OtpBody>,
 ) -> Result<impl axum::response::IntoResponse, AppError> {
     let rec: Option<EmailVerification> =
-        sqlx::query_as("SELECT * FROM accounts_emailverification WHERE email = ?")
+        sqlx::query_as("SELECT * FROM accounts_emailverification WHERE email = $1")
             .bind(&b.email)
             .fetch_optional(&s.db)
             .await?;
     let rec = rec.ok_or_else(|| AppError::bad_request("Email not found"))?;
-    let otp_int: i64 = b
+    let otp_int: i32 = b
         .otp
         .parse()
         .map_err(|_| AppError::bad_request("Invalid OTP"))?;
     if rec.timestamp.and_utc().timestamp() + 600 < Utc::now().timestamp() {
-        sqlx::query("DELETE FROM accounts_emailverification WHERE email = ?")
+        sqlx::query("DELETE FROM accounts_emailverification WHERE email = $1")
             .bind(&b.email)
             .execute(&s.db)
             .await?;
@@ -130,16 +130,16 @@ pub async fn verify_email(
         return Err(AppError::bad_request("Invalid OTP"));
     }
     let user: Option<Profile> =
-        sqlx::query_as("SELECT * FROM accounts_profile WHERE email = ?")
+        sqlx::query_as("SELECT * FROM accounts_profile WHERE email = $1")
             .bind(&rec.email)
             .fetch_optional(&s.db)
             .await?;
     let user = user.ok_or_else(|| AppError::bad_request("User not found"))?;
-    sqlx::query("UPDATE accounts_profile SET email_verified = 1 WHERE id = ?")
+    sqlx::query("UPDATE accounts_profile SET email_verified = TRUE WHERE id = $1")
         .bind(user.id)
         .execute(&s.db)
         .await?;
-    sqlx::query("DELETE FROM accounts_emailverification WHERE email = ?")
+    sqlx::query("DELETE FROM accounts_emailverification WHERE email = $1")
         .bind(&b.email)
         .execute(&s.db)
         .await?;
@@ -171,7 +171,7 @@ pub async fn resend_otp(
     Json(b): Json<EmailOnlyBody>,
 ) -> Result<impl axum::response::IntoResponse, AppError> {
     let exists: Option<(i64,)> =
-        sqlx::query_as("SELECT id FROM accounts_profile WHERE email = ?")
+        sqlx::query_as("SELECT id FROM accounts_profile WHERE email = $1")
             .bind(&b.email)
             .fetch_optional(&s.db)
             .await?;
@@ -181,7 +181,7 @@ pub async fn resend_otp(
             Json(json!({"message": "Email does not exist", "state": false})),
         ));
     }
-    sqlx::query("DELETE FROM accounts_emailverification WHERE email = ?")
+    sqlx::query("DELETE FROM accounts_emailverification WHERE email = $1")
         .bind(&b.email)
         .execute(&s.db)
         .await?;
@@ -189,8 +189,8 @@ pub async fn resend_otp(
     let now = now_naive().to_string();
     let rendered = signup_verification_email(&s.config.site_url, &b.email, &otp);
     send_rendered_email(&s, &rendered).await;
-    sqlx::query("INSERT INTO accounts_emailverification (email, otp, timestamp) VALUES (?, ?, ?) ON CONFLICT(email) DO UPDATE SET otp=excluded.otp, timestamp=excluded.timestamp")
-        .bind(&b.email).bind(otp.parse::<i64>().unwrap_or(0)).bind(&now).execute(&s.db).await?;
+    sqlx::query("INSERT INTO accounts_emailverification (email, otp, timestamp) VALUES ($1, $2, $3) ON CONFLICT (email) DO UPDATE SET otp=excluded.otp, timestamp=excluded.timestamp")
+        .bind(&b.email).bind(otp.parse::<i64>().unwrap_or(0)).bind(crate::time::Ts(&now)).execute(&s.db).await?;
     Ok((
         StatusCode::CREATED,
         Json(json!({"message": "Otp successfully sent, check your email", "state": true})),
@@ -214,7 +214,7 @@ pub async fn login(
     Json(b): Json<LoginBody>,
 ) -> Result<impl axum::response::IntoResponse, AppError> {
     let user: Option<Profile> =
-        sqlx::query_as("SELECT * FROM accounts_profile WHERE email = ?")
+        sqlx::query_as("SELECT * FROM accounts_profile WHERE email = $1")
             .bind(&b.email)
             .fetch_optional(&s.db)
             .await?;
@@ -227,8 +227,8 @@ pub async fn login(
         ));
     }
     let now = now_naive().to_string();
-    sqlx::query("UPDATE accounts_profile SET last_login = ? WHERE id = ?")
-        .bind(&now)
+    sqlx::query("UPDATE accounts_profile SET last_login = $1 WHERE id = $2")
+        .bind(crate::time::Ts(&now))
         .bind(user.id)
         .execute(&s.db)
         .await?;
@@ -263,7 +263,7 @@ pub async fn logout(
         .map_err(|_| AppError::bad_request("Invalid token or logout failed"))?;
     if !auth_jwt::blacklist_jti(&s.db, &claims.jti).await? {
         let row: Option<(String,)> =
-            sqlx::query_as("SELECT jti FROM token_blacklist_outstandingtoken WHERE token = ?")
+            sqlx::query_as("SELECT jti FROM token_blacklist_outstandingtoken WHERE token = $1")
                 .bind(&b.refresh_token)
                 .fetch_optional(&s.db)
                 .await?;
@@ -293,7 +293,7 @@ pub async fn password_reset_request(
     Json(b): Json<EmailOnlyBody>,
 ) -> Result<impl axum::response::IntoResponse, AppError> {
     let user: Option<Profile> =
-        sqlx::query_as("SELECT * FROM accounts_profile WHERE email = ?")
+        sqlx::query_as("SELECT * FROM accounts_profile WHERE email = $1")
             .bind(&b.email)
             .fetch_optional(&s.db)
             .await?;
@@ -305,16 +305,16 @@ pub async fn password_reset_request(
     let otp = six_digit_otp();
     let now = now_naive().to_string();
     let existing: Option<(i64,)> =
-        sqlx::query_as("SELECT id FROM accounts_resetpassword WHERE profile_id = ?")
+        sqlx::query_as("SELECT id FROM accounts_resetpassword WHERE profile_id = $1")
             .bind(user.id)
             .fetch_optional(&s.db)
             .await?;
     if existing.is_some() {
-        sqlx::query("UPDATE accounts_resetpassword SET otp = ?, timestamp = ? WHERE profile_id = ?")
-            .bind(otp.parse::<i64>().unwrap_or(0)).bind(&now).bind(user.id).execute(&s.db).await?;
+        sqlx::query("UPDATE accounts_resetpassword SET otp = $1, timestamp = $2 WHERE profile_id = $3")
+            .bind(otp.parse::<i64>().unwrap_or(0)).bind(crate::time::Ts(&now)).bind(user.id).execute(&s.db).await?;
     } else {
-        sqlx::query("INSERT INTO accounts_resetpassword (otp, timestamp, profile_id) VALUES (?, ?, ?)")
-            .bind(otp.parse::<i64>().unwrap_or(0)).bind(&now).bind(user.id).execute(&s.db).await?;
+        sqlx::query("INSERT INTO accounts_resetpassword (otp, timestamp, profile_id) VALUES ($1, $2, $3)")
+            .bind(otp.parse::<i64>().unwrap_or(0)).bind(crate::time::Ts(&now)).bind(user.id).execute(&s.db).await?;
     }
     let rendered = password_reset_email(&s.config.site_url, &user.email, &otp);
     send_rendered_email(&s, &rendered).await;
@@ -340,7 +340,7 @@ pub async fn password_reset_verify_otp(
     Json(b): Json<OtpBody>,
 ) -> Result<impl axum::response::IntoResponse, AppError> {
     let rec: Option<ResetPassword> = sqlx::query_as(
-        "SELECT r.* FROM accounts_resetpassword r JOIN accounts_profile p ON p.id = r.profile_id WHERE p.email = ?")
+        "SELECT r.* FROM accounts_resetpassword r JOIN accounts_profile p ON p.id = r.profile_id WHERE p.email = $1")
         .bind(&b.email)
         .fetch_optional(&s.db)
         .await?;
@@ -348,13 +348,13 @@ pub async fn password_reset_verify_otp(
         return Err(AppError::bad_request("Invalid request"));
     };
     if rec.timestamp.and_utc().timestamp() + 600 < Utc::now().timestamp() {
-        sqlx::query("DELETE FROM accounts_resetpassword WHERE id = ?")
+        sqlx::query("DELETE FROM accounts_resetpassword WHERE id = $1")
             .bind(rec.id)
             .execute(&s.db)
             .await?;
         return Err(AppError::bad_request("OTP has expired"));
     }
-    let otp_int: i64 = b
+    let otp_int: i32 = b
         .otp
         .parse()
         .map_err(|_| AppError::bad_request("Invalid OTP"))?;
@@ -364,13 +364,13 @@ pub async fn password_reset_verify_otp(
     let token = reset_token::issue(&s.config.secret_key, &b.email);
     let now = now_naive().to_string();
     sqlx::query(
-        "INSERT INTO accounts_resetpasswordvaluationtoken (reset_token, created_on) VALUES (?, ?)",
+        "INSERT INTO accounts_resetpasswordvaluationtoken (reset_token, created_on) VALUES ($1, $2)",
     )
     .bind(&token)
-    .bind(&now)
+    .bind(crate::time::Ts(&now))
     .execute(&s.db)
     .await?;
-    sqlx::query("DELETE FROM accounts_resetpassword WHERE id = ?")
+    sqlx::query("DELETE FROM accounts_resetpassword WHERE id = $1")
         .bind(rec.id)
         .execute(&s.db)
         .await?;
@@ -408,7 +408,7 @@ pub async fn password_reset_confirm(
     let email =
         reset_token::verify(&s.config.secret_key, &b.token, 900).map_err(AppError::bad_request)?;
     let tok: Option<(i64,)> = sqlx::query_as(
-        "SELECT id FROM accounts_resetpasswordvaluationtoken WHERE reset_token = ?",
+        "SELECT id FROM accounts_resetpasswordvaluationtoken WHERE reset_token = $1",
     )
     .bind(&b.token)
     .fetch_optional(&s.db)
@@ -419,7 +419,7 @@ pub async fn password_reset_confirm(
         ));
     }
     let user: Option<Profile> =
-        sqlx::query_as("SELECT * FROM accounts_profile WHERE email = ?")
+        sqlx::query_as("SELECT * FROM accounts_profile WHERE email = $1")
             .bind(&email)
             .fetch_optional(&s.db)
             .await?;
@@ -427,16 +427,16 @@ pub async fn password_reset_confirm(
         return Err(AppError::bad_request("User not found"));
     };
     let pw = auth_password::hash_password(&b.new_password);
-    sqlx::query("UPDATE accounts_profile SET password = ? WHERE id = ?")
+    sqlx::query("UPDATE accounts_profile SET password = $1 WHERE id = $2")
         .bind(&pw)
         .bind(user.id)
         .execute(&s.db)
         .await?;
-    sqlx::query("DELETE FROM accounts_resetpasswordvaluationtoken WHERE reset_token = ?")
+    sqlx::query("DELETE FROM accounts_resetpasswordvaluationtoken WHERE reset_token = $1")
         .bind(&b.token)
         .execute(&s.db)
         .await?;
-    sqlx::query("DELETE FROM accounts_resetpassword WHERE profile_id = ?")
+    sqlx::query("DELETE FROM accounts_resetpassword WHERE profile_id = $1")
         .bind(user.id)
         .execute(&s.db)
         .await?;

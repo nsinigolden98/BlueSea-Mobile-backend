@@ -279,7 +279,7 @@ async fn process_update(
 }
 
 async fn wallet_for(s: &AppState, user_id: i64) -> Option<i64> {
-    sqlx::query_as::<_, (i64,)>("SELECT id FROM wallet_wallet WHERE user_id = ?")
+    sqlx::query_as::<_, (i64,)>("SELECT id FROM wallet_wallet WHERE user_id = $1")
         .bind(user_id)
         .fetch_optional(&s.db)
         .await
@@ -417,7 +417,7 @@ async fn late_debit_user(
         if wallet_models::parse_cents(&charge_str).unwrap_or(0) > 0 {
             bonus_cents = wallet_models::parse_cents(&charge_str).ok();
             let balance: Option<(String,)> = sqlx::query_as(
-                "SELECT CAST(balance AS TEXT) FROM wallet_wallet WHERE id = ?",
+                "SELECT CAST(balance AS TEXT) FROM wallet_wallet WHERE id = $1",
             )
             .bind(wallet_id)
             .fetch_optional(&s.db)
@@ -446,44 +446,41 @@ mod tests {
     use super::*;
     use crate::state::AppState;
 
-    async fn memory_db() -> sqlx::SqlitePool {
-        let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.unwrap();
-        for ddl in [
-            "CREATE TABLE accounts_profile (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, password varchar(128) NOT NULL,
-             last_login datetime NULL, is_superuser bool NOT NULL, first_name varchar(150) NOT NULL, last_name varchar(150) NOT NULL,
-             date_joined datetime NOT NULL, email varchar(300) NOT NULL UNIQUE, surname varchar(100) NOT NULL, other_names varchar(100) NOT NULL,
-             phone varchar(200) NULL, image varchar(100) NULL, verification_code varchar(100) NULL, is_active bool NOT NULL,
-             is_staff bool NOT NULL, is_admin bool NOT NULL, role varchar(200) NOT NULL, email_verified bool NOT NULL,
-             created_on datetime NOT NULL, pin_is_set bool NOT NULL, transaction_pin varchar(255) NULL,
-             referral_code varchar(6) NOT NULL UNIQUE, pin_failed_attempts integer NOT NULL, pin_locked_until datetime NULL, has_DVA bool NOT NULL)",
-            "CREATE TABLE wallet_wallet (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, balance decimal NOT NULL,
-             locked_balance decimal NOT NULL, created_at datetime NOT NULL, updated_at datetime NOT NULL,
-             is_active bool NOT NULL, user_id bigint NOT NULL UNIQUE)",
-            "CREATE TABLE transactions_wallettransaction (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, amount decimal NOT NULL,
+    async fn memory_db() -> sqlx::PgPool {
+        let pool = crate::db::test_support::fresh_db(&[
+            "CREATE TABLE accounts_profile (id BIGSERIAL PRIMARY KEY, password varchar(128) NOT NULL,
+             last_login TIMESTAMPTZ NULL, is_superuser BOOLEAN NOT NULL, first_name varchar(150) NOT NULL, last_name varchar(150) NOT NULL,
+             date_joined TIMESTAMPTZ NOT NULL, email varchar(300) NOT NULL UNIQUE, surname varchar(100) NOT NULL, other_names varchar(100) NOT NULL,
+             phone varchar(200) NULL, image varchar(100) NULL, verification_code varchar(100) NULL, is_active BOOLEAN NOT NULL,
+             is_staff BOOLEAN NOT NULL, is_admin BOOLEAN NOT NULL, role varchar(200) NOT NULL, email_verified BOOLEAN NOT NULL,
+             created_on TIMESTAMPTZ NOT NULL, pin_is_set BOOLEAN NOT NULL, transaction_pin varchar(255) NULL,
+             referral_code varchar(6) NOT NULL UNIQUE, pin_failed_attempts integer NOT NULL, pin_locked_until TIMESTAMPTZ NULL, nin_encrypted text NULL, bvn_encrypted text NULL, house_address text NULL, utility_bill_image varchar(100) NULL, is_frozen BOOLEAN NOT NULL DEFAULT FALSE, frozen_reason varchar(200) NULL, \"has_DVA\" BOOLEAN NOT NULL)",
+            "CREATE TABLE wallet_wallet (id BIGSERIAL PRIMARY KEY, balance NUMERIC NOT NULL,
+             locked_balance NUMERIC NOT NULL, total_in NUMERIC NOT NULL DEFAULT 0, total_out NUMERIC NOT NULL DEFAULT 0,  created_at TIMESTAMPTZ NOT NULL, updated_at TIMESTAMPTZ NOT NULL,
+             is_active BOOLEAN NOT NULL, user_id bigint NOT NULL UNIQUE)",
+            "CREATE TABLE transactions_wallettransaction (id BIGSERIAL PRIMARY KEY, amount NUMERIC NOT NULL,
              transaction_type varchar(6) NOT NULL, status varchar(10) NOT NULL, description text NULL,
-             reference varchar(100) NOT NULL UNIQUE, created_at datetime NOT NULL, wallet_id bigint NOT NULL)",
-            "CREATE TABLE notifications_notification (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, title varchar(200) NOT NULL,
-             message text NOT NULL, notification_type varchar(20) NOT NULL, is_read bool NOT NULL, created_at datetime NOT NULL,
-             read_at datetime NULL, user_id bigint NOT NULL, broadcast_id bigint NULL)",
-            "CREATE TABLE payments_airtimetopup (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, amount integer NOT NULL,
+             reference varchar(100) NOT NULL UNIQUE, created_at TIMESTAMPTZ NOT NULL, wallet_id bigint NOT NULL)",
+            "CREATE TABLE notifications_notification (id BIGSERIAL PRIMARY KEY, title varchar(200) NOT NULL,
+             message text NOT NULL, notification_type varchar(20) NOT NULL, is_read BOOLEAN NOT NULL, created_at TIMESTAMPTZ NOT NULL,
+             read_at TIMESTAMPTZ NULL, user_id bigint NOT NULL, broadcast_id bigint NULL)",
+            "CREATE TABLE payments_airtimetopup (id BIGSERIAL PRIMARY KEY, amount integer NOT NULL,
              network varchar(10) NOT NULL, phone_number varchar(11) NOT NULL, request_id varchar(50) NULL UNIQUE,
-             created_at datetime NOT NULL, user_id bigint NULL, status varchar(20) NOT NULL, updated_at datetime NOT NULL,
+             created_at TIMESTAMPTZ NOT NULL, user_id bigint NULL, status varchar(20) NOT NULL, updated_at TIMESTAMPTZ NOT NULL,
              vtpass_transaction_id varchar(100) NULL)",
-            "CREATE TABLE payments_vtpasswebhooklog (id integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+            "CREATE TABLE payments_vtpasswebhooklog (id BIGSERIAL PRIMARY KEY,
              request_id varchar(100) NOT NULL, transaction_id varchar(100) NULL, vt_status varchar(20) NULL,
-             code varchar(20) NULL, amount decimal NULL, raw_payload text NOT NULL, is_processed bool NOT NULL,
-             error text NULL, created_at datetime NOT NULL, updated_at datetime NOT NULL)",
-        ] {
-            sqlx::query(ddl).execute(&pool).await.unwrap();
-        }
+             code varchar(20) NULL, amount NUMERIC NULL, raw_payload text NOT NULL, is_processed BOOLEAN NOT NULL,
+             error text NULL, created_at TIMESTAMPTZ NOT NULL, updated_at TIMESTAMPTZ NOT NULL)",
+        ]).await;
         sqlx::query(
             "INSERT INTO accounts_profile (password, is_superuser, first_name, last_name, date_joined, email, surname, other_names,
-             is_active, is_staff, is_admin, role, email_verified, created_on, pin_is_set, referral_code, pin_failed_attempts, has_DVA)
-             VALUES ('x', 0, '', '', '2026-01-01 00:00:00', 'v@example.com', 'V', 'W', 1, 0, 0, 'user', 1, '2026-01-01 00:00:00', 0, 'ABCDEF', 0, 0)",
+             is_active, is_staff, is_admin, role, email_verified, created_on, pin_is_set, referral_code, pin_failed_attempts, \"has_DVA\")
+             VALUES ('x', FALSE, '', '', '2026-01-01 00:00:00', 'v@example.com', 'V', 'W', TRUE, FALSE, FALSE, 'user', TRUE, '2026-01-01 00:00:00', FALSE, 'ABCDEF', 0, FALSE)",
         ).execute(&pool).await.unwrap();
         sqlx::query(
             "INSERT INTO wallet_wallet (balance, locked_balance, created_at, updated_at, is_active, user_id)
-             VALUES (10000, 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00', 1, 1)",
+             VALUES (10000, 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00', TRUE, 1)",
         ).execute(&pool).await.unwrap();
         sqlx::query(
             "INSERT INTO payments_airtimetopup (amount, network, phone_number, request_id, created_at, user_id, status, updated_at)
@@ -492,7 +489,7 @@ mod tests {
         pool
     }
 
-    fn test_state(db: sqlx::SqlitePool) -> AppState {
+    fn test_state(db: sqlx::PgPool) -> AppState {
         let mut config = crate::settings::Config::from_env();
         config.email_backend = "console".to_string();
         config.debug = true;
@@ -501,6 +498,9 @@ mod tests {
             config,
             http: reqwest::Client::new(),
             wallet_hub: crate::wallet::hub::WalletHub::default(),
+            support_hub: crate::support::hub::SupportHub::default(),
+            plans_store: crate::plans_cache::PlansStore::default(),
+            notification_hub: crate::notifications::hub::NotificationHub::default(),
         }
     }
 
@@ -548,7 +548,7 @@ mod tests {
                 .fetch_one(&db)
                 .await
                 .unwrap();
-        assert_eq!(bal.0, "9500");
+        assert_eq!(bal.0, "9500.00");
         let st: (String,) =
             sqlx::query_as("SELECT status FROM payments_airtimetopup WHERE request_id = 'BS-AIRT-1'")
                 .fetch_one(&db)
@@ -566,7 +566,7 @@ mod tests {
                 .fetch_one(&db)
                 .await
                 .unwrap();
-        assert_eq!(bal.0, "9500");
+        assert_eq!(bal.0, "9500.00");
 
         // failed -> status failed + refund 500 (debit row exists)
         let resp = vtpass_webhook(State(s.clone()), update_payload("BS-AIRT-1", "failed"))
@@ -578,7 +578,7 @@ mod tests {
                 .fetch_one(&db)
                 .await
                 .unwrap();
-        assert_eq!(bal.0, "10000");
+        assert_eq!(bal.0, "10000.00");
 
         // oversized body and unknown types ack
         let big = axum::body::Bytes::from(vec![b'x'; 1024 * 100 + 1]);
@@ -695,7 +695,7 @@ async fn handle_group_update(
             .unwrap_or(false)
         {
             let balance: Option<(String,)> = sqlx::query_as(
-                "SELECT CAST(balance AS TEXT) FROM wallet_wallet WHERE id = ?",
+                "SELECT CAST(balance AS TEXT) FROM wallet_wallet WHERE id = $1",
             )
             .bind(wallet_id)
             .fetch_optional(&s.db)

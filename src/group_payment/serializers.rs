@@ -22,15 +22,12 @@ pub fn dashed_uuid(hex: &str) -> String {
 }
 
 pub fn normalize_uuid(raw: &str) -> Option<String> {
-    let hex = raw.replace('-', "").to_lowercase();
-    if hex.len() == 32 && hex.chars().all(|c| c.is_ascii_hexdigit()) {
-        Some(hex)
-    } else if hex.is_empty() {
-        None
-    } else {
-        // Django raises ValidationError -> 500 for malformed UUIDs.
-        None
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return None;
     }
+    // Django raises ValidationError -> 500 for malformed UUIDs.
+    uuid::Uuid::parse_str(trimmed).ok().map(|u| u.hyphenated().to_string())
 }
 
 pub fn group_uuid_error(raw: &str) -> Value {
@@ -45,8 +42,8 @@ pub struct GroupListEntry {
     pub description: Option<String>,
     pub sub_number: String,
     pub service_type: String,
-    pub target_amount: i64,
-    pub current_amount: i64,
+    pub target_amount: i32,
+    pub current_amount: i32,
     pub status: String,
     pub plan: String,
     pub plan_type: Option<String>,
@@ -69,16 +66,16 @@ pub struct GroupMemberPublic {
     pub name: String,
     pub role: String,
     pub joined_at: String,
-    pub locked_amount: i64,
+    pub locked_amount: i32,
     pub profile_picture: Option<String>,
 }
 
 pub async fn member_public(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     m: &MemberRow,
 ) -> GroupMemberPublic {
     let prof: Option<(String, String, String, Option<String>)> = sqlx::query_as(
-        "SELECT email, surname, other_names, image FROM accounts_profile WHERE id = ?",
+        "SELECT email, surname, other_names, image FROM accounts_profile WHERE id = $1",
     )
     .bind(m.user_id)
     .fetch_optional(db)

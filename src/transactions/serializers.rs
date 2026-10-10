@@ -11,15 +11,14 @@ use crate::wallet::models::{cents_to_decimal, format_naira, parse_cents};
 
 /// Format an already-parsed naive datetime the way DRF renders stored
 /// datetimes (project timezone Africa/Lagos).
-pub fn format_naive_lagos(dt: &chrono::NaiveDateTime) -> String {
+pub fn format_naive_lagos(dt: &crate::time::NaiveUtc) -> String {
     format_created_at_lagos(&dt.format("%Y-%m-%d %H:%M:%S%.f").to_string())
 }
 
 /// DRF renders stored naive datetimes in the project timezone
 /// (Africa/Lagos, fixed +01:00, no DST).
-pub fn format_created_at_lagos(stored: &str) -> String {    let naive = chrono::NaiveDateTime::parse_from_str(stored, "%Y-%m-%d %H:%M:%S%.f")
-        .or_else(|_| chrono::NaiveDateTime::parse_from_str(stored, "%Y-%m-%d %H:%M:%S"))
-        .unwrap_or_else(|_| chrono::NaiveDateTime::MIN);
+pub fn format_created_at_lagos(stored: &str) -> String {
+    let naive = crate::time::parse_stored_dt(stored).unwrap_or(chrono::NaiveDateTime::MIN);
     let lagos = naive + chrono::Duration::hours(1);
     if lagos.nanosecond() == 0 {
         format!("{}+01:00", lagos.format("%Y-%m-%dT%H:%M:%S"))

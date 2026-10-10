@@ -13,17 +13,17 @@ pub struct AutoTopUpRow {
     pub phone_number: String,
     pub network: Option<String>,
     pub plan: Option<String>,
-    pub start_date: chrono::NaiveDateTime,
-    pub repeat_days: i64,
+    pub start_date: crate::time::NaiveUtc,
+    pub repeat_days: i32,
     pub is_active: bool,
-    pub next_run: chrono::NaiveDateTime,
+    pub next_run: crate::time::NaiveUtc,
     pub is_locked: bool,
     pub locked_amount: String,
-    pub last_run: Option<chrono::NaiveDateTime>,
-    pub total_runs: i64,
-    pub failed_runs: i64,
-    pub created_at: chrono::NaiveDateTime,
-    pub updated_at: chrono::NaiveDateTime,
+    pub last_run: Option<crate::time::NaiveUtc>,
+    pub total_runs: i32,
+    pub failed_runs: i32,
+    pub created_at: crate::time::NaiveUtc,
+    pub updated_at: crate::time::NaiveUtc,
     pub user_id: i64,
 }
 
@@ -35,7 +35,7 @@ pub struct AutoTopUpHistoryRow {
     pub vtu_reference: Option<String>,
     pub vtu_response: Option<String>,
     pub error_message: Option<String>,
-    pub executed_at: chrono::NaiveDateTime,
+    pub executed_at: crate::time::NaiveUtc,
     pub auto_topup_id: i64,
 }
 
@@ -48,12 +48,12 @@ const COLS: &str = "id, service_type, CAST(amount AS TEXT) AS amount, phone_numb
         last_run, total_runs, failed_runs, created_at, updated_at, user_id";
 
 pub async fn get_for_user(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     id: i64,
     user_id: i64,
 ) -> Result<Option<AutoTopUpRow>, sqlx::Error> {
     sqlx::query_as::<_, AutoTopUpRow>(&format!(
-        "SELECT {COLS} FROM autotopup_autotopup WHERE id = ? AND user_id = ?"
+        "SELECT {COLS} FROM autotopup_autotopup WHERE id = $1 AND user_id = $2"
     ))
     .bind(id)
     .bind(user_id)
@@ -62,22 +62,22 @@ pub async fn get_for_user(
 }
 
 pub async fn list_for_user(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     user_id: i64,
 ) -> Result<Vec<AutoTopUpRow>, sqlx::Error> {
     sqlx::query_as::<_, AutoTopUpRow>(&format!(
-        "SELECT {COLS} FROM autotopup_autotopup WHERE user_id = ? ORDER BY created_at DESC"
+        "SELECT {COLS} FROM autotopup_autotopup WHERE user_id = $1 ORDER BY created_at DESC"
     ))
     .bind(user_id)
     .fetch_all(db)
     .await
 }
 
-pub async fn due_topups(db: &sqlx::SqlitePool, now: &str) -> Result<Vec<i64>, sqlx::Error> {
+pub async fn due_topups(db: &sqlx::PgPool, now: &str) -> Result<Vec<i64>, sqlx::Error> {
     sqlx::query_as::<_, (i64,)>(
-        "SELECT id FROM autotopup_autotopup WHERE is_active = 1 AND next_run <= ? AND is_locked = 1 ORDER BY id",
+        "SELECT id FROM autotopup_autotopup WHERE is_active = TRUE AND next_run <= $1 AND is_locked = TRUE ORDER BY id",
     )
-    .bind(now)
+    .bind(crate::time::Ts(&now))
     .fetch_all(db)
     .await
     .map(|rows| rows.into_iter().map(|(id,)| id).collect())
@@ -85,14 +85,14 @@ pub async fn due_topups(db: &sqlx::SqlitePool, now: &str) -> Result<Vec<i64>, sq
 
 /// Move `amount` from balance to locked_balance. Returns false when short.
 pub async fn lock_funds(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     user_id: i64,
     topup_id: i64,
     amount: Decimal,
     now: &str,
 ) -> Result<bool, sqlx::Error> {
     let row: Option<(String, String)> = sqlx::query_as(
-        "SELECT CAST(balance AS TEXT), CAST(locked_balance AS TEXT) FROM wallet_wallet WHERE user_id = ?",
+        "SELECT CAST(balance AS TEXT), CAST(locked_balance AS TEXT) FROM wallet_wallet WHERE user_id = $1",
     )
     .bind(user_id)
     .fetch_optional(db)
@@ -105,18 +105,18 @@ pub async fn lock_funds(
         return Ok(false);
     }
     let locked = dec(&locked_raw) + amount;
-    sqlx::query("UPDATE wallet_wallet SET balance = ?, locked_balance = ?, updated_at = ? WHERE user_id = ?")
+    sqlx::query("UPDATE wallet_wallet SET balance = CAST($1 AS NUMERIC), locked_balance = CAST($2 AS NUMERIC), updated_at = $3 WHERE user_id = $4")
         .bind((balance - amount).to_string())
         .bind(locked.to_string())
-        .bind(now)
+        .bind(crate::time::Ts(&now))
         .bind(user_id)
         .execute(db)
         .await?;
     sqlx::query(
-        "UPDATE autotopup_autotopup SET is_locked = 1, locked_amount = ?, updated_at = ? WHERE id = ?",
+        "UPDATE autotopup_autotopup SET is_locked = TRUE, locked_amount = CAST($1 AS NUMERIC), updated_at = $2 WHERE id = $3",
     )
     .bind(amount.to_string())
-    .bind(now)
+    .bind(crate::time::Ts(&now))
     .bind(topup_id)
     .execute(db)
     .await?;
@@ -125,7 +125,7 @@ pub async fn lock_funds(
 
 /// Move locked funds back to balance. Returns false when nothing to unlock.
 pub async fn unlock_funds(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     user_id: i64,
     topup_id: i64,
     now: &str,
@@ -139,7 +139,7 @@ pub async fn unlock_funds(
         return Ok(false);
     }
     let row: Option<(String, String)> = sqlx::query_as(
-        "SELECT CAST(balance AS TEXT), CAST(locked_balance AS TEXT) FROM wallet_wallet WHERE user_id = ?",
+        "SELECT CAST(balance AS TEXT), CAST(locked_balance AS TEXT) FROM wallet_wallet WHERE user_id = $1",
     )
     .bind(user_id)
     .fetch_optional(db)
@@ -147,18 +147,18 @@ pub async fn unlock_funds(
     if let Some((balance_raw, locked_raw)) = row {
         let balance = dec(&balance_raw) + locked_amount;
         let locked = dec(&locked_raw) - locked_amount;
-        sqlx::query("UPDATE wallet_wallet SET balance = ?, locked_balance = ?, updated_at = ? WHERE user_id = ?")
+        sqlx::query("UPDATE wallet_wallet SET balance = CAST($1 AS NUMERIC), locked_balance = CAST($2 AS NUMERIC), updated_at = $3 WHERE user_id = $4")
             .bind(balance.to_string())
             .bind(locked.to_string())
-            .bind(now)
+            .bind(crate::time::Ts(&now))
             .bind(user_id)
             .execute(db)
             .await?;
     }
     sqlx::query(
-        "UPDATE autotopup_autotopup SET is_locked = 0, locked_amount = '0.00', updated_at = ? WHERE id = ?",
+        "UPDATE autotopup_autotopup SET is_locked = FALSE, locked_amount = '0.00', updated_at = $1 WHERE id = $2",
     )
-    .bind(now)
+    .bind(crate::time::Ts(&now))
     .bind(topup_id)
     .execute(db)
     .await?;
@@ -166,27 +166,27 @@ pub async fn unlock_funds(
 }
 
 pub async fn insert_history(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     topup_id: i64,
     amount: &str,
     status: &str,
     now: &str,
 ) -> Result<i64, sqlx::Error> {
-    let res = sqlx::query(
+    let res = sqlx::query_as::<_, (i64,)>(
         "INSERT INTO autotopup_autotopuphistory (auto_topup_id, amount, status, vtu_reference, vtu_response, error_message, executed_at)
-         VALUES (?, ?, ?, NULL, NULL, NULL, ?)",
+         VALUES ($1, CAST($2 AS NUMERIC), $3, NULL, NULL, NULL, $4) RETURNING id",
     )
     .bind(topup_id)
     .bind(amount)
     .bind(status)
-    .bind(now)
-    .execute(db)
+    .bind(crate::time::Ts(&now))
+    .fetch_one(db)
     .await?;
-    Ok(res.last_insert_rowid())
+    Ok(res.0)
 }
 
 pub async fn set_history(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     id: i64,
     status: &str,
     vtu_reference: Option<&str>,
@@ -194,8 +194,8 @@ pub async fn set_history(
     error_message: Option<&str>,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
-        "UPDATE autotopup_autotopuphistory SET status = ?, vtu_reference = COALESCE(?, vtu_reference),
-         vtu_response = COALESCE(?, vtu_response), error_message = COALESCE(?, error_message) WHERE id = ?",
+        "UPDATE autotopup_autotopuphistory SET status = $1, vtu_reference = COALESCE($2, vtu_reference),
+         vtu_response = COALESCE($3, vtu_response), error_message = COALESCE($4, error_message) WHERE id = $5",
     )
     .bind(status)
     .bind(vtu_reference)
@@ -208,7 +208,7 @@ pub async fn set_history(
 }
 
 pub async fn history_for(
-    db: &sqlx::SqlitePool,
+    db: &sqlx::PgPool,
     topup_id: i64,
     user_id: i64,
 ) -> Result<Vec<AutoTopUpHistoryRow>, sqlx::Error> {
@@ -217,7 +217,7 @@ pub async fn history_for(
                 h.error_message, h.executed_at, h.auto_topup_id
          FROM autotopup_autotopuphistory h
          JOIN autotopup_autotopup t ON t.id = h.auto_topup_id
-         WHERE h.auto_topup_id = ? AND t.user_id = ?
+         WHERE h.auto_topup_id = $1 AND t.user_id = $2
          ORDER BY h.executed_at DESC",
     )
     .bind(topup_id)

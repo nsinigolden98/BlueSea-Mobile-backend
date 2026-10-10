@@ -9,8 +9,8 @@ pub struct Notification {
     pub message: String,
     pub notification_type: String,
     pub is_read: bool,
-    pub created_at: chrono::NaiveDateTime,
-    pub read_at: Option<chrono::NaiveDateTime>,
+    pub created_at: crate::time::NaiveUtc,
+    pub read_at: Option<crate::time::NaiveUtc>,
     pub user_id: i64,
     pub broadcast_id: Option<i64>,
 }

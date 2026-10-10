@@ -1,11 +1,11 @@
 //! Route table for the accounts app.
 //! Mirrors `accounts/urls.py` (all paths mounted under `/accounts/`).
 
-use axum::{Router, routing::post};
+use axum::{Router, routing::{get, post}};
 
 use crate::state::AppState;
 
-use super::views;
+use super::{kyc, views};
 
 pub fn router(state: AppState) -> Router {
     Router::new()
@@ -57,5 +57,10 @@ pub fn router(state: AppState) -> Router {
             "/accounts/dva/assign/",
             post(views::lookup::dva_assign),
         )
+        .route("/accounts/kyc/", get(kyc::status))
+        .route("/accounts/kyc/nin/", post(kyc::submit_nin))
+        .route("/accounts/kyc/bvn/", post(kyc::submit_bvn))
+        .route("/accounts/kyc/address/", post(kyc::submit_address))
+        .route("/accounts/kyc/utility-bill/", post(kyc::upload_bill))
         .with_state(state)
 }
