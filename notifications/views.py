@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .models import Notification
 from .serializers import NotificationSerializer, NotificationListResponse
+from .utils import get_unread_count, push_read_receipt
 from .pagination import NotificationPagination
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema, OpenApiParameter
@@ -73,6 +74,16 @@ class MarkNotificationAsReadView(APIView):
                 id=notification_id, user=request.user
             )
             notification.mark_as_read()
+            push_read_receipt(
+                request.user.id,
+                {
+                    "type": "read_receipt",
+                    "notification_id": notification.id,
+                    "notification": NotificationSerializer(notification).data,
+                    "is_read": True,
+                    "unread_count": get_unread_count(request.user),
+                },
+            )
 
             return Response(
                 {
@@ -101,6 +112,15 @@ class MarkAllNotificationsAsReadView(APIView):
         updated_count = Notification.objects.filter(
             user=request.user, is_read=False
         ).update(is_read=True, read_at=timezone.now())
+        push_read_receipt(
+            request.user.id,
+            {
+                "type": "read_receipt",
+                "action": "mark_all_read",
+                "updated_count": updated_count,
+                "unread_count": 0,
+            },
+        )
 
         return Response(
             {"message": f"{updated_count} notifications marked as read"},
@@ -127,6 +147,14 @@ class DeleteNotificationView(APIView):
                 id=notification_id, user=request.user
             )
             notification.delete()
+            push_read_receipt(
+                request.user.id,
+                {
+                    "type": "notification_deleted",
+                    "notification_id": notification_id,
+                    "unread_count": get_unread_count(request.user),
+                },
+            )
 
             return Response(
                 {"message": "Notification deleted successfully"},

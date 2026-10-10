@@ -85,6 +85,106 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /accounts/dva/assign/:
+    post:
+      operationId: accounts_dva_assign_create
+      description: Create single-step Paystack DVA for Wema Bank. BVN is required
+        (frontend sends RSA-encrypted, backend decrypts). Phone is required if not
+        in DB and will update profile. If DVA already exists, returns existing account
+        without creating new one. Handles Paystack responses per docs.
+      summary: Assign Wema Dedicated Virtual Account
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DedicatedVirtualAccountAssign'
+            examples:
+              AssignRequest:
+                value:
+                  first_name: John
+                  last_name: Doe
+                  account_number: 0123456789
+                  bank_code: 058
+                  bvn: encrypted_string
+                  phone: 08012345678
+                summary: Assign Request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DedicatedVirtualAccountAssign'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DedicatedVirtualAccountAssign'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                ExistingDVA:
+                  value:
+                    already_exists: true
+                    account_number: 0123456789
+                    account_name: Test / User
+                    bank_name: Wema Bank
+                    bank_slug: wema-bank
+                    customer_code: CUS_xxx
+                    has_DVA: true
+                  summary: Existing DVA
+                CreatedDVA:
+                  value:
+                    status: true
+                    message: Dedicated account assigned
+                    data:
+                      account_number: '9930000001'
+                      account_name: Bluesea/User
+                      bank:
+                        name: Wema Bank
+                        slug: wema-bank
+                  summary: Created DVA
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                ExistingDVA:
+                  value:
+                    already_exists: true
+                    account_number: 0123456789
+                    account_name: Test / User
+                    bank_name: Wema Bank
+                    bank_slug: wema-bank
+                    customer_code: CUS_xxx
+                    has_DVA: true
+                  summary: Existing DVA
+                CreatedDVA:
+                  value:
+                    status: true
+                    message: Dedicated account assigned
+                    data:
+                      account_number: '9930000001'
+                      account_name: Bluesea/User
+                      bank:
+                        name: Wema Bank
+                        slug: wema-bank
+                  summary: Created DVA
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /accounts/login/:
     post:
       operationId: accounts_login_create
@@ -110,6 +210,8 @@ paths:
             schema:
               $ref: '#/components/schemas/MyTokenObtainPair'
         required: true
+      security:
+      - {}
       responses:
         '200':
           content:
@@ -126,6 +228,8 @@ paths:
                       id: 1
                       email: john@example.com
                       role: user
+                      is_staff: false
+                      is_admin: false
                       email_verified: true
                   summary: Success Response
           description: ''
@@ -999,72 +1103,6 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
-  /autotopup/create/:
-    post:
-      operationId: autotopup_create_create
-      description: Schedule a new auto top-up. Funds will be locked from wallet. Requires
-        transaction PIN.
-      summary: Create a new auto top-up
-      tags:
-      - Auto Top-Up
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AutoTopUpCreate'
-            examples:
-              AirtimeAutoTop-Up:
-                value:
-                  service_type: airtime
-                  amount: '100.00'
-                  phone_number: 08012345678
-                  network: mtn
-                  start_date: '2025-11-02T10:00:00Z'
-                  repeat_days: 7
-                  is_active: true
-                  transaction_pin: '1234'
-                summary: Airtime Auto Top-Up
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AutoTopUpCreate'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/AutoTopUpCreate'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AutoTopUp'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-  /autotopup/list/:
-    get:
-      operationId: autotopup_list_list
-      description: Retrieve all auto top-up schedules for the authenticated user.
-      summary: List user's auto top-ups
-      tags:
-      - Auto Top-Up
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AutoTopUp'
-          description: ''
   /autotopup/{id}/:
     get:
       operationId: autotopup_retrieve
@@ -1323,6 +1361,72 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /autotopup/create/:
+    post:
+      operationId: autotopup_create_create
+      description: Schedule a new auto top-up. Funds will be locked from wallet. Requires
+        transaction PIN.
+      summary: Create a new auto top-up
+      tags:
+      - Auto Top-Up
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoTopUpCreate'
+            examples:
+              AirtimeAutoTop-Up:
+                value:
+                  service_type: airtime
+                  amount: '100.00'
+                  phone_number: 08012345678
+                  network: mtn
+                  start_date: '2025-11-02T10:00:00Z'
+                  repeat_days: 7
+                  is_active: true
+                  transaction_pin: '1234'
+                summary: Airtime Auto Top-Up
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AutoTopUpCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AutoTopUpCreate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoTopUp'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /autotopup/list/:
+    get:
+      operationId: autotopup_list_list
+      description: Retrieve all auto top-up schedules for the authenticated user.
+      summary: List user's auto top-ups
+      tags:
+      - Auto Top-Up
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AutoTopUp'
+          description: ''
   /bonus/campaigns/:
     get:
       operationId: bonus_campaigns_list
@@ -1349,8 +1453,8 @@ paths:
                 additionalProperties: {}
           description: ''
   /bonus/daily-login/:
-    post:
-      operationId: bonus_daily_login_create
+    get:
+      operationId: bonus_daily_login_retrieve
       description: Claim daily login bonus points (once per day)
       summary: Claim daily login bonus
       tags:
@@ -1362,22 +1466,35 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
+                $ref: '#/components/schemas/ClaimDailyLogin200'
+              examples:
+                ClaimDailyLoginView200:
+                  value:
+                    success: true
+                    message: Daily login bonus claimed
+                    data:
+                      points_earned: 2.0
+                      new_balance: 5.0
+                ClaimDailyLoginView400:
+                  value:
+                    success: false
+                    message: You have already claimed your daily bonus today
+                ClaimDailyLoginView500:
+                  value:
+                    success: false
+                    error: Failed to claim daily point
           description: ''
         '400':
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
+                $ref: '#/components/schemas/ClaimDailyLogin400'
           description: ''
         '500':
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
+                $ref: '#/components/schemas/ClaimDailyLogin500'
           description: ''
   /bonus/history/:
     get:
@@ -1507,15 +1624,410 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
+                $ref: '#/components/schemas/BonusPointSummary200'
           description: ''
         '500':
           content:
             application/json:
               schema:
+                $ref: '#/components/schemas/BounsPointSummary500'
+          description: ''
+  /broadcast/:
+    get:
+      operationId: broadcast_list
+      description: Newest-first history of queued broadcasts (latest 50). Each entry
+        carries the delivery counters (`total`, `sent_count`, `failed_count`) and
+        final `status` (`pending`, `sending`, `sent`, `partial`, `failed`) with `completed_at`
+        set once `sent_count + failed_count` reaches `total`. Requires superuser JWT
+        (`is_superuser=True`); otherwise 403.
+      summary: List broadcasts (superuser)
+      tags:
+      - Broadcast
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Broadcast'
+              examples:
+                History:
+                  value:
+                  - - id: 4
+                      kind: important
+                      title: 'Important: We have moved to blueseamobile.com'
+                      status: sent
+                      total: 1250
+                      sent_count: 1250
+                      failed_count: 0
+                      created_at: '2026-10-01T08:05:00Z'
+                      completed_at: '2026-10-01T08:12:00Z'
+                    - id: 3
+                      kind: new_month
+                      title: Happy New Month — October 2026!
+                      status: partial
+                      total: 1250
+                      sent_count: 1248
+                      failed_count: 2
+                      created_at: '2026-10-01T08:00:00Z'
+                      completed_at: '2026-10-01T08:09:00Z'
+                  summary: Latest broadcasts with delivery status
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
                 type: object
                 additionalProperties: {}
+          description: ''
+  /broadcast/announcement/:
+    get:
+      operationId: broadcast_announcement_retrieve
+      description: |-
+        Send a reusable general announcement to every active user, or preview it first.
+
+        - Without `?confirm=yes`: dry-run preview. Returns the resolved title/message/subject, the editable template (`broadcast/announcement.html`), the active-user `recipient_count`, and whether an announcement was `already_sent`. Nothing is queued. Both copy and template are meant to change per announcement — override via query params or edit the template file.
+        - With `?confirm=yes`: creates a `Broadcast(kind=announcement)` record and queues delivery via Celery — one in-app Notification per user plus one email each rendered from the template. Returns the record immediately with HTTP 202; actual delivery continues in the background.
+
+        Delivery tracking: `total` = recipients targeted, `sent_count` = emails confirmed delivered, `failed_count` = emails failed after retries. Final `status` is `sent` (all delivered), `partial` (some failed), or `failed` (none delivered); follow-up detail via `GET /broadcast/`.
+
+        Idempotency: one-shot. Re-sending returns 400 unless `?force=yes` (use force for the next announcement). Responses are `Cache-Control: no-store` (safe to re-click). Requires superuser JWT (`is_superuser=True`); otherwise 403.
+      summary: Broadcast general announcement (superuser)
+      parameters:
+      - in: query
+        name: confirm
+        schema:
+          type: string
+        description: Set to 'yes' to queue the broadcast; omit for preview only
+      - in: query
+        name: email_subject
+        schema:
+          type: string
+        description: Override the email subject
+      - in: query
+        name: force
+        schema:
+          type: string
+        description: Set to 'yes' to send a new announcement when one was already
+          sent
+      - in: query
+        name: message
+        schema:
+          type: string
+        description: Override the announcement body text
+      - in: query
+        name: title
+        schema:
+          type: string
+        description: Override the announcement title
+      tags:
+      - Broadcast
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                Preview:
+                  value:
+                    kind: announcement
+                    title: Thank You for Celebrating with Us!
+                    message: Thank you for coming out on Saturday, October 3rd! Your
+                      presence at the BlueSea Mobile event meant the world to us.
+                    email_subject: BlueSea Mobile — Thank You!
+                    template: broadcast/announcement.html
+                    recipient_count: 1250
+                    already_sent: false
+                    hint: Add ?confirm=yes to queue the broadcast
+                  summary: Dry-run preview (no confirm)
+          description: ''
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Broadcast'
+              examples:
+                Queued:
+                  value:
+                    id: 5
+                    kind: announcement
+                    title: Thank You for Celebrating with Us!
+                    message: Thank you for coming out on Saturday, October 3rd! Your
+                      presence at the BlueSea Mobile event meant the world to us.
+                    email_subject: BlueSea Mobile — Thank You!
+                    template: broadcast/announcement.html
+                    month_key: null
+                    status: pending
+                    total: 1250
+                    sent_count: 0
+                    failed_count: 0
+                    created_by: 1
+                    created_at: '2026-10-03T08:00:00Z'
+                    completed_at: null
+                  summary: Broadcast accepted for delivery
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                AlreadySent:
+                  value:
+                    error: Announcement already sent. Use ?force=yes to send a new
+                      one.
+                  summary: Duplicate announcement
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                Forbidden:
+                  value:
+                    detail: You do not have permission to perform this action.
+                  summary: Non-superuser
+          description: ''
+  /broadcast/important/:
+    get:
+      operationId: broadcast_important_retrieve
+      description: |-
+        Send the one-shot domain-change notice to every active user, or preview it first.
+
+        - Without `?confirm=yes`: dry-run preview. Returns the resolved title/message/subject, the editable template (`broadcast/important.html`), the active-user `recipient_count`, and whether the notice was `already_sent`. Nothing is queued.
+        - With `?confirm=yes`: creates a `Broadcast(kind=important)` record and queues delivery via Celery — one in-app Notification per user plus one email each rendered from the template. Default copy informs users the platform moved from `blueseamobile.com.ng` to `blueseamobile.com` (accounts, wallet balances, and PINs unchanged). Returns the record immediately with HTTP 202; actual delivery continues in the background.
+
+        Delivery tracking: `total` = recipients targeted, `sent_count` = emails confirmed delivered, `failed_count` = emails failed after retries. Final `status` is `sent` (all delivered), `partial` (some failed), or `failed` (none delivered); follow-up detail via `GET /broadcast/`.
+
+        Idempotency: the notice sends once. Re-sending returns 400 unless `?force=yes`. Responses are `Cache-Control: no-store` (safe to re-click). Requires superuser JWT (`is_superuser=True`); otherwise 403.
+      summary: Broadcast important notice (superuser)
+      parameters:
+      - in: query
+        name: confirm
+        schema:
+          type: string
+        description: Set to 'yes' to queue the broadcast; omit for preview only
+      - in: query
+        name: email_subject
+        schema:
+          type: string
+        description: 'Override the email subject. Default: ''BlueSea Mobile — Important
+          domain change'''
+      - in: query
+        name: force
+        schema:
+          type: string
+        description: Set to 'yes' to resend when already sent
+      - in: query
+        name: message
+        schema:
+          type: string
+        description: Override the notice body text
+      - in: query
+        name: title
+        schema:
+          type: string
+        description: 'Override the notice title. Default: ''Important: We have moved
+          to blueseamobile.com'''
+      tags:
+      - Broadcast
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                Preview:
+                  value:
+                    kind: important
+                    title: 'Important: We have moved to blueseamobile.com'
+                    message: Hello from BlueSea Mobile! Please note our platform has
+                      moved from blueseamobile.com.ng to blueseamobile.com.
+                    email_subject: BlueSea Mobile — Important domain change
+                    template: broadcast/important.html
+                    recipient_count: 1250
+                    already_sent: false
+                    hint: Add ?confirm=yes to queue the broadcast
+                  summary: Dry-run preview (no confirm)
+          description: ''
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Broadcast'
+              examples:
+                Queued:
+                  value:
+                    id: 4
+                    kind: important
+                    title: 'Important: We have moved to blueseamobile.com'
+                    message: Hello from BlueSea Mobile! Please note our platform has
+                      moved from blueseamobile.com.ng to blueseamobile.com.
+                    email_subject: BlueSea Mobile — Important domain change
+                    template: broadcast/important.html
+                    month_key: null
+                    status: pending
+                    total: 1250
+                    sent_count: 0
+                    failed_count: 0
+                    created_by: 1
+                    created_at: '2026-10-01T08:05:00Z'
+                    completed_at: null
+                  summary: Broadcast accepted for delivery
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                AlreadySent:
+                  value:
+                    error: Important broadcast already sent. Use ?force=yes to resend.
+                  summary: Duplicate notice
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                Forbidden:
+                  value:
+                    detail: You do not have permission to perform this action.
+                  summary: Non-superuser
+          description: ''
+  /broadcast/new-month/:
+    get:
+      operationId: broadcast_new_month_retrieve
+      description: |-
+        Send the monthly greeting to every active user, or preview it first.
+
+        - Without `?confirm=yes`: dry-run preview. Returns the resolved title/message/subject, the editable template (`broadcast/new_month.html`), the current `month_key` (YYYY-MM), the active-user `recipient_count`, and whether this month was `already_sent`. Nothing is queued.
+        - With `?confirm=yes`: creates a `Broadcast(kind=new_month)` record and queues delivery via Celery — one in-app Notification per user plus one email each rendered from the template. Returns the record immediately with HTTP 202; actual delivery continues in the background.
+
+        Delivery tracking: `total` = recipients targeted, `sent_count` = emails confirmed delivered, `failed_count` = emails failed after retries. Final `status` is `sent` (all delivered), `partial` (some failed), or `failed` (none delivered); follow-up detail via `GET /broadcast/`.
+
+        Idempotency: one send per calendar month. Re-sending the same `month_key` returns 400 unless `?force=yes`. Responses are `Cache-Control: no-store` (safe to re-click). Requires superuser JWT (`is_superuser=True`); otherwise 403.
+      summary: Broadcast Happy New Month (superuser)
+      parameters:
+      - in: query
+        name: confirm
+        schema:
+          type: string
+        description: Set to 'yes' to queue the broadcast; omit for preview only
+      - in: query
+        name: email_subject
+        schema:
+          type: string
+        description: 'Override the email subject. Default: ''BlueSea Mobile — <title>'''
+      - in: query
+        name: force
+        schema:
+          type: string
+        description: Set to 'yes' to resend when this month was already sent
+      - in: query
+        name: message
+        schema:
+          type: string
+        description: Override the greeting body text
+      - in: query
+        name: title
+        schema:
+          type: string
+        description: 'Override the greeting title. Default: ''Happy New Month — <Month
+          Year>!'''
+      tags:
+      - Broadcast
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                Preview:
+                  value:
+                    kind: new_month
+                    month_key: 2026-10
+                    title: Happy New Month — October 2026!
+                    message: Happy New Month, and welcome to October 2026! Thank you
+                      for choosing BlueSea Mobile.
+                    email_subject: BlueSea Mobile — Happy New Month — October 2026!
+                    template: broadcast/new_month.html
+                    recipient_count: 1250
+                    already_sent: false
+                    hint: Add ?confirm=yes to queue the broadcast
+                  summary: Dry-run preview (no confirm)
+          description: ''
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Broadcast'
+              examples:
+                Queued:
+                  value:
+                    id: 3
+                    kind: new_month
+                    title: Happy New Month — October 2026!
+                    message: Happy New Month, and welcome to October 2026! Thank you
+                      for choosing BlueSea Mobile.
+                    email_subject: BlueSea Mobile — Happy New Month — October 2026!
+                    template: broadcast/new_month.html
+                    month_key: 2026-10
+                    status: pending
+                    total: 1250
+                    sent_count: 0
+                    failed_count: 0
+                    created_by: 1
+                    created_at: '2026-10-01T08:00:00Z'
+                    completed_at: null
+                  summary: Broadcast accepted for delivery
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                AlreadySent:
+                  value:
+                    error: New month broadcast for 2026-10 already sent. Use ?force=yes
+                      to resend.
+                  summary: Duplicate for the same month
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                Forbidden:
+                  value:
+                    detail: You do not have permission to perform this action.
+                  summary: Non-superuser
           description: ''
   /loyalty/redemptions/:
     get:
@@ -1645,101 +2157,6 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
-  /marketplace/events/all/:
-    get:
-      operationId: marketplace_events_all_list
-      description: Get all approved events with ticket types and pricing information.
-        Optionally filter by category.
-      summary: List all approved events
-      parameters:
-      - in: query
-        name: category
-        schema:
-          type: string
-        description: Filter by category (Music, Conference, Sports, Networking)
-      tags:
-      - Events
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/EventInfo'
-          description: ''
-  /marketplace/events/create/:
-    post:
-      operationId: marketplace_events_create_create
-      description: Create a new event with ticket information. Only admin or verified
-        vendors can create events.
-      summary: Create a new event
-      tags:
-      - Events
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/CreateEvent'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CreateEvent'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EventInfo'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '403':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-  /marketplace/events/public/{event_id}/:
-    get:
-      operationId: marketplace_events_public_retrieve
-      description: Retrieve details of an approved event without authentication.
-      summary: Get public event details
-      parameters:
-      - in: path
-        name: event_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - Events
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EventInfo'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
   /marketplace/events/{event_id}/:
     get:
       operationId: marketplace_events_retrieve
@@ -1815,11 +2232,231 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /marketplace/events/{event_id}/cancel/:
+    post:
+      operationId: marketplace_events_cancel_create
+      description: 'Cancel an entire event. Requires a cancellation reason and the
+        vendor''s transaction PIN. The vendor wallet must cover the total of all paid
+        upcoming tickets; it is debited synchronously, then buyer refunds and cancellation
+        mails are processed asynchronously — a 202 means QUEUED, not done: poll GET
+        events/<event_id>/cancel-status/ until cancel_status is ''completed''. Free
+        tickets are marked canceled with no refund. Admins may cancel without PIN
+        or balance check.'
+      summary: Cancel a whole event (vendor)
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelEventRequest'
+            examples:
+              CancelRequest:
+                value:
+                  reason: Venue double-booked, no alternative date
+                  transaction_pin: <RSA-encrypted PIN>
+                summary: Vendor cancel with reason + PIN
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CancelEventRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CancelEventRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                Queued:
+                  value:
+                    success: true
+                    state: true
+                    message: Event canceled. Refunds and mails are being processed.
+                    event_id: 1e838403-4a2d-424a-81ea-5d4e3a68594d
+                    tickets_queued: 42
+                    total_refund: '210000.00'
+                    funded_by: vendor
+                  summary: 202 — cancellation queued
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                Shortfall:
+                  value:
+                    error: 'Insufficient vendor balance to cover refunds. Required:
+                      ₦10,000.00, Available: ₦100.00'
+                    state: false
+                    required: '10000.00'
+                    available: '100.00'
+                  summary: 400 — vendor balance too low
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /marketplace/events/{event_id}/cancel-status/:
+    get:
+      operationId: marketplace_events_cancel_status_retrieve
+      description: Poll the async cancellation progress for an event. Vendor owner
+        or admin only.
+      summary: Get event cancellation status
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Events
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                Progress:
+                  value:
+                    event_id: 1e838403-4a2d-424a-81ea-5d4e3a68594d
+                    is_canceled: true
+                    cancel_status: processing
+                    cancel_total: 42
+                    cancel_processed: 30
+                    cancel_refunded: 28
+                    cancel_failed: 0
+                    canceled_at: '2026-09-23T18:59:53Z'
+                    cancellation_reason: Venue double-booked…
+                  summary: Cancellation progress
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /marketplace/events/{event_id}/edit/:
+    patch:
+      operationId: marketplace_events_edit_partial_update
+      description: Edit event title, banner, ticket image, venue, meeting link or
+        date. Only the owning verified vendor or admin. Canceled or past events cannot
+        be edited. Venue/link/date changes reset approval (pending re-review) and
+        notify upcoming ticket holders; banner/title/ticket-image changes do not.
+      summary: Edit event info (vendor)
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Events
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEventUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEventUpdate'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEventUpdate'
+            examples:
+              MaterialEdit:
+                value:
+                  event_location: Eko Convention Centre, Hall B
+                summary: Venue change (re-approval + buyer mail)
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventInfo'
+              examples:
+                Updated:
+                  value:
+                    success: true
+                    state: true
+                    message: Event updated successfully and pending re-approval
+                    reapproval_required: true
+                  summary: 200 — material edit response
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /marketplace/events/{event_id}/purchase/:
     post:
       operationId: marketplace_events_purchase_create
       description: Purchase tickets for an event. Provide ticket type name (e.g.,
-        'Regular', 'VIP'). Leave empty for free events.
+        'Regular', 'VIP'). Leave empty for free events. Ticket sales close 4hrs after
+        the event start.
       summary: Purchase event tickets
       parameters:
       - in: path
@@ -1956,6 +2593,101 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /marketplace/events/all/:
+    get:
+      operationId: marketplace_events_all_list
+      description: Get all approved events with ticket types and pricing information.
+        Optionally filter by category.
+      summary: List all approved events
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+        description: Filter by category (Music, Conference, Sports, Networking)
+      tags:
+      - Events
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventInfo'
+          description: ''
+  /marketplace/events/create/:
+    post:
+      operationId: marketplace_events_create_create
+      description: Create a new event with ticket information. Only admin or verified
+        vendors can create events.
+      summary: Create a new event
+      tags:
+      - Events
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateEvent'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateEvent'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventInfo'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /marketplace/events/public/{event_id}/:
+    get:
+      operationId: marketplace_events_public_retrieve
+      description: Retrieve details of an approved event without authentication.
+      summary: Get public event details
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Events
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventInfo'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /marketplace/my-scanner-assignments/:
     get:
       operationId: marketplace_my_scanner_assignments_retrieve
@@ -2033,80 +2765,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/TicketList'
-          description: ''
-  /marketplace/tickets/my/:
-    get:
-      operationId: marketplace_tickets_my_list
-      description: Retrieve all tickets purchased by or assigned to the authenticated
-        user
-      summary: Get my tickets
-      tags:
-      - Tickets
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/IssuedTicket'
-          description: ''
-  /marketplace/tickets/scan/:
-    post:
-      operationId: marketplace_tickets_scan_create
-      description: Scan a ticket QR code to validate and mark as used. Requires scanner
-        assignment or staff access.
-      summary: Scan and validate ticket QR code
-      tags:
-      - Scanner
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                qr_data:
-                  type: string
-                  description: QR code data from scanner
-                event_id:
-                  type: string
-                  format: uuid
-                  description: Event UUID being scanned for
-              required:
-              - qr_data
-              - event_id
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '403':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
           description: ''
   /marketplace/tickets/{ticket_id}/:
     get:
@@ -2235,6 +2893,80 @@ paths:
               required:
               - recipient_email
               - recipient_name
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /marketplace/tickets/my/:
+    get:
+      operationId: marketplace_tickets_my_list
+      description: Retrieve all tickets purchased by or assigned to the authenticated
+        user
+      summary: Get my tickets
+      tags:
+      - Tickets
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IssuedTicket'
+          description: ''
+  /marketplace/tickets/scan/:
+    post:
+      operationId: marketplace_tickets_scan_create
+      description: Scan a ticket QR code to validate and mark as used. Requires scanner
+        assignment or staff access.
+      summary: Scan and validate ticket QR code
+      tags:
+      - Scanner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                qr_data:
+                  type: string
+                  description: QR code data from scanner
+                event_id:
+                  type: string
+                  format: uuid
+                  description: Event UUID being scanned for
+              required:
+              - qr_data
+              - event_id
       security:
       - jwtAuth: []
       responses:
@@ -2398,6 +3130,17 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/VerifyAccountName'
+            examples:
+              RequestExample:
+                value:
+                  account_number: '1234567890'
+                  bank_code: '007'
+                summary: Request Example
+              ReponseExample:
+                value:
+                  success: 'false'
+                  message: User not found
+                summary: Reponse Example
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/VerifyAccountName'
@@ -2412,22 +3155,13 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
+                $ref: '#/components/schemas/VerifyAccountNameResponse200'
           description: ''
         '404':
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
+                $ref: '#/components/schemas/VerifyAccountNameResponse404'
           description: ''
   /marketplace/withdraw/:
     get:
@@ -2546,22 +3280,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotificationListResponse'
           description: ''
-  /notifications/mark-all-read/:
-    post:
-      operationId: notifications_mark_all_read_create
-      summary: Mark all notifications as read
-      tags:
-      - Notifications
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
   /notifications/{notification_id}/delete/:
     delete:
       operationId: notifications_delete_destroy
@@ -2620,6 +3338,22 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /notifications/mark-all-read/:
+    post:
+      operationId: notifications_mark_all_read_create
+      summary: Mark all notifications as read
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /payments/airtel-data/:
     post:
       operationId: payments_airtel_data_create
@@ -2661,58 +3395,6 @@ paths:
                   value:
                     amount: '50'
                     message: Transaction successful
-                    request_id: 20260820ABCD1234
-                    response_description: TRANSACTION SUCCESSFUL
-                    state: true
-                  summary: Response Example
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-  /payments/airtime-buyback/:
-    post:
-      operationId: payments_airtime_buyback_create
-      description: Convert airtime to wallet cash balance. Requires JWT; validates
-        PIN and wallet.
-      summary: Convert airtime to cash
-      tags:
-      - Payments
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Airtime2Cash'
-            examples:
-              RequestExample:
-                value:
-                  amount: 100
-                  network: mtn
-                  phone_number: 08012345678
-                summary: Request Example
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Airtime2Cash'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Airtime2Cash'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-              examples:
-                ResponseExample:
-                  value:
-                    message: Airtime converted to wallet balance
                     request_id: 20260820ABCD1234
                     response_description: TRANSACTION SUCCESSFUL
                     state: true
@@ -3225,6 +3907,111 @@ paths:
                       total_amount: '1000.00'
                   summary: Response Example
           description: ''
+  /payments/group/{group_id}/:
+    get:
+      operationId: payments_group_retrieve
+      description: Get detailed info about a group including its members. Requires
+        JWT and group membership.
+      summary: Get group details
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Group Payments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                ResponseExample:
+                  value:
+                    group:
+                      current_amount: '0'
+                      id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                      join_code: ABC123
+                      member_count: 3
+                      members:
+                      - email: a@b.com
+                        id: 1
+                        name: A B
+                        role: owner
+                      name: Family Group
+                      total_amount: '10000'
+                    success: true
+                  summary: Response Example
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /payments/group/{group_id}/update/:
+    patch:
+      operationId: payments_group_update_partial_update
+      description: Update group details (e.g. sub_number). Requires JWT and owner
+        role.
+      summary: Update group details
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Group Payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: {}
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: {}
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                ResponseExample:
+                  value:
+                    group:
+                      id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                      name: Family Group
+                      sub_number: '2'
+                    message: Group updated successfully
+                    success: true
+                  summary: Response Example
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /payments/group/add-member/:
     post:
       operationId: payments_group_add_member_create
@@ -3559,111 +4346,6 @@ paths:
                     target_amount: '10000'
                   summary: Response Example
           description: ''
-  /payments/group/{group_id}/:
-    get:
-      operationId: payments_group_retrieve
-      description: Get detailed info about a group including its members. Requires
-        JWT and group membership.
-      summary: Get group details
-      parameters:
-      - in: path
-        name: group_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - Group Payments
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-              examples:
-                ResponseExample:
-                  value:
-                    group:
-                      current_amount: '0'
-                      id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                      join_code: ABC123
-                      member_count: 3
-                      members:
-                      - email: a@b.com
-                        id: 1
-                        name: A B
-                        role: owner
-                      name: Family Group
-                      total_amount: '10000'
-                    success: true
-                  summary: Response Example
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-  /payments/group/{group_id}/update/:
-    patch:
-      operationId: payments_group_update_partial_update
-      description: Update group details (e.g. sub_number). Requires JWT and owner
-        role.
-      summary: Update group details
-      parameters:
-      - in: path
-        name: group_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - Group Payments
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: {}
-          application/x-www-form-urlencoded:
-            schema:
-              type: object
-              additionalProperties: {}
-          multipart/form-data:
-            schema:
-              type: object
-              additionalProperties: {}
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-              examples:
-                ResponseExample:
-                  value:
-                    group:
-                      id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                      name: Family Group
-                      sub_number: '2'
-                    message: Group updated successfully
-                    success: true
-                  summary: Response Example
-          description: ''
-        '403':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
   /payments/internal-transfer/:
     post:
       operationId: payments_internal_transfer_create
@@ -3941,6 +4623,38 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /payments/status/{reference_id}/:
+    get:
+      operationId: payments_status_retrieve
+      description: Retrieve VTpass payment status using reference_id (alias for request_id).
+        Requires JWT; user must own the transaction.
+      summary: Get payment status by reference_id
+      parameters:
+      - in: path
+        name: reference_id
+        schema:
+          type: string
+        description: Reference ID (BS-...)
+        required: true
+      tags:
+      - Payments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /payments/waec-registration/:
     post:
       operationId: payments_waec_registration_create
@@ -4044,12 +4758,17 @@ paths:
   /payments/withdrawal/:
     post:
       operationId: payments_withdrawal_create
-      description: Withdraw wallet funds to a bank account. Requires JWT and transaction
-        PIN; validates PIN, bank details, and minimum amount (N500). Returns a withdrawal
-        record (status pending).
-      summary: Request a withdrawal
+      description: Withdraw wallet funds to a bank account. Validates PIN, bank details,
+        and minimum amount (N500). If account_number matches an in-system PaystackDedicatedAccount.dva_account_number
+        (active), it is routed as an internal transfer (InternalTransfer, transfer_method=dva,
+        no Paystack fees, self-transfers rejected) instead of Paystack. Otherwise
+        creates withdrawal record with status pending and automatically initiates
+        Paystack transfer. Status updates to successful/failed via webhook at POST
+        /transactions/webhook/paystack/ handling transfer.success, transfer.failed,
+        transfer.reversed.
+      summary: Withdrawal via Paystack
       tags:
-      - Payments
+      - Withdrawal
       requestBody:
         content:
           application/json:
@@ -4063,7 +4782,7 @@ paths:
                   amount: '5000.00'
                   bank_code: 058
                   bank_name: GTBank
-                  transaction_pin: '1234'
+                  transaction_pin: encrypted_pin_string
                 summary: Request Example
           application/x-www-form-urlencoded:
             schema:
@@ -4083,7 +4802,7 @@ paths:
               examples:
                 ResponseExample:
                   value:
-                    message: Withdrawal initiated successfully
+                    message: Withdrawal request submitted and transfer initiated
                     state: true
                     withdrawal:
                       account_name: John Doe
@@ -4092,11 +4811,70 @@ paths:
                       bank_code: 058
                       bank_name: GTBank
                       completed_at: null
-                      created_at: '2026-08-20T00:00:00Z'
+                      created_at: '2026-09-10T00:00:00Z'
                       id: 1
-                      payment_reference: WD-20260820ABCD
+                      payment_reference: BS-WIT-20260910XXXX-ABCD
+                      recipient_code: null
+                      transfer_code: null
                       status: pending
                   summary: Response Example
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /payments/withdrawal/nomba/:
+    post:
+      operationId: payments_withdrawal_nomba_create
+      description: Withdraw wallet funds to a bank account via Nomba. Validates PIN,
+        bank details, and minimum amount (N500). If account_number matches an in-system
+        Nomba or Paystack dedicated account (active), it is routed as an internal
+        transfer (InternalTransfer, transfer_method=dva, self-transfers rejected)
+        instead of Nomba. Otherwise creates a withdrawal record (provider=nomba) and
+        initiates a Nomba bank transfer. Status updates via POST /transactions/nomba/webhook/.
+      summary: Withdrawal via Nomba
+      tags:
+      - Nomba
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WithdrawalRequest'
+            examples:
+              RequestExample:
+                value:
+                  account_name: John Doe
+                  account_number: 0123456789
+                  amount: '5000.00'
+                  bank_code: 058
+                  bank_name: GTBank
+                  transaction_pin: encrypted_pin_string
+                summary: Request Example
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WithdrawalRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WithdrawalRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WithdrawalResponse'
           description: ''
         '400':
           content:
@@ -4309,6 +5087,21 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/CreateTicket'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateTicket'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTicket'
+            examples:
+              CreateTicket:
+                value:
+                  subject: Cannot withdraw funds
+                  description: Withdrawal fails with error 500.
+                  priority: high
+                summary: Create a ticket with priority and an image
+                description: Send as multipart/form-data. `images` is one or more
+                  image files uploaded as form fields (not JSON strings).
         required: true
       security:
       - jwtAuth: []
@@ -4403,6 +5196,20 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/AddMessage'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddMessage'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddMessage'
+            examples:
+              AddMessage:
+                value:
+                  message: Here is the screenshot of the error.
+                  images: []
+                summary: Reply with an image attachment
+                description: Send as multipart/form-data. `images` is one or more
+                  image files uploaded as form fields.
         required: true
       security:
       - jwtAuth: []
@@ -4427,6 +5234,216 @@ paths:
                         image: https://api.bluesea.app/media/support_attachments/2026/08/25/err.png
                         uploaded_at: '2026-08-25T10:10:00Z'
                   summary: 201 response
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /support/admin/tickets/:
+    get:
+      operationId: support_admin_tickets_list
+      description: Retrieve all support tickets ordered by most recent. Includes full
+        message threads and attachments. Requires request.user.is_admin.
+      summary: List all support tickets (admin)
+      parameters:
+      - in: query
+        name: priority
+        schema:
+          type: string
+        description: Filter by priority (low, medium, high, urgent).
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search subject, description, or user email/name.
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: Filter by status (open, in_progress, resolved, closed).
+      tags:
+      - Support Admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminTicket'
+              examples:
+                TicketList:
+                  value:
+                  - tickets:
+                    - id: 1
+                      subject: Cannot withdraw funds
+                      description: Withdrawal fails with error 500.
+                      status: open
+                      priority: high
+                      message_count: 3
+                      created_at: '2026-09-10T10:00:00Z'
+                      updated_at: '2026-09-10T10:05:00Z'
+                      user_name: John Doe
+                      user_email: john@example.com
+                      messages:
+                      - id: 1
+                        sender_name: John Doe
+                        message: Withdrawal fails with error 500.
+                        is_admin: false
+                        created_at: '2026-09-10T10:00:00Z'
+                        attachments: []
+                  summary: All tickets ordered by time (most recent first)
+          description: ''
+  /support/admin/tickets/{ticket_id}/:
+    get:
+      operationId: support_admin_tickets_retrieve
+      description: Retrieve a single support ticket with its full message thread and
+        attachments by ID. Requires request.user.is_admin.
+      summary: Get support ticket detail (admin)
+      parameters:
+      - in: path
+        name: ticket_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Support Admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminTicket'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                NotFound:
+                  value:
+                    error: Ticket not found
+                  summary: 404 when ticket is missing
+          description: ''
+    patch:
+      operationId: support_admin_tickets_partial_update
+      description: Update the status and/or priority of a support ticket. Accepts
+        partial updates. Requires request.user.is_admin.
+      summary: Update ticket status or priority (admin)
+      parameters:
+      - in: path
+        name: ticket_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Support Admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminTicketUpdate'
+            examples:
+              UpdateRequest:
+                value:
+                  status: in_progress
+                  priority: urgent
+                summary: Update ticket status and priority
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminTicketUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminTicketUpdate'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                Updated:
+                  value:
+                    success: true
+                    status: in_progress
+                    priority: urgent
+                  summary: Ticket updated successfully
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /support/admin/tickets/{ticket_id}/reply/:
+    post:
+      operationId: support_admin_tickets_reply_create
+      description: Append an admin message to any ticket. Optional `images` is an
+        array of image files (multipart/form-data). Requires request.user.is_admin.
+        The reply is also pushed live on ws/support/<ticket_id>/.
+      summary: Reply to a support ticket (admin)
+      parameters:
+      - in: path
+        name: ticket_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Support Admin
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddMessage'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddMessage'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddMessage'
+            examples:
+              AdminReply:
+                value:
+                  message: We are looking into this.
+                  images: []
+                summary: Reply with text and optional images
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
         '400':
           content:
@@ -4497,6 +5514,69 @@ paths:
                 additionalProperties: {}
           description: ''
         '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /transactions/dva/refresh/:
+    post:
+      operationId: transactions_dva_refresh_create
+      description: 'Triggers Paystack requery for dedicated_account per docs: GET
+        https://api.paystack.co/dedicated_account/requery?account_number={account_number}&provider_slug=wema-bank&date=YYYY-MM-DD.
+        No reference needed (user''s local bank reference unknown). Paystack will
+        send webhook charge.success with dedicated_account channel if pending transactions
+        found. Limited to once every 10 minutes per Paystack. Handles Paystack responses
+        per docs.'
+      summary: Requery Wema DVA for pending transfers
+      tags:
+      - Wallet & Transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DvaRefreshRequest'
+            examples:
+              RefreshRequest:
+                value: {}
+                summary: Refresh Request
+              RefreshWithDate:
+                value:
+                  date: '2026-09-01'
+                summary: Refresh with date
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DvaRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DvaRefreshRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                Success:
+                  value:
+                    status: true
+                    message: We are checking the status of your transfer. We will
+                      send you a notification once it is confirmed
+                    account_number: 0123456789
+                    provider_slug: wema-bank
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
           content:
             application/json:
               schema:
@@ -4575,6 +5655,202 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /transactions/nomba/account-name/:
+    post:
+      operationId: transactions_nomba_account_name_create
+      description: Verify a bank account number and retrieve the account holder's
+        name via Nomba bank lookup.
+      summary: Resolve account name via Nomba
+      tags:
+      - Nomba
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountName'
+            examples:
+              ResolveRequest:
+                value:
+                  account_number: 0123456789
+                  bank_code: 058
+                summary: Resolve Request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AccountName'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AccountName'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                SuccessResponse:
+                  value:
+                    success: true
+                    account_name: JOHN DOE
+                  summary: Success Response
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /transactions/nomba/dva/assign/:
+    post:
+      operationId: transactions_nomba_dva_assign_create
+      description: 'Create a Nomba dedicated virtual account for the authenticated
+        user. Idempotent: returns the existing account when one is already assigned.'
+      summary: Assign Nomba dedicated virtual account
+      tags:
+      - Nomba
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                AlreadyExists:
+                  value:
+                    already_exists: true
+                    account_number: '9930000001'
+                    account_name: John Doe
+                    bank_name: Nomba
+                    account_ref: BS-NOMBA-DVA-7
+                    active: true
+                  summary: Already Exists
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                Assigned:
+                  value:
+                    success: true
+                    account_number: '9930000001'
+                    account_name: John Doe
+                    bank_name: Nomba
+                    account_ref: BS-NOMBA-DVA-7
+                    active: true
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /transactions/nomba/dva/confirm/:
+    post:
+      operationId: transactions_nomba_dva_confirm_create
+      description: Reconfirm a Nomba transaction status using its sessionId (used
+        to follow up on pending DVA credits).
+      summary: Confirm Nomba transaction by sessionId
+      tags:
+      - Nomba
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: {}
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: {}
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /transactions/nomba/fund-wallet/:
+    post:
+      operationId: transactions_nomba_fund_wallet_create
+      description: 'Create a Nomba hosted checkout order to fund the user wallet (minimum:
+        ₦100). Returns the hosted checkout URL.'
+      summary: Initialize wallet funding via Nomba
+      tags:
+      - Nomba
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitializeFunding'
+            examples:
+              FundingRequest:
+                value:
+                  amount: '5000.00'
+                summary: Funding Request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InitializeFunding'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InitializeFunding'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                SuccessResponse:
+                  value:
+                    success: true
+                    checkout_url: https://checkout.nomba.com/xyz
+                    payment_reference: BS-DEP-1234-abcd
+                    amount: '5000.00'
+                  summary: Success Response
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /user_preference/check/{email}/:
     get:
       operationId: user_preference_check_retrieve
@@ -4628,7 +5904,8 @@ paths:
     get:
       operationId: user_preference_user_retrieve
       description: Return the authenticated user's profile details, including saved
-        preferences
+        preferences. If `has_DVA` is true, `dva_account` contains Wema DVA `account_number`,
+        `account_name`, `bank_name`/`bank_slug`/`bank_id`, `customer_code`, `active`.
       summary: Get current user profile
       tags:
       - User Profile
@@ -4641,7 +5918,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CurrentUserWithPreference'
               examples:
-                SuccessResponse:
+                SuccessWithoutDVA:
                   value:
                     id: 1
                     other_names: John
@@ -4652,6 +5929,10 @@ paths:
                     image: http://example.com/media/profiles/photo.jpg
                     referral_code: REF123
                     created_on: '2026-01-01T12:00:00Z'
+                    is_staff: false
+                    is_admin: false
+                    has_DVA: false
+                    dva_account: null
                     preference:
                       image: http://example.com/media/profiles/photo.jpg
                       nickname: Johnny
@@ -4664,7 +5945,42 @@ paths:
                       landmark: Near Plaza
                       postal_code: '100001'
                       updated_on: '2026-01-01T12:00:00Z'
-                  summary: Success Response
+                  summary: Success without DVA
+                SuccessWithDVA:
+                  value:
+                    id: 1
+                    other_names: John
+                    email: user@example.com
+                    phone: 08012345678
+                    surname: Doe
+                    pin_is_set: true
+                    image: http://example.com/media/profiles/photo.jpg
+                    referral_code: REF123
+                    created_on: '2026-01-01T12:00:00Z'
+                    is_staff: false
+                    is_admin: false
+                    has_DVA: true
+                    dva_account:
+                      dva_account_number: 0123456789
+                      dva_account_name: Test / John Doe
+                      bank_name: Wema Bank
+                      bank_slug: wema-bank
+                      bank_id: 20
+                      customer_code: CUS_xxx
+                      active: true
+                    preference:
+                      image: http://example.com/media/profiles/photo.jpg
+                      nickname: Johnny
+                      gender: male
+                      date_of_birth: '1990-01-01'
+                      country: Nigeria
+                      state: Lagos
+                      city: Ikeja
+                      street_address: 123 Main St
+                      landmark: Near Plaza
+                      postal_code: '100001'
+                      updated_on: '2026-01-01T12:00:00Z'
+                  summary: Success with DVA
           description: ''
     patch:
       operationId: user_preference_user_partial_update
@@ -4682,6 +5998,24 @@ paths:
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedUpdateUser'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateUser'
+            examples:
+              UpdateRequest:
+                value:
+                  phone: 08012345678
+                  image: <binary file>
+                  nickname: Johnny
+                  gender: male
+                  country: Nigeria
+                  state: Lagos
+                  city: Ikeja
+                  street_address: 123 Main St
+                  landmark: Near Plaza
+                  postal_code: '100001'
+                  date_of_birth: '1990-01-01'
+                summary: Update Request
       security:
       - jwtAuth: []
       responses:
@@ -4742,6 +6076,144 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /ws/wallet/:
+    get:
+      tags:
+      - Wallet
+      summary: Wallet Balance WebSocket (real-time)
+      description: 'Real-time WebSocket for wallet balance. Connect with `?token=<JWT
+        access token>` or `Authorization: Bearer <token>` header. Server pushes `{"type":"balance_update","balance":"63900.00","balance_formatted":"₦63,900.00","available_balance":"...","locked_balance":"...","amount":"500.00","reference":"BS-...","description":"...","transaction_type":"CREDIT|DEBIT"}`
+        on every Wallet.credit/debit (DVA funding, withdrawal, internal transfer,
+        VTpass, bonus). On connect you receive `{"type":"connected","user_id":7,"balance":"...","balance_formatted":"..."}`.
+        Send `{"type":"ping"}` → `{"type":"pong"}`, `{"type":"balance_request"}` →
+        balance_update.'
+      operationId: wallet_ws_base_retrieve
+      parameters:
+      - name: token
+        in: query
+        required: false
+        description: JWT access token (alternative to Authorization header)
+        schema:
+          type: string
+      responses:
+        '101':
+          description: Switching Protocols - WebSocket established
+        '401':
+          description: Missing/invalid JWT
+      x-websocket: true
+  /ws/wallet/balance/:
+    get:
+      tags:
+      - Wallet
+      summary: Wallet Balance WebSocket (real-time)
+      description: 'Real-time WebSocket for wallet balance. Connect with `?token=<JWT
+        access token>` or `Authorization: Bearer <token>` header. Server pushes `{"type":"balance_update","balance":"63900.00","balance_formatted":"₦63,900.00","available_balance":"...","locked_balance":"...","amount":"500.00","reference":"BS-...","description":"...","transaction_type":"CREDIT|DEBIT"}`
+        on every Wallet.credit/debit (DVA funding, withdrawal, internal transfer,
+        VTpass, bonus). On connect you receive `{"type":"connected","user_id":7,"balance":"...","balance_formatted":"..."}`.
+        Send `{"type":"ping"}` → `{"type":"pong"}`, `{"type":"balance_request"}` →
+        balance_update.'
+      operationId: wallet_ws_balance_retrieve
+      parameters:
+      - name: token
+        in: query
+        required: false
+        description: JWT access token (alternative to Authorization header)
+        schema:
+          type: string
+      responses:
+        '101':
+          description: Switching Protocols - WebSocket established
+        '401':
+          description: Missing/invalid JWT
+      x-websocket: true
+  /ws/support/:
+    get:
+      tags:
+      - Support
+      summary: Support Chat WebSocket (real-time)
+      description: 'Real-time WebSocket for customer support chat (text + images).
+        Connect with `?token=<JWT access token>` or `Authorization: Bearer <token>`
+        header. History comes from REST (`GET /support/` and `GET /support/<ticket_id>/`);
+        WS carries live events only. Access: ticket owner or admin (`request.user.is_admin
+        is True`), else close `4401` unauth / `4403` not owner / `4404` unknown ticket.
+        Subscribe to `ws/support/<ticket_id>/` (ticket room) or `ws/support/` (user-scoped).
+        On connect you receive `{"type":"connected","user_id":7,"user_name":"...","is_admin":false,"ticket_id":1}`.
+        Send `{"type":"send_message","ticket_id":1,"message":"Hello","images":["data:image/png;base64,iVBOR..."]}`
+        (max 3 images, <=5MB each, png/jpg/webp/gif; `is_admin` is derived server-side
+        and client value is ignored). Server broadcasts `{"type":"new_message","ticket_id":1,"message":{"id":9,"sender_name":"...","message":"...","is_admin":false,"attachments":[{"id":1,"image":"/media/..."}],"created_at":"..."}}`.
+        Admins can send `{"type":"update_status","ticket_id":1,"status":"in_progress"}`
+        and `{"type":"update_priority","ticket_id":1,"priority":"urgent"}`; server
+        broadcasts `{"type":"status_update",...}` / `{"type":"priority_update",...}`.
+        Send `{"type":"ping"}` → `{"type":"pong"}`; errors arrive as `{"type":"error","detail":"..."}`.
+        Admin REST (`request.user.is_admin`): `GET /support/admin/tickets/?status=&priority=&search=`,
+        `GET/PATCH /support/admin/tickets/<id>/`, `POST /support/admin/tickets/<id>/reply/`
+        (multipart `message` + `images`), which also pushes `new_message` to the ticket
+        room.'
+      operationId: support_ws_base_retrieve
+      parameters:
+      - name: token
+        in: query
+        required: false
+        description: JWT access token (alternative to Authorization header)
+        schema:
+          type: string
+      responses:
+        '101':
+          description: Switching Protocols - WebSocket established
+        '401':
+          description: Missing/invalid JWT
+        '403':
+          description: Not owner and not admin
+        '404':
+          description: Unknown ticket
+      x-websocket: true
+  /ws/support/{ticket_id}/:
+    get:
+      tags:
+      - Support
+      summary: Support Chat WebSocket (real-time)
+      description: 'Real-time WebSocket for customer support chat (text + images).
+        Connect with `?token=<JWT access token>` or `Authorization: Bearer <token>`
+        header. History comes from REST (`GET /support/` and `GET /support/<ticket_id>/`);
+        WS carries live events only. Access: ticket owner or admin (`request.user.is_admin
+        is True`), else close `4401` unauth / `4403` not owner / `4404` unknown ticket.
+        Subscribe to `ws/support/<ticket_id>/` (ticket room) or `ws/support/` (user-scoped).
+        On connect you receive `{"type":"connected","user_id":7,"user_name":"...","is_admin":false,"ticket_id":1}`.
+        Send `{"type":"send_message","ticket_id":1,"message":"Hello","images":["data:image/png;base64,iVBOR..."]}`
+        (max 3 images, <=5MB each, png/jpg/webp/gif; `is_admin` is derived server-side
+        and client value is ignored). Server broadcasts `{"type":"new_message","ticket_id":1,"message":{"id":9,"sender_name":"...","message":"...","is_admin":false,"attachments":[{"id":1,"image":"/media/..."}],"created_at":"..."}}`.
+        Admins can send `{"type":"update_status","ticket_id":1,"status":"in_progress"}`
+        and `{"type":"update_priority","ticket_id":1,"priority":"urgent"}`; server
+        broadcasts `{"type":"status_update",...}` / `{"type":"priority_update",...}`.
+        Send `{"type":"ping"}` → `{"type":"pong"}`; errors arrive as `{"type":"error","detail":"..."}`.
+        Admin REST (`request.user.is_admin`): `GET /support/admin/tickets/?status=&priority=&search=`,
+        `GET/PATCH /support/admin/tickets/<id>/`, `POST /support/admin/tickets/<id>/reply/`
+        (multipart `message` + `images`), which also pushes `new_message` to the ticket
+        room.'
+      operationId: support_ws_detail_retrieve
+      parameters:
+      - name: token
+        in: query
+        required: false
+        description: JWT access token (alternative to Authorization header)
+        schema:
+          type: string
+      - name: ticket_id
+        in: path
+        required: true
+        description: Support ticket ID (owner or is_admin only)
+        schema:
+          type: integer
+      responses:
+        '101':
+          description: Switching Protocols - WebSocket established
+        '401':
+          description: Missing/invalid JWT
+        '403':
+          description: Not owner and not admin
+        '404':
+          description: Unknown ticket
+      x-websocket: true
 components:
   schemas:
     AccountName:
@@ -4787,6 +6259,104 @@ components:
       required:
       - message
       - success
+    AdminMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        sender_name:
+          type: string
+          readOnly: true
+        message:
+          type: string
+        is_admin:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupportAttachment'
+          readOnly: true
+      required:
+      - attachments
+      - created_at
+      - id
+      - message
+      - sender_name
+    AdminTicket:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        subject:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        status:
+          enum:
+          - open
+          - in_progress
+          - resolved
+          - closed
+          type: string
+          description: |-
+            * `open` - Open
+            * `in_progress` - In Progress
+            * `resolved` - Resolved
+            * `closed` - Closed
+          x-spec-enum-id: 14b8b22467940771
+        priority:
+          enum:
+          - low
+          - medium
+          - high
+          - urgent
+          type: string
+          description: |-
+            * `low` - Low
+            * `medium` - Medium
+            * `high` - High
+            * `urgent` - Urgent
+          x-spec-enum-id: 14a5860514627360
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminMessage'
+          readOnly: true
+        user_name:
+          type: string
+          readOnly: true
+        user_email:
+          type: string
+          format: email
+          readOnly: true
+        message_count:
+          type: integer
+          readOnly: true
+      required:
+      - created_at
+      - description
+      - id
+      - message_count
+      - messages
+      - subject
+      - updated_at
+      - user_email
+      - user_name
     AffiliateApply:
       type: object
       properties:
@@ -5165,39 +6735,6 @@ components:
       - billersCode
       - phone_number
       - plan
-      - user
-    Airtime2Cash:
-      type: object
-      properties:
-        user:
-          type: integer
-          readOnly: true
-          nullable: true
-        amount:
-          type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
-        network:
-          enum:
-          - mtn
-          - airtel
-          - glo
-          - etisalat
-          type: string
-          description: |-
-            * `mtn` - mtn
-            * `airtel` - airtel
-            * `glo` - glo
-            * `etisalat` - etisalat
-          x-spec-enum-id: 8965e286371c0128
-        phone_number:
-          type: string
-          maxLength: 11
-      required:
-      - amount
-      - network
-      - phone_number
       - user
     AirtimeTopUp:
       type: object
@@ -5612,11 +7149,13 @@ components:
         multiplier:
           type: string
           format: decimal
-          pattern: ^-?\d{0,2}(?:\.\d{0,1})?$
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
           readOnly: true
           description: Points multiplier (e.g., 2.0 for double points)
         bonus_amount:
-          type: integer
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
           readOnly: true
           description: Fixed bonus points or percentage bonus
         is_active:
@@ -5670,7 +7209,9 @@ components:
           type: string
           readOnly: true
         points:
-          type: integer
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
           readOnly: true
         reason:
           enum:
@@ -5707,11 +7248,15 @@ components:
           nullable: true
           description: Related transaction reference
         balance_before:
-          type: integer
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
           readOnly: true
           description: Points balance before transaction
         balance_after:
-          type: integer
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
           readOnly: true
           description: Points balance after transaction
         created_at:
@@ -5735,6 +7280,168 @@ components:
       - reference
       - transaction_type
       - transaction_type_display
+    BonusPointSummary200:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/BonusSummaryData'
+      required:
+      - data
+      - success
+    BonusSummaryData:
+      type: object
+      properties:
+        current_points:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        lifetime_record:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        lifetime_redeemed:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        redeemable_amount:
+          type: string
+        can_claim_daily_login:
+          type: boolean
+        last_daily_login:
+          type: string
+          format: date-time
+        referral_count:
+          type: integer
+        completed_referrals:
+          type: integer
+        recent_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecentHistory'
+        cached:
+          type: boolean
+      required:
+      - cached
+      - can_claim_daily_login
+      - completed_referrals
+      - current_points
+      - last_daily_login
+      - lifetime_record
+      - lifetime_redeemed
+      - recent_history
+      - redeemable_amount
+      - referral_count
+    BounsPointSummary500:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: false
+        error:
+          type: string
+      required:
+      - error
+    Broadcast:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          enum:
+          - new_month
+          - important
+          - announcement
+          type: string
+          description: |-
+            * `new_month` - New Month
+            * `important` - Important
+            * `announcement` - Announcement
+          x-spec-enum-id: d00fa2ad39228b8d
+        title:
+          type: string
+          maxLength: 200
+        message:
+          type: string
+        email_subject:
+          type: string
+          maxLength: 200
+        template:
+          type: string
+          maxLength: 200
+        month_key:
+          type: string
+          nullable: true
+          maxLength: 7
+        status:
+          enum:
+          - pending
+          - sending
+          - sent
+          - partial
+          - failed
+          type: string
+          description: |-
+            * `pending` - Pending
+            * `sending` - Sending
+            * `sent` - Sent
+            * `partial` - Partial
+            * `failed` - Failed
+          x-spec-enum-id: 1571c95c4b7bedbe
+          readOnly: true
+        total:
+          type: integer
+          readOnly: true
+        sent_count:
+          type: integer
+          readOnly: true
+        failed_count:
+          type: integer
+          readOnly: true
+        created_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - completed_at
+      - created_at
+      - created_by
+      - email_subject
+      - failed_count
+      - id
+      - kind
+      - message
+      - sent_count
+      - status
+      - template
+      - title
+      - total
+    CancelEventRequest:
+      type: object
+      description: Docs schema for vendor whole-event cancellation (see VendorEventCancelView).
+      properties:
+        reason:
+          type: string
+          description: Why the event is being canceled. Sent to buyers in the mail.
+        transaction_pin:
+          type: string
+          nullable: true
+          description: RSA-OAEP encrypted transaction PIN (base64), same format as
+            purchase. Required for vendors; skipped for admins.
+          maxLength: 512
+      required:
+      - reason
     ChangeTransactionPin:
       type: object
       properties:
@@ -5751,6 +7458,51 @@ components:
       - confirm_pin
       - new_pin
       - old_pin
+    ClaimDailyLogin200:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: true
+        message:
+          type: string
+          default: Daily login bonus claimed
+        data:
+          $ref: '#/components/schemas/ClaimedDailyLoginData200'
+      required:
+      - data
+    ClaimDailyLogin400:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: false
+        message:
+          type: string
+          default: You have already claimed your daily bonus point
+    ClaimDailyLogin500:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: false
+        error:
+          type: string
+          default: Failed to claim daily bonus
+    ClaimedDailyLoginData200:
+      type: object
+      properties:
+        points_earned:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        new_balance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - new_balance
+      - points_earned
     CreateEvent:
       type: object
       properties:
@@ -5912,12 +7664,24 @@ components:
         created_on:
           type: string
           format: date-time
+        has_DVA:
+          type: boolean
+        is_staff:
+          type: boolean
+        is_admin:
+          type: boolean
+        dva_account:
+          $ref: '#/components/schemas/DvaAccount'
         preference:
           $ref: '#/components/schemas/UserPreference'
       required:
       - created_on
+      - dva_account
       - email
+      - has_DVA
       - id
+      - is_admin
+      - is_staff
       - other_names
       - phone
       - pin_is_set
@@ -6037,6 +7801,67 @@ components:
       - phone_number
       - subscription_type
       - user
+    DedicatedVirtualAccountAssign:
+      type: object
+      properties:
+        first_name:
+          type: string
+          description: First name for Paystack customer
+        last_name:
+          type: string
+          description: Last name for Paystack customer
+        account_number:
+          type: string
+          description: Customer personal account number 10 digits (NUBAN) for Paystack
+            validation
+        bank_code:
+          type: string
+          description: Bank code 1-7 digits (e.g. 058, 000013) for account validation
+        bvn:
+          type: string
+          description: RSA-encrypted BVN (11 digits plain after decrypt, frontend
+            encrypted)
+        phone:
+          type: string
+          description: Phone required if not in profile (11 digits, e.g. 08012345678)
+      required:
+      - account_number
+      - bank_code
+      - bvn
+      - first_name
+      - last_name
+    DvaAccount:
+      type: object
+      properties:
+        dva_account_number:
+          type: string
+        dva_account_name:
+          type: string
+        bank_name:
+          type: string
+        bank_slug:
+          type: string
+        bank_id:
+          type: integer
+          nullable: true
+        customer_code:
+          type: string
+        active:
+          type: boolean
+      required:
+      - active
+      - bank_id
+      - bank_name
+      - bank_slug
+      - customer_code
+      - dva_account_name
+      - dva_account_number
+    DvaRefreshRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          description: Date transfer was made YYYY-MM-DD, defaults to today
     ElectricityPayment:
       type: object
       properties:
@@ -7104,6 +8929,35 @@ components:
       - next
       - previous
       - results
+    PatchedAdminTicketUpdate:
+      type: object
+      properties:
+        status:
+          enum:
+          - open
+          - in_progress
+          - resolved
+          - closed
+          type: string
+          description: |-
+            * `open` - Open
+            * `in_progress` - In Progress
+            * `resolved` - Resolved
+            * `closed` - Closed
+          x-spec-enum-id: 14b8b22467940771
+        priority:
+          enum:
+          - low
+          - medium
+          - high
+          - urgent
+          type: string
+          description: |-
+            * `low` - Low
+            * `medium` - Medium
+            * `high` - High
+            * `urgent` - Urgent
+          x-spec-enum-id: 14a5860514627360
     PatchedAutoTopUp:
       type: object
       properties:
@@ -7179,6 +9033,36 @@ components:
         available_balance:
           type: string
           readOnly: true
+    PatchedEventUpdate:
+      type: object
+      description: 'Vendor edit of event info: title, banner, ticket image, venue,
+        link, time.'
+      properties:
+        event_title:
+          type: string
+          maxLength: 255
+        event_banner:
+          type: string
+          format: uri
+        ticket_image:
+          type: string
+          format: uri
+          nullable: true
+          description: Optional ticket design image
+        event_location:
+          type: string
+          nullable: true
+          description: Physical venue/address (required for offline and hybrid events)
+          maxLength: 255
+        meeting_link:
+          type: string
+          format: uri
+          nullable: true
+          description: Online meeting URL (required for online and hybrid events)
+          maxLength: 500
+        event_date:
+          type: string
+          format: date-time
     PatchedUpdateUser:
       type: object
       properties:
@@ -7270,6 +9154,25 @@ components:
           maxLength: 13
       required:
       - quantity
+    RecentHistory:
+      type: object
+      properties:
+        bonus_type:
+          type: string
+        points:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        description:
+          type: string
+        date:
+          type: string
+          format: date-time
+      required:
+      - bonus_type
+      - date
+      - description
+      - points
     Redemption:
       type: object
       properties:
@@ -8291,6 +10194,30 @@ components:
       required:
       - account_number
       - bank_code
+    VerifyAccountNameResponse200:
+      type: object
+      properties:
+        success:
+          type: boolean
+        account_name:
+          type: string
+          description: User account name
+      required:
+      - account_name
+      - success
+    VerifyAccountNameResponse404:
+      type: object
+      properties:
+        success:
+          type: boolean
+          readOnly: true
+          default: false
+        message:
+          type: string
+          description: Error Message
+      required:
+      - message
+      - success
     VerifyPinResetOTP:
       type: object
       properties:
@@ -8423,6 +10350,17 @@ components:
           type: string
           readOnly: true
           nullable: true
+        recipient_code:
+          type: string
+          readOnly: true
+          nullable: true
+        transfer_code:
+          type: string
+          readOnly: true
+          nullable: true
+        provider:
+          type: string
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -8442,7 +10380,10 @@ components:
       - created_at
       - id
       - payment_reference
+      - provider
+      - recipient_code
       - status
+      - transfer_code
       - user
     WithdrawalRequest:
       type: object
@@ -8495,24 +10436,3 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-tags:
-- name: Affiliate
-- name: Authentication
-- name: Auto Top-Up
-- name: Bonus & Rewards
-- name: Events
-- name: Group Payments
-- name: Loyalty Market
-- name: Notifications
-- name: Payments
-- name: Scanner
-- name: Support
-  description: Customer support tickets, threaded messages, and image attachments.
-    Requires JWT authentication; users can only access their own tickets.
-- name: Tickets
-- name: User Profile
-- name: Vendors
-- name: Wallet
-- name: Wallet & Transactions
-- name: Withdrawal
-- name: schema

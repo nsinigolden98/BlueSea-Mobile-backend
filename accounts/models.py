@@ -48,6 +48,13 @@ class Profile(AbstractUser):
         max_length=6, default=generate_referal_code, unique=True
     )
     has_DVA = models.BooleanField(default=False, db_index=True)
+    # KYC tiers: T0 no phone, T1 phone, T2 +NIN, T3 +BVN, T4 +address+utility bill.
+    nin_encrypted = models.TextField(null=True, blank=True)
+    bvn_encrypted = models.TextField(null=True, blank=True)
+    house_address = models.TextField(null=True, blank=True)
+    utility_bill_image = models.ImageField(upload_to="kyc/", null=True, blank=True)
+    is_frozen = models.BooleanField(default=False, db_index=True)
+    frozen_reason = models.CharField(max_length=200, null=True, blank=True)
 
     objects = UserManager()
 
@@ -115,6 +122,32 @@ class PaystackDedicatedAccount(models.Model):
         indexes = (
             models.Index(fields=["account_number"]),
             models.Index(fields=["customer_code"]),
+            models.Index(fields=["user"]),
+        )
+
+    def __str__(self):
+        return f"{self.account_number} - {self.bank_name} - {self.user.email}"
+
+
+class NombaDedicatedAccount(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="nomba_dva_account",
+    )
+    account_ref = models.CharField(max_length=100, unique=True, db_index=True)
+    account_number = models.CharField(max_length=15, unique=True, db_index=True)
+    account_name = models.CharField(max_length=100)
+    bank_name = models.CharField(max_length=50, blank=True, default="")
+    active = models.BooleanField(default=True)
+    nomba_response = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = (
+            models.Index(fields=["account_number"]),
+            models.Index(fields=["account_ref"]),
             models.Index(fields=["user"]),
         )
 

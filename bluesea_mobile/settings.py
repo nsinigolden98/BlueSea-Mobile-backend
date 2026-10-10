@@ -381,6 +381,48 @@ def _inject_websocket_docs(result, generator, request, public):
                     "x-websocket": True,
                 }
             }
+    notification_desc = (
+        "Real-time WebSocket for user notifications. "
+        "Connect to `ws/notifications/` with `?token=<JWT access token>` or "
+        "`Authorization: Bearer <token>` header, then join group "
+        "`notifications_user_{id}` so all devices stay in sync. "
+        'On connect you receive `{"type":"connected","user_id":7,"unread_count":3}`. '
+        'Every `send_notification()` push arrives as `{"type":"new_notification",'
+        '"notification":{"id":9,"title":"...","message":"...","notification_type":"wallet",'
+        '"is_read":false,"created_at":"..."},"unread_count":4}`. '
+        'Send `{"type":"mark_read","notification_id":9}` or `{"type":"mark_all_read"}`; '
+        'server marks the rows and broadcasts `{"type":"read_receipt",...}` with the fresh '
+        '`unread_count` to the whole group (REST read/read-all/delete in `notifications/views.py` '
+        'broadcast the same receipts). `{"type":"unread_count_request"}` → '
+        '`{"type":"unread_count","unread_count":N}`. `{"type":"ping"}` → `{"type":"pong"}`; '
+        'errors arrive as `{"type":"error","detail":"..."}`. History stays on REST '
+        '`GET /notifications/`.'
+    )
+    if "/ws/notifications/" not in paths:
+        paths["/ws/notifications/"] = {
+            "get": {
+                "tags": ["Notifications"],
+                "summary": "Notifications WebSocket (real-time)",
+                "description": notification_desc,
+                "operationId": "notifications_ws_retrieve",
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "query",
+                        "required": False,
+                        "description": "JWT access token (alternative to Authorization header)",
+                        "schema": {"type": "string"},
+                    }
+                ],
+                "responses": {
+                    "101": {
+                        "description": "Switching Protocols - WebSocket established"
+                    },
+                    "401": {"description": "Missing/invalid JWT"},
+                },
+                "x-websocket": True,
+            }
+        }
     return result
 
 
@@ -675,6 +717,12 @@ ANYMAIL = {
     "BREVO_API_KEY": os.environ.get("BREVO_API_KEY"),
 }
 PAYSTACK_PIN = os.environ.get("PAYSTACK_PIN")
+
+NOMBA_ACCOUNT_ID= os.environ.get('NOMBA_ACCOUNT_ID')
+NOMBA_CLIENT_ID = os.environ.get('NOMBA_CLIENT_ID')
+NOMBA_SECRET_KEY = os.environ.get('NOMBA_SECRET_KEY')
+NOMBA_DEBUG = DEBUG
+NOMBA_SIGNATURE_KEY = os.environ.get('NOMBA_SIGNATURE_KEY')
 
 TIME_ZONE = "Africa/Lagos"
 

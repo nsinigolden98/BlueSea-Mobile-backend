@@ -50,3 +50,20 @@ class InitializeFundingSerializer(serializers.Serializer):
         max_digits=12, decimal_places=2, min_value=Decimal("100.00"),
         help_text="Amount to fund the wallet in NGN (minimum ₦100)",
     )
+
+
+class NombaAccountLookupSerializer(serializers.Serializer):
+    account_number = serializers.CharField(
+        max_length=10,
+        help_text="10-digit bank account number to resolve",
+    )
+    bank_code = serializers.CharField(
+        max_length=10,
+        help_text="Nomba bank code, e.g. 058 for GTBank",
+    )
+
+
+class NombaDvaConfirmSerializer(serializers.Serializer):
+    session_id = serializers.CharField(
+        help_text="Nomba sessionId of the pending DVA/transfer transaction",
+    )

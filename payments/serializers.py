@@ -153,6 +153,7 @@ class WithdrawalSerializer(serializers.ModelSerializer):
             "payment_reference",
             "recipient_code",
             "transfer_code",
+            "provider",
             "created_at",
             "completed_at",
         )
@@ -162,6 +163,7 @@ class WithdrawalSerializer(serializers.ModelSerializer):
             "payment_reference",
             "recipient_code",
             "transfer_code",
+            "provider",
             "created_at",
             "completed_at",
         )

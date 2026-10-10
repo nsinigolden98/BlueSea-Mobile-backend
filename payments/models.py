@@ -820,6 +820,7 @@ class Withdrawal(models.Model):
     )
     recipient_code = models.CharField(max_length=100, null=True, blank=True)
     transfer_code = models.CharField(max_length=100, null=True, blank=True)
+    provider = models.CharField(max_length=20, default="paystack", db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(blank=True, null=True)
 
@@ -881,3 +882,26 @@ class InternalTransfer(models.Model):
     class Meta:
             ordering = ("-created_at",)
 
+
+
+class BettingPayment(models.Model):
+    """Betting-account funding via Nomba (fund only — no bet placement)."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name="betting_payments",
+    )
+    provider = models.CharField(max_length=50)
+    customer_id = models.CharField(max_length=50)
+    amount = models.IntegerField()
+    phone_number = models.CharField(max_length=11)
+    request_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    status = models.CharField(
+        max_length=20, choices=VT_STATUS_CHOICES, default="pending", db_index=True
+    )
+    vtpass_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    vtpass_response = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

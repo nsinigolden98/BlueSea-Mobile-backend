@@ -19,10 +19,13 @@ from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 
 import support.routing
+import notifications.routing
 import wallet.routing
 
 ws_patterns = (
-    support.routing.websocket_urlpatterns + wallet.routing.websocket_urlpatterns
+    support.routing.websocket_urlpatterns
+    + wallet.routing.websocket_urlpatterns
+    + notifications.routing.websocket_urlpatterns
 )
 
 application = ProtocolTypeRouter(
