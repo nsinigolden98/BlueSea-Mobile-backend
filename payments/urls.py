@@ -23,6 +23,7 @@ from .views import (
     WithdrawalView,
 )
 from .webhook import VTpassWebhookView
+from .nomba_views import NombaWithdrawalView
 
 urlpatterns = [
     path("airtime/", AirtimeTopUpViews.as_view(), name="airtime"),
@@ -58,6 +59,7 @@ urlpatterns = [
         "internal-transfer/", InternalTransferView.as_view(), name="internal-transfer"
     ),
     path("withdrawal/", WithdrawalView.as_view(), name="withdrawal"),
+    path("withdrawal/nomba/", NombaWithdrawalView.as_view(), name="nomba-withdrawal"),
     path(
         "status/<str:reference_id>/", PaymentStatusView.as_view(), name="payment-status"
     ),

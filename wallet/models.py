@@ -24,6 +24,9 @@ class Wallet(models.Model):
         default=0.00,
         validators=[MinValueValidator(Decimal("0.00"))],
     )  # Add this field
+    # Lifetime tier-limit counters (in/out), updated atomically with the ledger.
+    total_in = models.DecimalField(max_digits=14, decimal_places=2, default=0.00)
+    total_out = models.DecimalField(max_digits=14, decimal_places=2, default=0.00)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)

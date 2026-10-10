@@ -5,6 +5,66 @@ from .models import Notification
 logger = logging.getLogger(__name__)
 
 
+def _serialize_notification(notification):
+    return {
+        "id": notification.id,
+        "title": notification.title,
+        "message": notification.message,
+        "notification_type": notification.notification_type,
+        "is_read": notification.is_read,
+        "created_at": notification.created_at.isoformat()
+        if notification.created_at
+        else None,
+        "read_at": notification.read_at.isoformat() if notification.read_at else None,
+    }
+
+
+def get_unread_count(user):
+    return Notification.objects.filter(user=user, is_read=False).count()
+
+
+def push_notification_event(user_id, payload):
+    """Best-effort push of a live event to the user's notification WS group."""
+    try:
+        from asgiref.sync import async_to_sync
+        from channels.layers import get_channel_layer
+
+        channel_layer = get_channel_layer()
+        if channel_layer is None:
+            return
+        async_to_sync(channel_layer.group_send)(
+            f"notifications_user_{user_id}", payload
+        )
+    except Exception as e:
+        logger.debug(f"Notification WS push failed for user {user_id}: {e}")
+
+
+def push_new_notification(notification):
+    try:
+        unread = Notification.objects.filter(
+            user_id=notification.user_id, is_read=False
+        ).count()
+    except Exception:
+        unread = 0
+    push_notification_event(
+        notification.user_id,
+        {
+            "type": "notification_event",
+            "event_data": {
+                "type": "new_notification",
+                "notification": _serialize_notification(notification),
+                "unread_count": unread,
+            },
+        },
+    )
+
+
+def push_read_receipt(user_id, receipt):
+    push_notification_event(
+        user_id, {"type": "read_event", "event_data": receipt}
+    )
+
+
 def send_notification(user, title, message, notification_type='info', email_subject=None, email_template=None, context=None):    
     """
     Create notification and queue email sending asynchronously
@@ -17,6 +77,12 @@ def send_notification(user, title, message, notification_type='info', email_subj
         notification_type=notification_type,
         is_read=False
     )
+
+    # Live push to ws/notifications/ (best-effort, never breaks the caller)
+    try:
+        push_new_notification(notification)
+    except Exception as e:
+        logger.debug(f"Notification WS push failed for {user.email}: {e}")
     
     try:
         from .tasks import send_email_notification
