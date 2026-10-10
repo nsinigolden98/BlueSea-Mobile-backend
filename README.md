@@ -84,14 +84,23 @@ request/response shapes (existing frontend works untouched).
 #    Tests carry their own DDL (isolated scratch DBs per test), so the
 #    fixture DDL in src/db.rs must move together with every migration.
 
-# 2. Environment: create ./.env (dev) with:
+# 2. Environment: ./.env holds every setting — there are no silent
+#    defaults. A missing var panics at boot naming it; an explicit
+#    DATABASE_URL wins, otherwise it is composed from the DATABASE_*
+#    parts (same construction as docker-compose):
 #    DEBUG=True
-#    DATABASE_URL=postgres://postgres:postgres@localhost:5432/bluesea
-#    (plus SECRET_KEY, PIN_RSA_PRIVATE_KEY, EMAIL_BACKEND=console — see
-#    the full variable list under "Deploy" below)
+#    DATABASE_URL=postgres://bluesea:password@127.0.0.1:5432/bluesea_test
+#    (plus SECRET_KEY, PIN_RSA_PRIVATE_KEY, SITE_URL, MEDIA_ROOT,
+#    EMAIL_*, VTPASS_*, NOMBA_*, GOOGLE_*, APPLE_CLIENT_ID,
+#    CORS_ALLOWED_ORIGINS / CORS_ALLOW_ALL_ORIGINS, SECURE_SSL_REDIRECT —
+#    see the full variable list under "Deploy" below)
 # NOTE: .env is parsed literally (no $VAR expansion), like Django.
+# Do NOT switch the loader to the dotenvy crate: it expands `$...`,
+# which silently rewrote SECRET_KEY (it contained a literal `$gvk`) and
+# broke every HMAC/JWT cross-check (verified by probe 2026-10-10;
+# key since rotated to alphanumeric-only).
 
-cargo run            # serves on :8000
+cargo run            # serves on :8000 (migrates + enforces env on boot)
 ```
 
 ## Docs & health
@@ -160,7 +169,7 @@ rows carry `provider="nomba"` so Paystack records are never touched.
 ## Tests
 
 ```bash
-# One variable for everything (default: the local test database).
+# DATABASE_URL comes from .env (exported value still wins).
 # Each test gets an isolated scratch database; real tables are never touched.
 cargo test
 ```
@@ -180,6 +189,15 @@ fails sends so handlers return 500, exactly like Django's send failure.
 
 ## Notes / deliberate divergences
 
+- CORS mirrors Django (`CORS_ALLOW_ALL_ORIGINS = DEBUG`, allowlist from
+  `CORS_ALLOWED_ORIGINS` via `tower_http::cors::CorsLayer`; methods match
+  Django's `CORS_ALLOW_METHODS`, headers are `Any`). Env is read with
+  `std::env` over a literal `.env` parser — never the `dotenvy` crate.
+- SSL mirrors Django (`SECURE_SSL_REDIRECT` + `X-Forwarded-Proto` trust):
+  plain-http hits get a 301 to `https://` unless the proxy header says
+  `https` (nginx sets it; the Docker healthcheck sends it). Django's
+  secure-cookie flags have no equivalent — the API is stateless Bearer
+  JWT, it sets no cookies — and CSRF middleware is likewise N/A.
 - Nomba runs on the async `nomba-rs` SDK: `create_order` takes a
   `redirectUrl` the Django call omits, so `SITE_URL` is sent (the customer
   email is passed as both email and name, per Nomba's checkout docs). The
@@ -218,6 +236,11 @@ DATABASE_USER=bluesea_user
 DATABASE_PASSWORD=...
 SECRET_KEY=<same as Django, so tokens cross-verify>
 SITE_URL=https://api.blueseamobile.com
+MEDIA_ROOT=/app/media
+APPLE_CLIENT_ID=...
+CORS_ALLOWED_ORIGINS=https://blueseamobile.com,https://www.blueseamobile.com
+# CORS_ALLOW_ALL_ORIGINS=True   # dev only; defaults to DEBUG (Django parity)
+SECURE_SSL_REDIRECT=True        # Django parity (http→https 301); 0 disables
 PIN_RSA_PRIVATE_KEY=<same base64 PEM as Django>
 EMAIL_BACKEND=brevo
 BREVO_API_KEY=...

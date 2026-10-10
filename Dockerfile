@@ -50,7 +50,9 @@ ENV PORT=8000 \
 EXPOSE 8000
 
 # bash /dev/tcp probe: no curl/wget in the slim image.
+# Sends X-Forwarded-Proto like nginx does, so the SECURE_SSL_REDIRECT
+# middleware (Django parity) lets the check through with a 200.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD bash -c 'exec 3<>/dev/tcp/127.0.0.1/${PORT:-8000} && echo -e "GET /health HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3 && grep -q "200" <&3'
+    CMD bash -c 'exec 3<>/dev/tcp/127.0.0.1/${PORT:-8000} && echo -e "GET /health HTTP/1.0\r\nHost: localhost\r\nX-Forwarded-Proto: https\r\n\r\n" >&3 && grep -q "200" <&3'
 
 CMD ["/app/bluesea-backend"]

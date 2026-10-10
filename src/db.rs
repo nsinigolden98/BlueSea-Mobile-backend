@@ -31,7 +31,9 @@ pub mod test_support {
     fn test_base_url() -> String {
         // Tests share the single DATABASE_URL (default: the test database).
         // Each test still gets an isolated scratch database; your real
-        // tables are never touched.
+        // tables are never touched. `.env` is loaded so plain `cargo test`
+        // works; an exported DATABASE_URL still wins.
+        crate::settings::load_dotenv_literal();
         std::env::var("DATABASE_URL").unwrap_or_else(|_| {
             "postgres://postgres:postgres@localhost:5432/bluesea_test".to_string()
         })

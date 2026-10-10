@@ -24,16 +24,19 @@ pub struct Config {
     pub nomba_signature_key: String,
     pub nomba_sandbox: bool,
     pub media_root: String,
+    pub cors_allow_all: bool,
+    pub cors_allowed_origins: Vec<String>,
+    pub secure_ssl_redirect: bool,
 }
 
 /// Load `.env` literally: no `$VAR` interpolation, matching how Django
 /// consumes the same file. (`dotenvy` expands `$...`, which silently
 /// rewrote this repo's `SECRET_KEY` — it contains a literal `$gvk` — and
 /// broke every HMAC/JWT cross-check with Django.)
-fn load_dotenv_literal() {
-    let Ok(text) = std::fs::read_to_string(".env") else {
-        return;
-    };
+/// Parse `.env` text into pairs without touching the environment.
+/// Pure function so tests never race on cwd/process env.
+fn parse_dotenv_literal(text: &str) -> Vec<(String, String)> {
+    let mut out = Vec::new();
     for raw_line in text.lines() {
         let line = raw_line.trim();
         if line.is_empty() || line.starts_with('#') {
@@ -44,67 +47,147 @@ fn load_dotenv_literal() {
             continue;
         };
         let key = key.trim();
-        if key.is_empty() || std::env::var(key).is_ok() {
+        if key.is_empty() {
             continue;
         }
         let value = value.trim();
         let unquoted = value.strip_prefix('"').and_then(|v| v.strip_suffix('"')).or_else(|| {
             value.strip_prefix('\'').and_then(|v| v.strip_suffix('\''))
         });
-        std::env::set_var(key, unquoted.unwrap_or(value));
+        out.push((key.to_string(), unquoted.unwrap_or(value).to_string()));
     }
+    out
+}
+
+pub(crate) fn load_dotenv_literal() {
+    let Ok(text) = std::fs::read_to_string(".env") else {
+        return;
+    };
+    for (key, value) in parse_dotenv_literal(&text) {
+        if std::env::var(&key).is_ok() {
+            continue;
+        }
+        std::env::set_var(key, value);
+    }
+}
+
+/// Required env var: panics at boot naming the missing key instead of
+/// running on a silent default. The `.env` file (or real environment in
+/// Docker) is the single source of truth — see README "Deploy".
+fn req(key: &str) -> String {
+    env::var(key).unwrap_or_else(|_| panic!("Missing required env var {key} — set it in .env"))
+}
+
+fn req_bool(key: &str) -> bool {
+    match req(key).as_str() {
+        "True" | "true" | "1" => true,
+        "False" | "false" | "0" => false,
+        other => panic!("Env var {key} must be True/False/1/0, got {other:?}"),
+    }
+}
+
+fn req_num<T: std::str::FromStr>(key: &str) -> T {
+    let raw = req(key);
+    raw.parse()
+        .unwrap_or_else(|_| panic!("Env var {key} must be a number, got {raw:?}"))
+}
+
+/// Percent-encode a URL user-info segment (passwords like `a@b` would
+/// otherwise split the host). Unreserved set per RFC 3986.
+fn url_encode(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for b in s.bytes() {
+        if b.is_ascii_alphanumeric() || b"-._~".contains(&b) {
+            out.push(b as char);
+        } else {
+            out.push_str(&format!("%{b:02X}"));
+        }
+    }
+    out
 }
 
 impl Config {
     pub fn from_env() -> Self {
         load_dotenv_literal();
-        let debug = env::var("DEBUG").map(|v| v == "True" || v == "true" || v == "1").unwrap_or(true);
-        let database_url = env::var("DATABASE_URL").unwrap_or_else(|_| {
-            "postgres://postgres:postgres@localhost:5432/bluesea_test".to_string()
-        });
+        let debug = req_bool("DEBUG");
+        // DATABASE_URL when set outright, else composed from the Django-style
+        // parts (same construction as docker-compose) — never a silent default.
+        let database_url = env::var("DATABASE_URL")
+            .ok()
+            .filter(|v| !v.trim().is_empty())
+            .unwrap_or_else(|| {
+                format!(
+                    "postgres://{}:{}@{}:{}/{}",
+                    url_encode(&req("DATABASE_USER")),
+                    url_encode(&req("DATABASE_PASSWORD")),
+                    req("DATABASE_HOST"),
+                    req("DATABASE_PORT"),
+                    req("DATABASE_NAME"),
+                )
+            });
         Self {
             debug,
             database_url,
-            secret_key: env::var("SECRET_KEY").unwrap_or_else(|_| "dev-insecure-secret-key-change-me".to_string()),
-            pin_rsa_private_key_b64: env::var("PIN_RSA_PRIVATE_KEY").unwrap_or_default(),
-            pin_max_attempts: env::var("PIN_MAX_ATTEMPTS").ok().and_then(|v| v.parse().ok()).unwrap_or(5),
-            pin_lockout_minutes: env::var("PIN_LOCKOUT_MINUTES").ok().and_then(|v| v.parse().ok()).unwrap_or(30),
-            google_client_id: env::var("GOOGLE_CLIENT_ID").unwrap_or_default(),
-            google_client_secret: env::var("GOOGLE_CLIENT_SECRET").unwrap_or_default(),
-            apple_client_id: env::var("APPLE_CLIENT_ID").unwrap_or_default(),
-            site_url: env::var("SITE_URL").unwrap_or_else(|_| "http://localhost:8000".to_string()),
-            email_backend: env::var("EMAIL_BACKEND").unwrap_or_else(|_| {
-                if debug {
-                    "console".to_string()
-                } else {
-                    "brevo".to_string()
-                }
-            }),
-            brevo_api_key: env::var("BREVO_API_KEY").unwrap_or_default(),
+            secret_key: req("SECRET_KEY"),
+            pin_rsa_private_key_b64: req("PIN_RSA_PRIVATE_KEY"),
+            pin_max_attempts: req_num("PIN_MAX_ATTEMPTS"),
+            pin_lockout_minutes: req_num("PIN_LOCKOUT_MINUTES"),
+            google_client_id: req("GOOGLE_CLIENT_ID"),
+            google_client_secret: req("GOOGLE_CLIENT_SECRET"),
+            // Presence required; empty means the integration is unconfigured
+            // (Apple login fails at use-time, as before — never silently).
+            apple_client_id: req("APPLE_CLIENT_ID"),
+            site_url: req("SITE_URL"),
+            email_backend: req("EMAIL_BACKEND"),
+            brevo_api_key: req("BREVO_API_KEY"),
             from_email: {
                 let user = env::var("EMAIL_HOST_USER").unwrap_or_default();
                 if !user.trim().is_empty() {
                     user
                 } else {
-                    env::var("DEFAULT_FROM_EMAIL")
-                        .unwrap_or_else(|_| "noreply@bluesea.com".to_string())
+                    req("DEFAULT_FROM_EMAIL")
                 }
             },
-            vtpass_base_url: env::var("VTPASS_BASE_URL")
-                .unwrap_or_else(|_| "https://sandbox.vtpass.com/api".to_string()),
-            vtpass_api_key: env::var("VTPASS_API_KEY").unwrap_or_default(),
-            vtpass_secret_key: env::var("VTPASS_SECRET_KEY").unwrap_or_default(),
-            vtpass_public_key: env::var("VTPASS_PUBLIC_KEY").unwrap_or_default(),
-            nomba_client_id: env::var("NOMBA_CLIENT_ID").unwrap_or_default(),
-            nomba_account_id: env::var("NOMBA_ACCOUNT_ID").unwrap_or_default(),
-            nomba_secret_key: env::var("NOMBA_SECRET_KEY").unwrap_or_default(),
-            nomba_signature_key: env::var("NOMBA_SIGNATURE_KEY").unwrap_or_default(),
+            vtpass_base_url: req("VTPASS_BASE_URL"),
+            vtpass_api_key: req("VTPASS_API_KEY"),
+            vtpass_secret_key: req("VTPASS_SECRET_KEY"),
+            vtpass_public_key: req("VTPASS_PUBLIC_KEY"),
+            nomba_client_id: req("NOMBA_CLIENT_ID"),
+            nomba_account_id: req("NOMBA_ACCOUNT_ID"),
+            nomba_secret_key: req("NOMBA_SECRET_KEY"),
+            nomba_signature_key: req("NOMBA_SIGNATURE_KEY"),
             // Mirrors Django (`sandbox=settings.NOMBA_DEBUG`, itself = DEBUG),
-            // overridable per environment.
+            // overridable per environment (Django parses "True"/"False"
+            // strings the same way).
             nomba_sandbox: env::var("NOMBA_SANDBOX")
+                .ok()
+                .filter(|v| !v.trim().is_empty())
                 .map(|v| v == "True" || v == "true" || v == "1")
                 .unwrap_or(debug),
-            media_root: env::var("MEDIA_ROOT").unwrap_or_else(|_| "./media".to_string()),
+            media_root: req("MEDIA_ROOT"),
+            // Mirrors Django (`CORS_ALLOW_ALL_ORIGINS = DEBUG`), overridable
+            // per environment via CORS_ALLOW_ALL_ORIGINS.
+            cors_allow_all: env::var("CORS_ALLOW_ALL_ORIGINS")
+                .ok()
+                .filter(|v| !v.trim().is_empty())
+                .map(|v| v == "True" || v == "true" || v == "1")
+                .unwrap_or(debug),
+            // Mirrors Django (`CORS_ALLOWED_ORIGINS`, comma-separated).
+            cors_allowed_origins: env::var("CORS_ALLOWED_ORIGINS")
+                .map(|v| {
+                    v.split(',')
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .collect()
+                })
+                .unwrap_or_default(),
+            // Mirrors Django (`SECURE_SSL_REDIRECT = True`, unconditional).
+            // kill-switch for local plain-http dev/smoke tests.
+            secure_ssl_redirect: env::var("SECURE_SSL_REDIRECT")
+                .ok()
+                .filter(|v| !v.trim().is_empty())
+                .map(|v| !(v == "False" || v == "false" || v == "0"))
+                .unwrap_or(true),
         }
     }
 }
@@ -116,21 +199,38 @@ mod tests {
     #[test]
     fn dotenv_loader_keeps_dollar_literal() {
         // Regression: dotenvy expanded `$gvk` inside SECRET_KEY, silently
-        // changing every HMAC/JWT secret vs Django. The literal loader must
-        // preserve it (and must not clobber real env vars).
-        std::env::remove_var("LITERAL_LOADER_TEST_KEY");
-        let dir = std::env::temp_dir().join(format!("dotenv-lit-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
-        std::fs::write(dir.join(".env"), "LITERAL_LOADER_TEST_KEY=\"ab$cd${EF}gh\"\n").unwrap();
-        let prev = std::env::current_dir().unwrap();
-        std::env::set_current_dir(&dir).unwrap();
-        load_dotenv_literal();
-        std::env::set_current_dir(prev).unwrap();
-        assert_eq!(
-            std::env::var("LITERAL_LOADER_TEST_KEY").unwrap(),
-            "ab$cd${EF}gh"
+        // changing every HMAC/JWT secret vs Django. The literal parser must
+        // preserve `$` verbatim.
+        let pairs = parse_dotenv_literal(
+            "# comment\nexport LITERAL_LOADER_TEST_KEY=\"ab$cd${EF}gh\"\nEMPTY=\n",
         );
-        std::env::remove_var("LITERAL_LOADER_TEST_KEY");
-        std::fs::remove_dir_all(&dir).ok();
+        assert_eq!(
+            pairs,
+            vec![
+                ("LITERAL_LOADER_TEST_KEY".to_string(), "ab$cd${EF}gh".to_string()),
+                ("EMPTY".to_string(), String::new()),
+            ]
+        );
+    }
+
+    #[test]
+    fn dotenv_loader_preserves_real_secret_key_shape() {
+        // The incident shape: double-quoted key with a literal `$gvk`.
+        // dotenvy parses this as `...dp^ofjm...` ($gvk expanded to empty);
+        // the literal parser must keep it byte-identical.
+        let pairs = parse_dotenv_literal(
+            "SECRET_KEY=\"django-insecure-fybc+pa&dp^^xnmmsz5fe-c52-ku4xmtt3=1c$gvk^ofjm_b(2\"\n",
+        );
+        assert_eq!(pairs.len(), 1);
+        let (key, value) = &pairs[0];
+        assert_eq!(key, "SECRET_KEY");
+        assert!(value.contains("$gvk"), "literal $gvk must survive: {value:?}");
+        assert!(value.ends_with("b(2"), "closing quote stripped only: {value:?}");
+    }
+
+    #[test]
+    fn dotenv_loader_skips_comments_and_blank_keys() {
+        let pairs = parse_dotenv_literal("# c\n\n   \n=novalue\nOK=yes\n");
+        assert_eq!(pairs, vec![("OK".to_string(), "yes".to_string())]);
     }
 }
