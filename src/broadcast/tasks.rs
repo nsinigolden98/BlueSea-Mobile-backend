@@ -160,7 +160,7 @@ async fn maybe_complete(state: &AppState, broadcast_id: i64) {
         "UPDATE broadcast_broadcast SET status = $1, completed_at = $2 WHERE id = $3",
     )
     .bind(status)
-    .bind(now_str())
+    .bind(crate::time::Ts(&now_str()))
     .bind(broadcast_id)
     .execute(&state.db)
     .await
@@ -319,7 +319,7 @@ pub async fn send_broadcast(state: &AppState, broadcast_id: i64) -> bool {
             let _ = sqlx::query(
                 "UPDATE broadcast_broadcast SET status = 'failed', completed_at = $1 WHERE id = $2",
             )
-            .bind(now_str())
+            .bind(crate::time::Ts(&now_str()))
             .bind(broadcast_id)
             .execute(&state.db)
             .await;

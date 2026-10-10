@@ -58,7 +58,7 @@ pub async fn record_outstanding(
         .map(|d| d.naive_utc().to_string())
         .unwrap_or_else(|| now.clone());
     sqlx::query("INSERT INTO token_blacklist_outstandingtoken (user_id, jti, token, created_at, expires_at) VALUES ($1, $2, $3, $4, $5)")
-        .bind(user_id).bind(jti).bind(token).bind(crate::time::Ts(&now)).bind(&exp_str)
+        .bind(user_id).bind(jti).bind(token).bind(crate::time::Ts(&now)).bind(crate::time::Ts(&exp_str))
         .execute(db).await?;
     Ok(())
 }

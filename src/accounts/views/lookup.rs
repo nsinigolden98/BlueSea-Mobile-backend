@@ -123,7 +123,6 @@ pub async fn dva_assign(
     }
     let data = result;
     let now = now_naive().to_string();
-    let now = now_naive().to_string();
     let name = format!("{} {}", b.first_name.trim(), b.last_name.trim());
     let account_number = data.get("bankAccountNumber").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let account_name = data.get("bankAccountName").and_then(|v| v.as_str()).unwrap_or(&name).to_string();

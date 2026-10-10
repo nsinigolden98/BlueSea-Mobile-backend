@@ -175,7 +175,7 @@ pub async fn mark_read(
         let _ = sqlx::query(
             "UPDATE notifications_notification SET is_read = TRUE, read_at = $1 WHERE id = $2",
         )
-        .bind(now_str())
+        .bind(crate::time::Ts(&now_str()))
         .bind(n.id)
         .execute(&s.db)
         .await;
@@ -215,7 +215,7 @@ pub async fn mark_all_read(
     let res = sqlx::query(
         "UPDATE notifications_notification SET is_read = TRUE, read_at = $1 WHERE user_id = $2 AND is_read = FALSE",
     )
-    .bind(now_str())
+    .bind(crate::time::Ts(&now_str()))
     .bind(user.id)
     .execute(&s.db)
     .await?;
