@@ -435,21 +435,66 @@ pub async fn lookup_cable_customer(
 }
 
 /// Raw data plans for one network (cached by the plans store at startup).
+/// Every failure point logs the underlying cause — a bare "unavailable"
+/// cost an evening of probing against a deserialization mismatch.
 pub async fn fetch_data_plans_raw(config: &Config, network: &str) -> Option<serde_json::Value> {
-    let client = client(config).await.ok()?;
-    client.airtime_data.fetch_data_plans(network).await.ok().and_then(|r| {
-        let v = data_value(&r);
-        if is_success(&v) { Some(v.get("data").cloned().unwrap_or(serde_json::Value::Null)) } else { None }
-    })
+    let client = match client(config).await {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::warn!("nomba data plans: client build failed for {network}: {e}");
+            return None;
+        }
+    };
+    match client.airtime_data.fetch_data_plans(network).await {
+        Err(e) => {
+            tracing::warn!("nomba data plans: fetch failed for {network}: {e}");
+            None
+        }
+        Ok(r) => {
+            let v = data_value(&r);
+            if is_success(&v) {
+                Some(v.get("data").cloned().unwrap_or(serde_json::Value::Null))
+            } else {
+                tracing::warn!(
+                    "nomba data plans: non-success payload for {network}: code={} description={}",
+                    v.get("code").and_then(|c| c.as_str()).unwrap_or("?"),
+                    v.get("description").and_then(|d| d.as_str()).unwrap_or("?"),
+                );
+                None
+            }
+        }
+    }
 }
 
 /// Raw cable plans for one provider (cached by the plans store at startup).
+/// Same loud-failure contract as [`fetch_data_plans_raw`].
 pub async fn fetch_cable_plans_raw(config: &Config, provider: &str) -> Option<serde_json::Value> {
-    let client = client(config).await.ok()?;
-    client.cabletv.fetch_plans(provider).await.ok().and_then(|r| {
-        let v = data_value(&r);
-        if is_success(&v) { Some(v.get("data").cloned().unwrap_or(serde_json::Value::Null)) } else { None }
-    })
+    let client = match client(config).await {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::warn!("nomba cable plans: client build failed for {provider}: {e}");
+            return None;
+        }
+    };
+    match client.cabletv.fetch_plans(provider).await {
+        Err(e) => {
+            tracing::warn!("nomba cable plans: fetch failed for {provider}: {e}");
+            None
+        }
+        Ok(r) => {
+            let v = data_value(&r);
+            if is_success(&v) {
+                Some(v.get("data").cloned().unwrap_or(serde_json::Value::Null))
+            } else {
+                tracing::warn!(
+                    "nomba cable plans: non-success payload for {provider}: code={} description={}",
+                    v.get("code").and_then(|c| c.as_str()).unwrap_or("?"),
+                    v.get("description").and_then(|d| d.as_str()).unwrap_or("?"),
+                );
+                None
+            }
+        }
+    }
 }
 /// Webhook timestamp age in seconds. Tolerant of `Z` and numeric offsets
 /// (with or without millis). Returns `None` when unparseable.
