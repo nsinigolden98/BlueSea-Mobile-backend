@@ -9,3 +9,4 @@ admin-panel/dist/
 debug.log
 /target
 .vscode/
+/bluesea-backend
