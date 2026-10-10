@@ -150,7 +150,7 @@ pub async fn insert_history(
     let res = sqlx::query_as::<_, (i64,)>(
         "INSERT INTO bonus_bonushistory (transaction_type, points, reason, description, reference,
                 balance_before, balance_after, created_at, metadata, created_by_id, user_id)
-         VALUES ($1, CAST($2 AS NUMERIC), $3, $4, $5, CAST($6 AS NUMERIC), CAST($7 AS NUMERIC), $8, $9, $10, $11) RETURNING id",
+         VALUES ($1, CAST($2 AS NUMERIC), $3, $4, $5, CAST($6 AS NUMERIC), CAST($7 AS NUMERIC), $8, CAST($9 AS JSONB), $10, $11) RETURNING id",
     )
     .bind(transaction_type)
     .bind(points)
