@@ -20,7 +20,6 @@ pub fn router(state: AppState) -> Router {
             "/accounts/auth/google/",
             post(views::social::google_login),
         )
-        .route("/accounts/auth/apple/", post(views::social::apple_login))
         .route(
             "/accounts/password/reset/request/",
             post(views::auth::password_reset_request),

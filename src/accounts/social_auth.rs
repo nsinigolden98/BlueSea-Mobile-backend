@@ -1,6 +1,6 @@
 //! Social authentication providers.
 //! Mirrors `accounts/social_auth.py`:
-//! `GoogleAuth`, `AppleAuth`, `get_or_create_social_user`.
+//! `GoogleAuth`, `get_or_create_social_user`.
 
 use serde_json::Value;
 
@@ -135,74 +135,6 @@ impl GoogleAuth {
     }
 }
 
-pub struct AppleAuth;
-
-impl AppleAuth {
-    /// Verify an Apple identity token (RS256, Apple JWKS, audience + issuer checks).
-    pub async fn verify_apple_token(
-        http: &reqwest::Client,
-        apple_client_id: &str,
-        id_token: &str,
-    ) -> Result<SocialUser, String> {
-        let header_part = id_token.split('.').next().unwrap_or("");
-        use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD as B64U};
-        let header_raw = B64U
-            .decode(header_part)
-            .map_err(|_| "Invalid token".to_string())?;
-        let header: Value =
-            serde_json::from_slice(&header_raw).map_err(|_| "Invalid token".to_string())?;
-        let kid = header.get("kid").and_then(|v| v.as_str()).unwrap_or("");
-
-        let jwks: Value = http
-            .get("https://appleid.apple.com/auth/keys")
-            .send()
-            .await
-            .map_err(|_| "Could not retrieve Apple public key".to_string())?
-            .json()
-            .await
-            .map_err(|_| "Could not retrieve Apple public key".to_string())?;
-        let key = jwks
-            .get("keys")
-            .and_then(|k| k.as_array())
-            .and_then(|arr| {
-                arr.iter()
-                    .find(|k| k.get("kid").and_then(|v| v.as_str()) == Some(kid))
-            })
-            .cloned()
-            .ok_or_else(|| "Could not retrieve Apple public key".to_string())?;
-
-        let n = key.get("n").and_then(|v| v.as_str()).unwrap_or("");
-        let e = key.get("e").and_then(|v| v.as_str()).unwrap_or("");
-        let decoding_key = jsonwebtoken::DecodingKey::from_rsa_components(n, e)
-            .map_err(|_| "Invalid token".to_string())?;
-        let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::RS256);
-        validation.set_audience(&[apple_client_id]);
-        validation.set_issuer(&["https://appleid.apple.com"]);
-        let data = jsonwebtoken::decode::<Value>(id_token, &decoding_key, &validation)
-            .map_err(|_| "Invalid token".to_string())?;
-
-        let email = data
-            .claims
-            .get("email")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-        if email.is_empty() {
-            return Err("Email is required for social authentication".into());
-        }
-        Ok(SocialUser {
-            email,
-            email_verified: data
-                .claims
-                .get("email_verified")
-                .and_then(|v| v.as_bool())
-                .unwrap_or(false),
-            given_name: String::new(),
-            family_name: String::new(),
-        })
-    }
-}
-
 /// Find the user by email or create one (plus wallet), like
 /// `get_or_create_social_user`. Returns `(user, is_new)`.
 pub async fn get_or_create_social_user(
@@ -245,31 +177,6 @@ pub async fn get_or_create_social_user(
                 social.given_name.clone()
             },
         ),
-        "apple" => {
-            let (mut first, mut last) = (String::new(), String::new());
-            if let Some(u) = extra {
-                if let Some(name) = u.get("name") {
-                    first = name
-                        .get("firstName")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string();
-                    last = name
-                        .get("lastName")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string();
-                }
-            }
-            if first.is_empty() {
-                (
-                    last,
-                    social.email.split('@').next().unwrap_or("").to_string(),
-                )
-            } else {
-                (last, first)
-            }
-        }
         _ => (
             String::new(),
             social.email.split('@').next().unwrap_or("").to_string(),

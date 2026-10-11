@@ -113,18 +113,10 @@ pub struct GoogleLoginBody {
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
-pub struct AppleLoginBody {
-    pub id_token: String,
-    pub phone: Option<String>,
-    pub user: Option<serde_json::Value>,
-}
-
-#[derive(Debug, Deserialize, ToSchema)]
 pub struct DvaAssignBody {
     pub first_name: String,
     pub last_name: String,
     pub account_number: String,
     pub bank_code: String,
-    pub bvn: String,
     pub phone: Option<String>,
 }

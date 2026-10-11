@@ -9,7 +9,6 @@ pub struct Config {
     pub pin_lockout_minutes: i64,
     pub google_client_id: String,
     pub google_client_secret: String,
-    pub apple_client_id: String,
     pub site_url: String,
     pub email_backend: String,
     pub brevo_api_key: String,
@@ -134,9 +133,6 @@ impl Config {
             pin_lockout_minutes: req_num("PIN_LOCKOUT_MINUTES"),
             google_client_id: req("GOOGLE_CLIENT_ID"),
             google_client_secret: req("GOOGLE_CLIENT_SECRET"),
-            // Presence required; empty means the integration is unconfigured
-            // (Apple login fails at use-time, as before — never silently).
-            apple_client_id: req("APPLE_CLIENT_ID"),
             site_url: req("SITE_URL"),
             email_backend: req("EMAIL_BACKEND"),
             brevo_api_key: req("BREVO_API_KEY"),

@@ -91,7 +91,7 @@ request/response shapes (existing frontend works untouched).
 #    DEBUG=True
 #    DATABASE_URL=postgres://bluesea:password@127.0.0.1:5432/bluesea_test
 #    (plus SECRET_KEY, PIN_RSA_PRIVATE_KEY, SITE_URL, MEDIA_ROOT,
-#    EMAIL_*, VTPASS_*, NOMBA_*, GOOGLE_*, APPLE_CLIENT_ID,
+#    EMAIL_*, VTPASS_*, NOMBA_*, GOOGLE_*,
 #    CORS_ALLOWED_ORIGINS / CORS_ALLOW_ALL_ORIGINS, SECURE_SSL_REDIRECT —
 #    see the full variable list under "Deploy" below)
 # NOTE: .env is parsed literally (no $VAR expansion), like Django.
@@ -237,7 +237,6 @@ DATABASE_PASSWORD=...
 SECRET_KEY=<same as Django, so tokens cross-verify>
 SITE_URL=https://api.blueseamobile.com
 MEDIA_ROOT=/app/media
-APPLE_CLIENT_ID=...
 CORS_ALLOWED_ORIGINS=https://blueseamobile.com,https://www.blueseamobile.com
 # CORS_ALLOW_ALL_ORIGINS=True   # dev only; defaults to DEBUG (Django parity)
 SECURE_SSL_REDIRECT=True        # Django parity (http→https 301); 0 disables
@@ -256,7 +255,6 @@ NOMBA_SIGNATURE_KEY=...
 # NOMBA_SANDBOX=1   # defaults to DEBUG (Django uses sandbox=NOMBA_DEBUG)
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
-APPLE_CLIENT_ID=...
 
 # fresh database: nothing to do — the app runs sqlx migrations on boot
 # (./migrations). Existing Django-migrated databases were marked with the

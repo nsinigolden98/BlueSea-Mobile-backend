@@ -267,11 +267,21 @@ pub async fn dva_assign(
             })),
         ));
     }
+    // DVA identity is the user's NIN (KYC tier 2+), RSA-encrypted at
+    // rest: decrypt for the Nomba call. No BVN anywhere on this path.
+    if crate::accounts::tier::tier_of(&user) < 2 {
+        return Err(AppError::bad_request(
+            "NIN required for a dedicated account. Submit it at /accounts/kyc/nin/.",
+        ));
+    }
+    let nin_enc = user.nin_encrypted.clone().unwrap_or_default();
+    let nin = crate::accounts::crypto::decrypt_pin(&nin_enc, &s.config.pin_rsa_private_key_b64)
+        .map_err(|_| AppError::bad_request("Could not read your NIN. Re-submit it at /accounts/kyc/nin/."))?;
     let full_name = format!("{} {}", user.surname, user.other_names).trim().to_string();
     let full_name = if full_name.is_empty() { user.email.clone() } else { full_name };
     let account_ref = format!("BS-NOMBA-DVA-{}", user.id);
     let (ok, result) =
-        nomba_gateway::create_virtual_account(&s.config, &account_ref, &full_name).await;
+        nomba_gateway::create_virtual_account(&s.config, &account_ref, &full_name, Some(nin)).await;
     if !ok {
         let msg = result.as_str().unwrap_or("Virtual account creation failed").to_string();
         return Ok((StatusCode::BAD_REQUEST, Json(json!({"success": false, "error": msg}))));

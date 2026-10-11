@@ -6,9 +6,10 @@
 use axum::{
     Json, Router,
     body::Body,
-    http::{HeaderValue, Method, Request, StatusCode, header::LOCATION},
-    middleware::{Next, from_fn},
-    response::Response,
+    extract::State,
+    http::{HeaderMap, HeaderValue, Method, Request, StatusCode, header::LOCATION},
+    middleware::{Next, from_fn, from_fn_with_state},
+    response::{IntoResponse, Response},
     routing::get,
 };
 use tower_http::cors::{AllowOrigin, Any, CorsLayer};
@@ -84,8 +85,35 @@ async fn ssl_redirect_mw(req: Request<Body>, next: Next) -> Response {
         .unwrap()
 }
 
+/// Superuser-only gate for API docs (`/schema/`, `/docs`, `/redoc`).
+/// Reuses the admin login session: same `Bearer` JWT + `is_superuser` check
+/// as `/admin/api/*`. Anon -> 401, non-superuser -> 403.
+async fn require_superuser_mw(
+    State(s): State<AppState>,
+    headers: HeaderMap,
+    req: Request<Body>,
+    next: Next,
+) -> Response {
+    match crate::admin::require_staff(&s, headers).await {
+        Ok(_) => next.run(req).await,
+        Err((status, body)) => (status, body).into_response(),
+    }
+}
+
 pub fn router(state: AppState) -> Router {
     let media_root = state.config.media_root.clone();
+    let docs_router = Router::new()
+        .route(
+            "/schema/",
+            get(|| async { Json(crate::docs::ApiDoc::openapi()) }),
+        )
+        .merge(
+            SwaggerUi::new("/docs")
+                .url("/schema/openapi.json", crate::docs::ApiDoc::openapi()),
+        )
+        .merge(Redoc::with_url("/redoc", crate::docs::ApiDoc::openapi()))
+        .layer(from_fn_with_state(state.clone(), require_superuser_mw))
+        .with_state(state.clone());
     let router = Router::new()
         .merge(crate::accounts::urls::router(state.clone()))// accounts
         .merge(crate::wallet::urls::router(state.clone()))// wallet
@@ -108,15 +136,7 @@ pub fn router(state: AppState) -> Router {
         .merge(crate::admin::router(state.clone())) //staff admin JSON API
         .nest_service("/media/", ServeDir::new(media_root))// media files
         .route("/health", get(|| async { "ok" }))// health check
-        .route(
-            "/schema/",
-            get(|| async { Json(crate::docs::ApiDoc::openapi()) }),
-        )// OpenAPI schema
-        .merge(
-            SwaggerUi::new("/docs")
-                .url("/schema/openapi.json", crate::docs::ApiDoc::openapi()),
-        )// Swagger UI
-        .merge(Redoc::with_url("/redoc", crate::docs::ApiDoc::openapi()))// ReDoc UI
+        .merge(docs_router)// superuser-only OpenAPI schema/docs/redoc
         .fallback(crate::admin::spa_fallback);// React panel under /admin
     // Outermost last: plain-http hits redirect before CORS runs (browsers
     // never send preflights over http in prod — nginx only proxies 443).

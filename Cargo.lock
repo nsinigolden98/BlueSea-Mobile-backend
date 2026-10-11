@@ -1486,9 +1486,9 @@ dependencies = [
 
 [[package]]
 name = "nomba-rs"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f9e2490f6de43c61f79488f336d5b5dd7a839b2a00f26bd2ba218d990f47c75"
+checksum = "b33edff6a9ca8a4270d4e5eb689d9efb1a0e23bf397a00d8529a6ea04a86a17f"
 dependencies = [
  "base64 0.22.1",
  "chrono",

@@ -146,7 +146,7 @@ fn hash_profile_password(def: &ModelDef, body: &mut Value) {
 pub fn forbidden() -> Resp {
     (
         StatusCode::FORBIDDEN,
-        Json(json!({"detail": "Admin access required."})),
+        Json(json!({"detail": "Superuser access required."})),
     )
 }
 
@@ -154,7 +154,7 @@ pub async fn require_staff(s: &AppState, headers: HeaderMap) -> Result<Profile, 
     let user = auth_user(State(s.clone()), headers).await.map_err(|e| {
         (StatusCode::UNAUTHORIZED, Json(json!({"detail": e.message})))
     })?;
-    if !(user.is_staff || user.is_superuser) {
+    if !user.is_superuser {
         return Err(forbidden());
     }
     Ok(user)
@@ -777,15 +777,16 @@ mod tests {
              token_id bigint NOT NULL UNIQUE, id BIGSERIAL PRIMARY KEY)",
         ])
         .await;
-        for (email, staff, code) in [("staff@x.com", true, "STAFF1"), ("user@x.com", false, "USER01")] {
+        for (email, staff, superuser, code) in [("staff@x.com", true, true, "STAFF1"), ("user@x.com", false, false, "USER01")] {
             sqlx::query(
                 "INSERT INTO accounts_profile (password, is_superuser, first_name, last_name, date_joined, email, surname, other_names,
                  is_active, is_staff, is_admin, role, email_verified, created_on, pin_is_set, referral_code, pin_failed_attempts, \"has_DVA\")
-                 VALUES ('x', FALSE, '', '', '2026-01-01 00:00:00', $1, 'S', 'O', TRUE, $2, FALSE, 'user', TRUE, '2026-01-01 00:00:00', FALSE, $3, 0, FALSE)",
+                 VALUES ('x', $4, '', '', '2026-01-01 00:00:00', $1, 'S', 'O', TRUE, $2, FALSE, 'user', TRUE, '2026-01-01 00:00:00', FALSE, $3, 0, FALSE)",
             )
             .bind(email)
             .bind(staff)
             .bind(code)
+            .bind(superuser)
             .execute(&pool)
             .await
             .unwrap();
@@ -829,12 +830,12 @@ mod tests {
         let (s, secret) = test_state(db);
         // No token -> 401.
         assert!(require_staff(&s, HeaderMap::new()).await.is_err());
-        // Non-staff user (id 2) -> 403.
+        // Non-superuser (id 2) -> 403.
         let err = require_staff(&s, bearer(&secret, 2)).await.unwrap_err();
         assert_eq!(err.0, StatusCode::FORBIDDEN);
-        // Staff user (id 1) passes.
+        // Superuser (id 1) passes.
         let staff = require_staff(&s, bearer(&secret, 1)).await.unwrap();
-        assert!(staff.is_staff);
+        assert!(staff.is_superuser);
     }
 
     #[tokio::test]

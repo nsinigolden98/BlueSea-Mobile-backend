@@ -129,6 +129,7 @@ pub async fn create_virtual_account(
     config: &Config,
     account_ref: &str,
     account_name: &str,
+    nin: Option<String>,
 ) -> (bool, serde_json::Value) {
     let client = match client(config).await {
         Ok(c) => c,
@@ -136,7 +137,7 @@ pub async fn create_virtual_account(
     };
     match client
         .virtual_accounts
-        .create_virtual_account(account_ref, account_name, None, None, None)
+        .create_virtual_account(account_ref, account_name, None, nin, None, None)
         .await
     {
         Err(e) => {
