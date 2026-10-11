@@ -10,3 +10,5 @@ debug.log
 /target
 .vscode/
 /bluesea-backend
+*.swp
+*.swo
