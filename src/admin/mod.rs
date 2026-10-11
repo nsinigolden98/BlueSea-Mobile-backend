@@ -573,9 +573,39 @@ fn crud_routes(router: axum::Router<AppState>, prefix: &str, slug: &str) -> axum
         )
 }
 
+/// Locate the built React panel. The binary may run from any working
+/// directory, so search `./admin-panel/dist` (repo checkout, `cargo run`),
+/// the executable's own directory (release binary next to the repo), and
+/// `/app/admin-panel/dist` (Docker image) — first existing wins.
+fn panel_dir() -> std::path::PathBuf {
+    let rel = std::path::Path::new("admin-panel/dist");
+    if rel.join("index.html").is_file() {
+        return rel.to_path_buf();
+    }
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            for base in [dir.to_path_buf(), dir.join("..")] {
+                let cand = base.join("admin-panel/dist");
+                if cand.join("index.html").is_file() {
+                    return cand;
+                }
+            }
+            // Binary sitting directly inside the project root or dist parent.
+            if dir.join("index.html").is_file() {
+                return dir.to_path_buf();
+            }
+        }
+    }
+    let docker = std::path::PathBuf::from("/app/admin-panel/dist");
+    if docker.join("index.html").is_file() {
+        return docker;
+    }
+    rel.to_path_buf()
+}
+
 /// SPA fallback: `/admin` (except `/admin/api/*`) serves the React panel's
 /// `index.html`; anything else is a plain 404 so mistyped API paths never
-/// return HTML. Missing `dist/` (panel not built yet) is a 404 with a hint.
+/// return HTML. Missing `dist/` is a 404 naming the searched directory.
 pub async fn spa_fallback(uri: axum::http::Uri) -> impl axum::response::IntoResponse {
     use axum::response::IntoResponse;
     let path = uri.path();
@@ -591,7 +621,7 @@ pub async fn spa_fallback(uri: axum::http::Uri) -> impl axum::response::IntoResp
                 .into_response();
         }
         // Static asset? Serve from dist, else the SPA shell.
-        let dist = std::path::Path::new("admin-panel/dist");
+        let dist = panel_dir();
         let candidate = dist.join(rest.trim_start_matches('/'));
         if candidate.is_file() {
             let content_type = match candidate.extension().and_then(|e| e.to_str()) {
@@ -624,7 +654,8 @@ pub async fn spa_fallback(uri: axum::http::Uri) -> impl axum::response::IntoResp
 
 async fn serve_index() -> axum::response::Response {
     use axum::response::IntoResponse;
-    match tokio::fs::read("admin-panel/dist/index.html").await {
+    let index = panel_dir().join("index.html");
+    match tokio::fs::read(&index).await {
         Ok(bytes) => (
             StatusCode::OK,
             [(axum::http::header::CONTENT_TYPE, "text/html")],
@@ -633,7 +664,10 @@ async fn serve_index() -> axum::response::Response {
             .into_response(),
         Err(_) => (
             StatusCode::NOT_FOUND,
-            Json(json!({"detail": "Admin panel not built. Run `npm run build` in admin-panel/."})),
+            Json(json!({"detail": format!(
+                "Admin panel not built or not found (looked for {}). Run `npm run build` in admin-panel/ or launch from the repo root.",
+                index.display()
+            )})),
         )
             .into_response(),
     }
